@@ -87,6 +87,8 @@ import Command.Result ( Result )
 
 -- Internal imports: subcommands
 import qualified CLI.CommandCStructs2Copilot
+import qualified CLI.CommandFretComponentSpec2Copilot
+import qualified CLI.CommandFretReqsDB2Copilot
 
 -- * Command
 
@@ -96,7 +98,9 @@ import qualified CLI.CommandCStructs2Copilot
 -- @CommandOpts@ to capture their respective arguments. These types are
 -- different for each subcommand.
 data CommandOpts =
-  CommandOptsCStructs2Copilot CLI.CommandCStructs2Copilot.CommandOpts
+    CommandOptsCStructs2Copilot          CLI.CommandCStructs2Copilot.CommandOpts
+  | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
+  | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
 
 -- * CLI
 
@@ -108,7 +112,10 @@ commandDesc =
 -- | Subparser for multiple subcommands.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = subparser
-  subcommandCStructs
+  (  subcommandCStructs
+  <> subcommandFretComponentSpec
+  <> subcommandFretReqs
+  )
 
 -- | Modifier for the CStruct to Copilot Struct generation subcommand, linking
 -- the subcommand options and description to the command @structs@ at top
@@ -120,6 +127,29 @@ subcommandCStructs =
     (CommandOptsCStructs2Copilot
        <$> CLI.CommandCStructs2Copilot.commandOptsParser)
     CLI.CommandCStructs2Copilot.commandDesc
+
+
+-- | Modifier for the FRET component spec to copilot subcommand, linking the
+-- subcommand options and description to the command @fret-component-spec@ at
+-- top level.
+subcommandFretComponentSpec :: Mod CommandFields CommandOpts
+subcommandFretComponentSpec =
+  subcommand
+    "fret-component-spec"
+    (CommandOptsFretComponentSpec2Copilot
+       <$> CLI.CommandFretComponentSpec2Copilot.commandOptsParser)
+    CLI.CommandFretComponentSpec2Copilot.commandDesc
+
+-- | Modifier for the FRET requirements DB to copilot subcommand, linking the
+-- subcommand options and description to the command @fret-reqs-db@ at top
+-- level.
+subcommandFretReqs :: Mod CommandFields CommandOpts
+subcommandFretReqs =
+  subcommand
+    "fret-reqs-db"
+    (CommandOptsFretReqsDB2Copilot
+       <$> CLI.CommandFretReqsDB2Copilot.commandOptsParser)
+    CLI.CommandFretReqsDB2Copilot.commandDesc
 
 -- * Command dispatcher
 
@@ -145,6 +175,10 @@ subcommandCStructs =
 command :: CommandOpts -> IO (Result ErrorCode)
 command (CommandOptsCStructs2Copilot c) =
   id <$> CLI.CommandCStructs2Copilot.command c
+command (CommandOptsFretComponentSpec2Copilot c) =
+  id <$> CLI.CommandFretComponentSpec2Copilot.command c
+command (CommandOptsFretReqsDB2Copilot c) =
+  id <$> CLI.CommandFretReqsDB2Copilot.command c
 
 -- * Error codes
 

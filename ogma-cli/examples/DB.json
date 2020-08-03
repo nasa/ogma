@@ -1,0 +1,45 @@
+[
+ {
+     "reqid": "TEST",
+     "parent_reqid": "",
+     "project": "STALLUSECASE",
+     "rationale": "Trivial requirement",
+     "comments": "Trivial requirement for testing purposes",
+     "fulltext": "external_component shall satisfy (external_signal <= 35)",
+     "semantics": {
+         "type": "nasa",
+         "scope": {
+             "type": "null"
+         },
+         "condition": "null",
+         "timing": "null",
+         "response": "satisfaction",
+         "variables": {
+             "regular": [
+                 "external_signal"
+             ],
+             "modes": []
+         },
+         "component_name": "external_component",
+         "componentTextRange": [
+             0,
+             17
+         ],
+         "post_condition": "(( external_signal <= 35 ))",
+         "responseTextRange": [
+             25,
+             55
+         ],
+         "ft": "((! LAST) U <b><i>(( external_signal <= 35 ))</i></b>)",
+         "pt": "(O <b><i>(( external_signal <= 35 ))</i></b>)",
+         "ftExpanded": "((! LAST) U <b><i>(( external_signal <= 35 ))</i></b>)",
+         "ptExpanded": "(O(external_signal))",
+         "component": "<b><i>external_component</i></b>",
+         "CoCoSpecCode": "(O(external_signal <= 35))",
+         "diagramVariables": "Response = <b><i>(( external_signal <= 35 ))</i></b>.",
+         "description": "ENFORCED: in the interval defined by the entire execution.\nTRIGGER: first point in the interval.\nREQUIRES: for every trigger, RES must hold at some time point between (and including) the trigger and the end of the interval.",
+         "diagram": "_media/user-interface/examples/svgDiagrams/null_null_null_satisfaction.svg"
+     },
+     "_id": "51a1bc60-c3d0-11eb-a339-fd36e7b31a1f"
+ }
+]

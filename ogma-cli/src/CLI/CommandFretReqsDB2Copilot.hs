@@ -28,51 +28,70 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Ogma: Tool to interoperate between <https://cfs.gsfc.nasa.gov/ Copilot>
--- and other languages.
---
--- Ogma is a tool to facilitate integration of safe runtime monitors into other
--- systems. It takes information from a system created in a language (e.g.,
--- CoCoSpec ) and produces specifications for the runtime verification
--- framework <https://cfs.gsfc.nasa.gov/ Copilot>. Currently, features
--- supported are:
---
--- * Translation of ptLTL and Cocospec properties defined in a
--- <https://github.com/NASA-SW-VnV/fret FRET> file into corresponding
--- expressions in Copilot.
---
--- * Translation of C headers declaring structs into the corresponding Copilot
--- Struct definitions.
---
--- More information can be obtained by calling ogma with the argument @--help@.
-module Main
-    ( main )
+-- | CLI interface to the CStructs2Copilot subcommand
+module CLI.CommandFretReqsDB2Copilot
+    (
+      -- * Direct command access
+      command
+    , CommandOpts
+    , ErrorCode
+
+      -- * CLI
+    , commandDesc
+    , commandOptsParser
+    )
   where
 
 -- External imports
-import Options.Applicative ( execParser )
+import Options.Applicative ( Parser, help, long, metavar, strOption, switch )
 
--- External imports
-import Options.Applicative ( ParserInfo, fullDesc, header, helper, info,
-                             progDesc, (<**>) )
+-- External imports: command results
+import Command.Result ( Result )
 
--- Internal imports: CLI parsing, handling, and processing of results.
-import CLI.CommandTop ( CommandOpts, command, commandDesc, commandOptsParser )
-import CLI.Result     ( processResult )
+-- External imports: actions or commands supported
+import Command.FRETReqsDB2Copilot ( ErrorCode, fretReqsDB2Copilot )
 
--- | Ogma: Helper tool to interoperate between Copilot and other languages.
-main :: IO ()
-main = execParser fullCLIOpts >>= command >>= processResult
+-- * Command
 
--- | Full program options.
-fullCLIOpts :: ParserInfo CommandOpts
-fullCLIOpts = info (commandOptsParser <**> helper)
-  (  fullDesc
-  <> progDesc commandDesc
-  <> header strProgramSummary
-  )
+-- | Options to generate Copilot from FRET Requirements Databases.
+data CommandOpts = CommandOpts
+  { fretReqsDBFileName :: FilePath
+  , fretReqsDBCoCoSpec :: Bool
+  }
 
--- | Short program description
-strProgramSummary :: String
-strProgramSummary =
-  "ogma - an anything-to-Copilot application generator"
+-- | Transform a FRET requirements database containing a temporal logic
+-- specification into a Copilot specification.
+--
+-- This is just an uncurried version of "Command.FRETReqsDB2Copilot".
+command :: CommandOpts -> IO (Result ErrorCode)
+command c =
+  fretReqsDB2Copilot (fretReqsDBFileName c) (fretReqsDBCoCoSpec c)
+
+-- * CLI
+
+-- | Command description for CLI help.
+commandDesc :: String
+commandDesc =
+  "Generate a Copilot file from a FRET Requirements Database"
+
+-- | Subparser for the @fret-reqs-db@ command, used to generate a Copilot
+-- specification from a FRET file containing requirements only.
+commandOptsParser :: Parser CommandOpts
+commandOptsParser = CommandOpts
+  <$> strOption
+        (  long "fret-file-name"
+        <> metavar "FILENAME"
+        <> help strFretArgDesc
+        )
+  <*> switch
+        (  long "cocospec"
+        <> help strFretCoCoDesc
+        )
+
+-- | Argument FRET command description
+strFretArgDesc :: String
+strFretArgDesc = "FRET file with requirements."
+
+-- | CoCoSpec flag description
+strFretCoCoDesc :: String
+strFretCoCoDesc = "Use CoCoSpec variant of TL properties"
