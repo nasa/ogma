@@ -1,0 +1,331 @@
+-- Copyright 2020 United States Government as represented by the Administrator
+-- of the National Aeronautics and Space Administration. All Rights Reserved.
+--
+-- Disclaimers
+--
+-- No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY
+-- OF ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+-- LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+-- SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+-- PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE
+-- SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF
+-- PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN
+-- ANY MANNER, CONSTITUTE AN ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR
+-- RECIPIENT OF ANY RESULTS, RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR
+-- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
+-- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
+-- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
+-- IT "AS IS."
+--
+-- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+-- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
+-- ANY PRIOR RECIPIENT. IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS IN
+-- ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH USE,
+-- INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM, RECIPIENT'S
+-- USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD HARMLESS THE
+-- UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS ANY
+-- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
+-- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
+-- AGREEMENT.
+--
+entrypoints TranslationUnit;
+
+token Identifier ( ( letter | '_' ) (letter | digit | '_' )* ) ;
+token IntegerConstant ( ( ["123456789"] digit*)
+                      | ('0' ["01234567"]+)
+                      | ('0' ('x' | 'X') ["01234567"]+)
+                      )
+                      ( ('u' | 'U' | 'l' | 'L')? ) ;
+
+MkTranslationUnit . TranslationUnit ::= [ExternalDeclaration] ;
+
+(:[]) . [ExternalDeclaration] ::= ExternalDeclaration ;
+(:)   . [ExternalDeclaration] ::= ExternalDeclaration [ExternalDeclaration] ;
+
+MkExternalDeclarationFunctionDefinition . ExternalDeclaration ::= FunctionDefinition ;
+MkExternalDeclarationDeclaration        . ExternalDeclaration ::= Declaration ;
+
+MkFunctionDefinition . FunctionDefinition ::= [DeclarationSpecifier] Declarator [Declaration] CompoundStatement ;
+
+MkDeclaration . Declaration ::= DeclarationSpecifiers InitDeclarationListOpt ";" ;
+
+[]  . [Declaration] ::= ;
+(:) . [Declaration] ::= Declaration [Declaration];
+
+[]  . [DeclarationSpecifier] ::= ;
+(:) . [DeclarationSpecifier] ::= DeclarationSpecifier [DeclarationSpecifier] ;
+
+DeclarationSpecifiers . DeclarationSpecifiers ::= DeclarationSpecifier [DeclarationSpecifier] ;
+
+MkDeclarationSpecifierStorageClass  . DeclarationSpecifier ::= StorageClassSpecifier ;
+MkDeclarationSpecifierTypeSpecifier . DeclarationSpecifier ::= TypeSpecifier ;
+MkDeclarationSpecifierTypeQualifier . DeclarationSpecifier ::= TypeQualifier ;
+
+MkStorageClassSpecifierAuto     . StorageClassSpecifier ::= "auto" ;
+MkStorageClassSpecifierRegister . StorageClassSpecifier ::= "register" ;
+MkStorageClassSpecifierStatic   . StorageClassSpecifier ::= "static" ;
+MkStorageClassSpecifierExtern   . StorageClassSpecifier ::= "extern" ;
+MkStorageClassSpecifierTypedef  . StorageClassSpecifier ::= "typedef" ;
+
+MkTypeSpecifierVoid          . TypeSpecifier ::= "void" ;
+MkTypeSpecifierChar          . TypeSpecifier ::= "char" ;
+MkTypeSpecifierShort         . TypeSpecifier ::= "short" ;
+MkTypeSpecifierInt           . TypeSpecifier ::= "int" ;
+MkTypeSpecifierInt8          . TypeSpecifier ::= "int8_t" ;
+MkTypeSpecifierInt16         . TypeSpecifier ::= "int16_t" ;
+MkTypeSpecifierInt32         . TypeSpecifier ::= "int32_t" ;
+MkTypeSpecifierInt64         . TypeSpecifier ::= "int64_t" ;
+MkTypeSpecifierUInt8         . TypeSpecifier ::= "uint8_t" ;
+MkTypeSpecifierUInt16        . TypeSpecifier ::= "uint16_t" ;
+MkTypeSpecifierUInt32        . TypeSpecifier ::= "uint32_t" ;
+MkTypeSpecifierUInt64        . TypeSpecifier ::= "uint64_t" ;
+MkTypeSpecifierLong          . TypeSpecifier ::= "long" ;
+MkTypeSpecifierFloat         . TypeSpecifier ::= "float" ;
+MkTypeSpecifierDouble        . TypeSpecifier ::= "double" ;
+MkTypeSpecifierSigned        . TypeSpecifier ::= "signed" ;
+MkTypeSpecifierUnsigned      . TypeSpecifier ::= "unsigned" ;
+MkTypeSpecifierStructOrUnion . TypeSpecifier ::= StructOrUnionSpecifier ;
+MkTypeSpecifierEnumSpecifier . TypeSpecifier ::= EnumSpecifier ;
+-- MkTypeSpecifierTypedefName   . TypeSpecifier ::= TypedefName ;
+
+MkTypeQualifierConst    . TypeQualifier ::= "const" ;
+MkTypeQualifierVolatile . TypeQualifier ::= "volatile" ;
+
+MkStructOrUnionSpecifierWithFields . StructOrUnionSpecifier ::= StructOrUnion IdentifierOpt "{" [StructDeclaration] "}" ;
+MkStructOrUnionSpecifierEmpty      . StructOrUnionSpecifier ::= StructOrUnion Identifier ;
+
+MkStructOrUnionStruct . StructOrUnion ::= "struct" ;
+MkStructOrUnionUnion  . StructOrUnion ::= "union" ;
+
+(:[]) . [StructDeclaration] ::= StructDeclaration ;
+(:)   . [StructDeclaration] ::= StructDeclaration [StructDeclaration];
+
+MkInitDeclarationListOptNothing . InitDeclarationListOpt ::= ;
+MkInitDeclarationListOptJust    . InitDeclarationListOpt ::= [InitDeclarator] ;
+
+(:[]) . [InitDeclarator] ::= InitDeclarator ;
+(:)   . [InitDeclarator] ::= InitDeclarator "," [InitDeclarator];
+
+MkInitDeclaratorUninitialized . InitDeclarator ::= Declarator ;
+MkInitDeclaratorInitialized   . InitDeclarator ::= Declarator "=" Initializer ;
+
+MkStructDeclaration . StructDeclaration ::= [SpecifierQualifier] [StructDeclarator] ";" ;
+
+(:[]) . [SpecifierQualifier] ::= SpecifierQualifier ;
+(:)   . [SpecifierQualifier] ::= SpecifierQualifier [SpecifierQualifier] ;
+
+MkSpecifierQualifierTypeSpecifier . SpecifierQualifier ::= TypeSpecifier ;
+MkSpecifierQualifierTypeQualifier . SpecifierQualifier ::= TypeQualifier ;
+
+(:[]) . [StructDeclarator] ::= StructDeclarator ;
+(:)   . [StructDeclarator] ::= StructDeclarator "," [StructDeclarator] ;
+
+MkStructDeclaratorDeclarator . StructDeclarator ::= Declarator ;
+MkStructDeclaratorConstant   . StructDeclarator ::= DeclaratorOpt ":" ConstantExpression ;
+
+MkEnumSpecifierWithCases . EnumSpecifier ::= "enum" IdentifierOpt "{" EnumeratorList "}" ;
+MkEnumSpecifierEmpty     . EnumSpecifier ::= "enum" Identifier ;
+
+MkEnumeratorList1 . EnumeratorList ::= Enumerator ;
+MkEnumeratorListN . EnumeratorList ::= EnumeratorList "," Enumerator ;
+
+MkEnumeratorUninitialized . Enumerator ::= Identifier ;
+MkEnumeratorInitialized   . Enumerator ::= Identifier "=" ConstantExpression ;
+
+MkDeclaratorOptNothing . DeclaratorOpt ::= ;
+MkDeclaratorOptJust    . DeclaratorOpt ::= Declarator ;
+
+MkDeclarator . Declarator ::= PointerOpt DirectDeclarator ;
+
+MkDirectDeclaratorIdentifier            . DirectDeclarator ::= Identifier ;
+MkDirectDeclaratorParDeclarator         . DirectDeclarator ::= "(" Declarator ")" ;
+MkDirectDeclaratorConstantExpressionOpt . DirectDeclarator ::= DirectDeclarator "[" ConstantExpressionOpt "]" ;
+MkDirectDeclaratorParameterTypeList     . DirectDeclarator ::= DirectDeclarator "(" ParameterTypeList ")" ;
+MkDirectDeclaratorIdentifierListOpt     . DirectDeclarator ::= DirectDeclarator "(" IdentifierListOpt ")" ;
+
+MkPointerOptNothing . PointerOpt ::= ;
+MkPointerOptJust    . PointerOpt ::= Pointer ;
+
+MkPointer1 . Pointer ::= "*" TypeQualifierListOpt ;
+MkPointerN . Pointer ::= "*" TypeQualifierListOpt Pointer ;
+
+MkTypeQualifierListOptNothing . TypeQualifierListOpt ::= ;
+MkTypeQualifierListOptJust    . TypeQualifierListOpt ::= TypeQualifierList ;
+
+MkTypeQualifierList1 . TypeQualifierList ::= TypeQualifier ;
+MkTypeQualifierListN . TypeQualifierList ::= TypeQualifierList TypeQualifier ;
+
+MkParameterTypeList         . ParameterTypeList ::= ParameterList ;
+MkParameterTypeListEllipsis . ParameterTypeList ::= ParameterList "," "..." ;
+
+MkParameterList1 . ParameterList ::= ParameterDeclaration ;
+MkParameterListN . ParameterList ::= ParameterList "," ParameterDeclaration ;
+
+MkParameterDeclarationDeclarator            . ParameterDeclaration ::= DeclarationSpecifiers Declarator ;
+MkParameterDeclarationAbstractDeclaratorOpt . ParameterDeclaration ::= DeclarationSpecifiers AbstractDeclaratorOpt ;
+
+MkIdentifierListOptNothing . IdentifierListOpt ::= ;
+MkIdentifierListOptJust    . IdentifierListOpt ::= IdentifierList ;
+
+MkIdentifierList1 . IdentifierList ::= Identifier ;
+MkIdentifierListN . IdentifierList ::= IdentifierList "," Identifier ;
+
+MkInitializerAssignment        . Initializer ::= Expression ;
+MkInitializerIniutializerList  . Initializer ::= "{" InitializerList "}" ;
+MkInitializerIniutializerListC . Initializer ::= "{" InitializerList "," "}" ;
+
+MkInitializerList1 . InitializerList ::= Initializer ;
+MkInitializerListN . InitializerList ::= InitializerList "," Initializer ;
+
+MkTypeName . TypeName ::= [SpecifierQualifier] AbstractDeclaratorOpt  ;
+
+MkAbstractDeclaratorOptNothing . AbstractDeclaratorOpt ::= ;
+MkAbstractDeclaratorOptJust    . AbstractDeclaratorOpt ::= AbstractDeclarator ;
+
+MkAbstractDeclaratorPointer . AbstractDeclarator ::= Pointer ;
+MkAbstractDeclaratorDirect  . AbstractDeclarator ::= PointerOpt DirectAbstractDeclarator ;
+
+MkDirectAbstractDeclaratorOptNothing . DirectAbstractDeclaratorOpt ::= ;
+MkDirectAbstractDeclaratorOptJust    . DirectAbstractDeclaratorOpt ::= DirectAbstractDeclarator ;
+
+MkDirectAbstractDeclaratorPar                   . DirectAbstractDeclarator ::= "(" AbstractDeclarator ")" ;
+MkDirectAbstractDeclaratorConstantExpressionOpt . DirectAbstractDeclarator ::= DirectAbstractDeclaratorOpt "[" ConstantExpressionOpt "]" ;
+MkDirectAbstractDeclaratorParameterTypeList     . DirectAbstractDeclarator ::= DirectAbstractDeclaratorOpt "(" ParameterTypeList ")" ;
+
+-- MkTypedefName . TypedefName ::= Identifier ;
+
+MkStatementLabeled    . Statement ::= LabeledStatement ;
+MkStatementExpression . Statement ::= ExpressionStatement ;
+MkStatementCompound   . Statement ::= CompoundStatement ;
+MkStatementSelection  . Statement ::= SelectionStatement ;
+MkStatementIteration  . Statement ::= IterationStatement ;
+MkStatementJump       . Statement ::= JumpStatement ;
+
+MkLabeledStatementIdentifier . LabeledStatement ::= Identifier ":" Statement ;
+MkLabeledStatementCase       . LabeledStatement ::= "case" ConstantExpression ":" Statement ;
+MkLabeledStatementDefault    . LabeledStatement ::= "default" ":" Statement ;
+
+MkExpressionStatement . ExpressionStatement ::= ExpressionOpt ";" ;
+
+MkCompoundStatement . CompoundStatement ::= "{" [Declaration] [Statement] "}" ;
+
+[]  . [Statement] ::=  ;
+(:) . [Statement] ::= Statement [Statement] ;
+
+MkSelectionStatementIfThen     . SelectionStatement ::= "if" "(" Expression ")" Statement ;
+MkSelectionStatementIfThenElse . SelectionStatement ::= "if" "(" Expression ")" Statement "else" Statement ;
+MkSelectionStatementSwitch     . SelectionStatement ::= "switch" "(" Expression ")" Statement ;
+
+MkIterationStatementWhile . IterationStatement ::= "while" "(" Expression ")" Statement ;
+MkIterationStatementDo    . IterationStatement ::= "do" Statement "while" "(" Expression ")" ";" ;
+MkIterationStatementFor   . IterationStatement ::= "for" "(" ExpressionOpt ";" ExpressionOpt ";" ExpressionOpt ")" Statement ;
+
+MkJumpStatementGoto     . JumpStatement ::= "goto" Identifier ";" ;
+MkJumpStatementContinue . JumpStatement ::= "continue" ";" ;
+MkJumpStatementBreak    . JumpStatement ::= "break" ";" ;
+MkJumpStatementReturn   . JumpStatement ::= "return" ExpressionOpt ";" ;
+
+MkExpressionOptNothing . ExpressionOpt ::= ;
+MkExpressionOptJust    . ExpressionOpt ::= Expression ;
+
+coercions Expression 12 ;
+Expression12 . Expression12 ::= CastExpression ;
+Expression11 . Expression11 ::= Expression11 MultOp Expression12 ;
+Expression10 . Expression10 ::= Expression10 AddOp Expression11 ;
+Expression9  . Expression9  ::= Expression9 ShiftOp Expression10 ;
+Expression8  . Expression8  ::= Expression8 RelOp Expression9 ;
+Expression7  . Expression7  ::= Expression7 EqOp Expression8 ;
+Expression6  . Expression6  ::= Expression6 "^" Expression7 ;
+Expression5  . Expression5  ::= Expression5 "|" Expression6 ;
+Expression4  . Expression4  ::= Expression4 "&&" Expression5 ;
+Expression3  . Expression3  ::= Expression3 "||" Expression4 ;
+Expression2  . Expression2  ::= Expression3 "?" Expression ":" Expression2 ;
+Expression1  . Expression1  ::= UnaryExpression AssignmentOperator Expression2 ;
+Expression   . Expression   ::= Expression "," Expression1;
+
+(:[]) . [Expression1] ::= Expression1 ;
+(:)   . [Expression1] ::= Expression1 "," [Expression1] ;
+
+MkAssignmentOperatorAssign . AssignmentOperator ::= "=" ;
+MkAssignmentOperatorTimes  . AssignmentOperator ::= "*=" ;
+MkAssignmentOperatorDiv    . AssignmentOperator ::= "/=" ;
+MkAssignmentOperatorMod    . AssignmentOperator ::= "%=" ;
+MkAssignmentOperatorPlus   . AssignmentOperator ::= "+=" ;
+MkAssignmentOperatorMinus  . AssignmentOperator ::= "-=" ;
+MkAssignmentOperatorShiftL . AssignmentOperator ::= "<<=" ;
+MkAssignmentOperatorShiftR . AssignmentOperator ::= ">>=" ;
+MkAssignmentOperatorAnd    . AssignmentOperator ::= "&=" ;
+MkAssignmentOperatorXOr    . AssignmentOperator ::= "^=" ;
+MkAssignmentOperatorOr     . AssignmentOperator ::= "|=" ;
+
+MkConditionalExpressionNothing . ConstantExpressionOpt ::= ;
+MkConditionalExpressionJust    . ConstantExpressionOpt ::= ConstantExpression ;
+
+-- Should be Expression2
+MkConstantExpression . ConstantExpression ::= Expression2 ;
+
+EqOpEq  . EqOp ::= "==" ;
+EqOpNeq . EqOp ::= "!=" ;
+
+RelOpLT . RelOp ::= "<" ;
+RelOpGT . RelOp ::= ">" ;
+RelOpLE . RelOp ::= "<=" ;
+RelOpGE . RelOp ::= ">=" ;
+
+ShiftOpLeft  . ShiftOp ::= "<<" ;
+ShiftOpRight . ShiftOp ::= ">>" ;
+
+AddOpPlus  . AddOp ::= "+" ;
+AddOpMinus . AddOp ::= "-" ;
+
+MultOpTimes . MultOp ::= "*" ;
+MultOpDiv   . MultOp ::= "/" ;
+MultOpMod   . MultOp ::= "%" ;
+
+MkCastExpression1 . CastExpression ::= UnaryExpression ;
+MkCastExpressionN . CastExpression ::= "(" TypeName ")" CastExpression ;
+
+MkUnaryExpressionPostfix   . UnaryExpression ::= PostfixExpression ;
+MkUnaryExpressionPlus2     . UnaryExpression ::= "++" UnaryExpression ;
+MkUnaryExpressionMinus2    . UnaryExpression ::= "--" UnaryExpression ;
+MkUnaryExpressionUnaryOp   . UnaryExpression ::= UnaryOperator CastExpression ;
+MkUnaryExpressionSizeof1   . UnaryExpression ::= "sizeof" UnaryExpression ;
+MkUnaryExpressionSizeofPar . UnaryExpression ::= "sizeof" "(" TypeName ")" ;
+
+MkUnaryOperatorAnd   . UnaryOperator ::= "&" ;
+MkUnaryOperatorTimes . UnaryOperator ::= "*" ;
+MkUnaryOperatorPlus  . UnaryOperator ::= "+" ;
+MkUnaryOperatorMinus . UnaryOperator ::= "-" ;
+MkUnaryOperatorTilde . UnaryOperator ::= "~" ;
+MkUnaryOperatorBang  . UnaryOperator ::= "!" ;
+
+MkPostfixExpression1                         . PostfixExpression ::= PrimaryExpression ;
+MkPostfixExpressionBrackets                  . PostfixExpression ::= PostfixExpression "[" Expression "]" ;
+MkPostfixExpressionArgumentExpressionListOpt . PostfixExpression ::= PostfixExpression "(" ArgumentExpressionListOpt ")" ;
+MkPostfixExpressionDot                       . PostfixExpression ::= PostfixExpression "." Identifier ;
+MkPostfixExpressionArrow                     . PostfixExpression ::= PostfixExpression "->" Identifier ;
+MkPostfixExpressionPlus2                     . PostfixExpression ::= PostfixExpression "++" ;
+MkPostfixExpressionMinus2                    . PostfixExpression ::= PostfixExpression "--" ;
+
+MkPrimaryExpressionIdentifier    . PrimaryExpression ::= Identifier ;
+MkPrimaryExpressionConstant      . PrimaryExpression ::= Constant ;
+MkPrimaryExpressionString        . PrimaryExpression ::= String ;
+MkPrimaryExpressionParExpression . PrimaryExpression ::= "(" Expression ")" ;
+
+MkArgumentExpressionListOptNothing . ArgumentExpressionListOpt ::= ;
+MkArgumentExpressionListOptJust    . ArgumentExpressionListOpt ::= [Expression1] ;
+
+MkConstantInteger   . Constant ::= IntegerConstant ;
+MkConstantCharacter . Constant ::= CharacterConstant ;
+MkConstantFloating  . Constant ::= FloatingConstant ;
+-- MkConstantEnumeration . Constant ::= EnumerationConstant ;
+
+MkIdentifierOptNothing . IdentifierOpt ::= ;
+MkIdentifierOptJust    . IdentifierOpt ::= Identifier ;
+
+MkCharacterConstant . CharacterConstant ::= Char ;
+MkFloatingConstant . FloatingConstant ::= Double ;
+
+comment "/*" "*/" ;
+comment "//" ;
+comment "#" ;
