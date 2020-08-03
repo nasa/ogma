@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS." 
+-- IT "AS IS."
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -27,71 +27,31 @@
 -- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
+--
+-- | Auxiliary functions for working with values of type 'ByteString'.
+module Data.ByteString.Extra where
 
-cabal-version:       2.0
-build-type:          Simple
+import           Control.Exception    ( catch )
+import qualified Data.ByteString.Lazy as B
+import           System.IO.Error      ( isDoesNotExistError )
 
-name:                ogma-extra
-version:             0.0.1
-homepage:            http://nasa.gov
-license:             AllRightsReserved
-license-file:        LICENSE.pdf
-author:              Ivan Perez, Alwyn Goodloe
-maintainer:          ivan.perezdominguez@nasa.gov
-category:            Aerospace
-extra-source-files:  CHANGELOG.md
+-- * Safe I/O
 
-synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+-- | Safely read a file into a lazy 'ByteString', returning a 'Left' error
+-- message if the file cannot be opened.
+safeReadFile :: FilePath -> IO (Either String B.ByteString)
+safeReadFile fp =
+  catch (return <$> B.readFile fp) $ \e ->
+           if isDoesNotExistError e
+             then return $ Left $ strByteStringFileNotFound fp
+             else return $ Left $ strByteStringCannotOpenFile fp
 
-description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
-                     other systems. Ogma extends
-                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
-                     verification framework that generates hard real-time C99 code.
-                     .
-                     This package implements internal extensions to existing libraries
-                     and modules that are used in several ogma packages and their
-                     testing facilities.
+-- ** Error messages
 
-library
+-- | File-not-found message.
+strByteStringFileNotFound :: FilePath -> String
+strByteStringFileNotFound fp = "File not found: " ++ fp
 
-  exposed-modules:
-    Data.ByteString.Extra
-    Data.List.Extra
-    Data.String.Extra
-
-  build-depends:
-      base       >= 4.11.0.0 && < 5
-    , bytestring
-
-  hs-source-dirs:
-    src
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
-
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
-
-    , ogma-extra
-
-  hs-source-dirs:
-    tests
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
+-- | Cannot-open-file message.
+strByteStringCannotOpenFile :: FilePath -> String
+strByteStringCannotOpenFile fp = "Error opening file " ++ fp

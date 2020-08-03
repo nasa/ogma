@@ -31,7 +31,7 @@
 cabal-version:       2.0
 build-type:          Simple
 
-name:                ogma-extra
+name:                ogma-language-fret-reqs
 version:             0.0.1
 homepage:            http://nasa.gov
 license:             AllRightsReserved
@@ -40,28 +40,30 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
+                     tests/fret_good.json
+                     tests/fret_bad.json
 
-synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+synopsis:            Ogma: Runtime Monitor translator: FRET Component Requirement DB Frontend
 
 description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
                      other systems. Ogma extends
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     This package implements internal extensions to existing libraries
-                     and modules that are used in several ogma packages and their
-                     testing facilities.
+                     This library contains a frontend to read FRET Component Requirement Databases.
 
 library
 
   exposed-modules:
-    Data.ByteString.Extra
-    Data.List.Extra
-    Data.String.Extra
+    Language.FRETReqsDB.AST
 
   build-depends:
-      base       >= 4.11.0.0 && < 5
-    , bytestring
+      base                   >= 4.11.0.0 && < 5
+    , aeson
+    , text
+
+    , ogma-language-cocospec >= 0.0.1 && < 0.1
+    , ogma-language-smv      >= 0.0.1 && < 0.1
 
   hs-source-dirs:
     src
@@ -80,12 +82,15 @@ test-suite unit-tests
     Main.hs
 
   build-depends:
-      base
+      base                       >= 4.11.0.0 && < 5
+
+    , aeson
     , QuickCheck
     , test-framework
     , test-framework-quickcheck2
 
-    , ogma-extra
+    , ogma-extra                 >= 0.0.1 && < 0.1
+    , ogma-language-fret-reqs
 
   hs-source-dirs:
     tests

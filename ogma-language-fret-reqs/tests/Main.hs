@@ -27,71 +27,57 @@
 -- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
+--
+-- | Test FRETReqsDB language library.
+module Main where
 
-cabal-version:       2.0
-build-type:          Simple
+-- External imports
+import Data.Aeson                           ( eitherDecode )
+import Data.Either                          ( isLeft, isRight )
+import Test.Framework                       ( Test, defaultMainWithOpts )
+import Test.Framework.Providers.QuickCheck2 ( testProperty )
+import Test.QuickCheck                      ( Property )
+import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 
-name:                ogma-extra
-version:             0.0.1
-homepage:            http://nasa.gov
-license:             AllRightsReserved
-license-file:        LICENSE.pdf
-author:              Ivan Perez, Alwyn Goodloe
-maintainer:          ivan.perezdominguez@nasa.gov
-category:            Aerospace
-extra-source-files:  CHANGELOG.md
+-- External imports: auxiliary
+import Data.ByteString.Extra as B ( safeReadFile )
 
-synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+-- Internal imports
+import Language.FRETReqsDB.AST ( FRETReqsDB )
 
-description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
-                     other systems. Ogma extends
-                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
-                     verification framework that generates hard real-time C99 code.
-                     .
-                     This package implements internal extensions to existing libraries
-                     and modules that are used in several ogma packages and their
-                     testing facilities.
+-- | Run all unit tests for the FRETReqsDB parser.
+main :: IO ()
+main =
+  defaultMainWithOpts tests mempty
 
-library
+-- | All unit tests for the FRETReqsDB parser.
+tests :: [Test.Framework.Test]
+tests =
+  [ testProperty "Parse FRETReqsDB (correct case)"   propParseFRETReqsDBOk
+  -- , testProperty "Parse FRETReqsDB (incorrect case)" propParseFRETReqsDBFail
+  ]
 
-  exposed-modules:
-    Data.ByteString.Extra
-    Data.List.Extra
-    Data.String.Extra
+-- | Test the FRETReqsDB parser on a well-formed boolean specification.
+propParseFRETReqsDBOk :: Property
+propParseFRETReqsDBOk = monadicIO $ do
+  content <- run $ parseFretReqsDB "tests/fret_good.json"
+  assert (isRight content)
 
-  build-depends:
-      base       >= 4.11.0.0 && < 5
-    , bytestring
+-- | Test the FRETReqsDB parser on an incorrect boolean specification.
+propParseFRETReqsDBFail :: Property
+propParseFRETReqsDBFail = monadicIO $ do
+  componentSpec <- run $ parseFretReqsDB "tests/fret_bad.json"
+  assert (isLeft componentSpec)
 
-  hs-source-dirs:
-    src
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
-
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
-
-    , ogma-extra
-
-  hs-source-dirs:
-    tests
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
+-- | Parse a JSON file containing a FRET Requirements Database.
+--
+-- Returns a 'Left' with an error message if the file does not have the correct
+-- format.
+--
+-- Throws an exception if the file cannot be read.
+parseFretReqsDB :: FilePath -> IO (Either String FRETReqsDB)
+parseFretReqsDB fp = do
+  reqsDB <- B.safeReadFile fp
+  let e = eitherDecode =<< reqsDB
+  print e
+  return e
