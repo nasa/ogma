@@ -7,8 +7,10 @@ import Test.Framework.Providers.HUnit ( testCase )
 import Test.HUnit                     ( assertBool )
 
 -- Internal imports
-import Command.CStructs2Copilot ( cstructs2Copilot )
-import Command.Result           ( isSuccess )
+import Command.CStructs2Copilot          ( cstructs2Copilot )
+import Command.FRETComponentSpec2Copilot ( fretComponentSpec2Copilot )
+import Command.FRETReqsDB2Copilot        ( fretReqsDB2Copilot )
+import Command.Result                    ( isSuccess )
 
 -- | Run all unit tests on ogma-core.
 main :: IO ()
@@ -19,7 +21,40 @@ main =
 tests :: [Test.Framework.Test]
 tests =
   [
-    testCase "structs-parse-ok"
+    testCase "fret-cmd-fret-cs-ok"
+      (testFretComponentSpec2Copilot "tests/fret_good.json" True)
+    -- Should pass
+
+  , testCase "fret-cmd-fret-file-not-found"
+      (testFretComponentSpec2Copilot "tests/file-invalid.json" False)
+    -- Should fail because the file does not exist
+
+  , testCase "fret-cmd-fret-parse-fail-1"
+      (testFretComponentSpec2Copilot
+         "tests/commands-fret-error-parsing-failed-1.json"
+         False
+      )
+    -- Should fail because the opening bracket is [ and not {
+
+  , testCase "fret-cmd-fret-parse-fail-2"
+      (testFretComponentSpec2Copilot
+         "tests/commands-fret-error-parsing-failed-2.json"
+         False
+      )
+    -- Should fail because a field is missing in an external variable
+
+  , testCase "fret-cmd-fret-parse-fail-3"
+      (testFretComponentSpec2Copilot
+         "tests/commands-fret-error-parsing-failed-3.json"
+         False
+      )
+    -- Should fail because a field is missing in an internal variable
+
+  , testCase "fret-reqs-db-cocospec"
+      (testFretReqsDBCoCoSpec2Copilot "tests/fret-example1.json" True)
+    -- Should pass
+
+  , testCase "structs-parse-ok"
       (testCStructs2Copilot "tests/reduced_geofence_msgs.h" True)
     -- Should pass
 
@@ -53,3 +88,53 @@ testCStructs2Copilot file success = do
   where
     errorMsg = "The result of the transformation of the C header file "
                ++ file ++ " to Copilot struct declarations was unexpected."
+
+-- | Test FRET Component Spec 2 Copilot transformation.
+--
+-- This test uses the Copilot backend for FRET files, so it generates a Copilot
+-- file.
+--
+-- This IO action fails if any of the following are true:
+--   * The given file is not found or accessible.
+--   * The format in the given file is incorrect.
+--   * Ogma fails due to an internal error or bug.
+testFretComponentSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON requirements file
+                              -> Bool
+                              -> IO ()
+testFretComponentSpec2Copilot file success = do
+    result <- fretComponentSpec2Copilot file False
+
+    -- True if success is expected and detected, or niether expected nor
+    -- detected.
+    let testPass = success == (isSuccess result)
+
+    assertBool errorMsg testPass
+  where
+    errorMsg = "The result of the transformation of FRET CS file "
+               ++ file ++ " to Copilot was unexpected."
+
+-- | Test FRET Component Spec 2 Copilot transformation.
+--
+-- This test uses the Copilot backend for FRET files with the CoCoSpec
+-- frontend.
+--
+-- This IO action fails if any of the following are true:
+--   * The given file is not found or accessible.
+--   * The format in the given file is incorrect.
+--   * Ogma fails due to an internal error or bug.
+--
+testFretReqsDBCoCoSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON
+                                            --   requirements file
+                               -> Bool
+                               -> IO ()
+testFretReqsDBCoCoSpec2Copilot file success = do
+    result <- fretReqsDB2Copilot file True
+
+    -- True if success is expected and detected, or niether expected nor
+    -- detected.
+    let testPass = success == (isSuccess result)
+
+    assertBool errorMsg testPass
+  where
+    errorMsg = "The result of the transformation of FRET CS file "
+               ++ file ++ " to Copilot was unexpected."

@@ -34,11 +34,15 @@ module Data.String.Extra
       -- * Safe I/O
       safeReadFile
 
+      -- * String sanitization
+    , sanitizeLCIdentifier
+    , sanitizeUCIdentifier
     )
   where
 
 -- External imports
 import Control.Exception ( catch )
+import Data.Char         ( toLower, toUpper )
 import System.IO.Error   ( isDoesNotExistError )
 
 -- * Safe I/O
@@ -65,3 +69,33 @@ strStringFileNotFound fp = "File not found: " ++ fp
 -- | Cannot-open-file message.
 strStringCannotOpenFile :: FilePath -> String
 strStringCannotOpenFile fp = "Error opening file: " ++ fp
+
+-- * Sanitization
+
+-- | Remove extraneous characters from an identifier and make the starting
+-- character lowercase.
+--
+-- This function currently replaces hyphens with underscores.
+sanitizeLCIdentifier :: String -> String
+sanitizeLCIdentifier = headToLower . map sanitizeCharacter
+  where
+    sanitizeCharacter '-' = '_'
+    sanitizeCharacter x   = x
+
+    headToLower :: [Char] -> [Char]
+    headToLower []     = []
+    headToLower (x:xs) = toLower x : xs
+
+-- | Remove extraneous characters from an identifier and make the starting
+-- character uppercase.
+--
+-- This function currently replaces hyphens with underscores.
+sanitizeUCIdentifier :: String -> String
+sanitizeUCIdentifier = headToUpper . map sanitizeCharacter
+  where
+    sanitizeCharacter '-' = '_'
+    sanitizeCharacter x   = x
+
+    headToUpper :: [Char] -> [Char]
+    headToUpper []     = []
+    headToUpper (x:xs) = toUpper x : xs

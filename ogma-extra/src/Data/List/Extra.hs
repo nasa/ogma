@@ -31,6 +31,11 @@
 -- | Auxiliary functions for working with values of type '[]'.
 module Data.List.Extra where
 
+-- | Safely extract the head of a list.
+headEither :: [a] -> Either String a
+headEither (a:_) = Right a
+headEither []    = Left "Empty list"
+
 -- | Apply a transformation only to the head of a list.
 toHead :: (a -> a) -> [a] -> [a]
 toHead f (x:xs) = f x : xs
