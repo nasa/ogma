@@ -1,0 +1,95 @@
+-- Copyright 2020 United States Government as represented by the Administrator
+-- of the National Aeronautics and Space Administration. All Rights Reserved.
+--
+-- Disclaimers
+--
+-- No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY
+-- OF ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+-- LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+-- SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+-- PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE
+-- SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF
+-- PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN
+-- ANY MANNER, CONSTITUTE AN ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR
+-- RECIPIENT OF ANY RESULTS, RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR
+-- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
+-- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
+-- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
+-- IT "AS IS." 
+--
+-- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+-- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
+-- ANY PRIOR RECIPIENT. IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS IN
+-- ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH USE,
+-- INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM, RECIPIENT'S
+-- USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD HARMLESS THE
+-- UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS ANY
+-- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
+-- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
+-- AGREEMENT.
+
+cabal-version:       2.0
+build-type:          Simple
+
+name:                ogma-extra
+version:             0.0.1
+homepage:            http://nasa.gov
+license:             AllRightsReserved
+license-file:        LICENSE.pdf
+author:              Ivan Perez, Alwyn Goodloe
+maintainer:          ivan.perezdominguez@nasa.gov
+category:            Aerospace
+extra-source-files:  CHANGELOG.md
+
+synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+
+description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
+                     other systems. Ogma extends
+                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
+                     verification framework that generates hard real-time C99 code.
+                     .
+                     This package implements internal extensions to existing libraries
+                     and modules that are used in several ogma packages and their
+                     testing facilities.
+
+library
+
+  exposed-modules:
+    Data.List.Extra
+    Data.String.Extra
+
+  build-depends:
+    base >= 4.11.0.0 && < 5
+
+  hs-source-dirs:
+    src
+
+  default-language:
+    Haskell2010
+
+  ghc-options:
+    -Wall
+
+test-suite unit-tests
+  type:
+    exitcode-stdio-1.0
+
+  main-is:
+    Main.hs
+
+  build-depends:
+      base
+    , QuickCheck
+    , test-framework
+    , test-framework-quickcheck2
+
+    , ogma-extra
+
+  hs-source-dirs:
+    tests
+
+  default-language:
+    Haskell2010
+
+  ghc-options:
+    -Wall
