@@ -1,0 +1,5 @@
+- functions:
+  - {name: unsafePerformIO, within: []} # unsafePerformIO cannot appear in any modules
+
+# Ignore in automatically generated files.
+- ignore: {within: [Language.SMV.AbsSMV, Language.SMV.ErrM, Language.SMV.LexSMV, Language.SMV.ParSMV, Language.SMV.PrintSMV, Language.SMV.SkelSMV]}
