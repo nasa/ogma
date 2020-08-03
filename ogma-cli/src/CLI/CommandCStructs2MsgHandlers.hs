@@ -28,57 +28,58 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Ogma: Tool to interoperate between <https://cfs.gsfc.nasa.gov/ Copilot>
--- and other languages.
---
--- Ogma is a tool to facilitate integration of safe runtime monitors into other
--- systems. It takes information from a system created in a language (e.g.,
--- CoCoSpec ) and produces specifications for the runtime verification
--- framework <https://cfs.gsfc.nasa.gov/ Copilot>. Currently, features
--- supported are:
---
--- * Translation of ptLTL and Cocospec properties defined in a
--- <https://github.com/NASA-SW-VnV/fret FRET> file into corresponding
--- expressions in Copilot.
---
--- * Translation of C headers declaring structs into the corresponding Copilot
--- Struct definitions.
---
--- * Translation of C headers declaring structs into CFS message handlers that
--- copy data in global variables.
---
--- * Generate NASA core Flight System (cFS) applications for runtime monitoring
--- using Copilot.
---
--- More information can be obtained by calling ogma with the argument @--help@.
-module Main
-    ( main )
+-- | CLI interface to the CStructs2Copilot subcommand
+module CLI.CommandCStructs2MsgHandlers
+    (
+      -- * Direct command access
+      command
+    , CommandOpts
+    , ErrorCode
+
+      -- * CLI
+    , commandDesc
+    , commandOptsParser
+    )
   where
 
 -- External imports
-import Options.Applicative ( execParser )
+import Options.Applicative ( Parser, help, long, metavar, strOption )
 
--- External imports
-import Options.Applicative ( ParserInfo, fullDesc, header, helper, info,
-                             progDesc, (<**>) )
+-- External imports: command results
+import Command.Result ( Result )
 
--- Internal imports: CLI parsing, handling, and processing of results.
-import CLI.CommandTop ( CommandOpts, command, commandDesc, commandOptsParser )
-import CLI.Result     ( processResult )
+-- External imports: actions or commands supported
+import Command.CStructs2MsgHandlers ( ErrorCode, cstructs2MsgHandlers )
 
--- | Ogma: Helper tool to interoperate between Copilot and other languages.
-main :: IO ()
-main = execParser fullCLIOpts >>= command >>= processResult
+-- * Command
 
--- | Full program options.
-fullCLIOpts :: ParserInfo CommandOpts
-fullCLIOpts = info (commandOptsParser <**> helper)
-  (  fullDesc
-  <> progDesc commandDesc
-  <> header strProgramSummary
-  )
+-- | Options to generate message handlers from C struct definitions.
+newtype CommandOpts = CommandOpts
+  { msgHandlersFileName :: FilePath }
 
--- | Short program description
-strProgramSummary :: String
-strProgramSummary =
-  "ogma - an anything-to-Copilot application generator"
+-- | Generate C methods that process NASA Core Flight System messages dealing
+-- with the structs defined in a header file.
+--
+-- This is just an uncurried version of "Command.CStructs2MsgHandlers".
+command :: CommandOpts -> IO (Result ErrorCode)
+command c = cstructs2MsgHandlers (msgHandlersFileName c)
+
+-- * CLI
+
+-- | Command description for CLI help.
+commandDesc :: String
+commandDesc = "Generate message handlers from C structs"
+
+-- | Subparser for the @handlers@ command, used to generate message handers
+-- from C structs.
+commandOptsParser :: Parser CommandOpts
+commandOptsParser = CommandOpts
+  <$> strOption
+        (  long "header-file-name"
+        <> metavar "FILENAME"
+        <> help strMsgHandlersHeaderArgDesc
+        )
+
+-- | Argument C header file to handler generation command
+strMsgHandlersHeaderArgDesc :: String
+strMsgHandlersHeaderArgDesc = "C header file with struct definitions"

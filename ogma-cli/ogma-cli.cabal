@@ -57,6 +57,15 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      - Generating the glue code necessary to work with C
                        structs in Copilot.
                      .
+                     - Generating
+                       <https://cfs.gsfc.nasa.gov/ NASA Core Flight System>
+                       applications that use Copilot for monitoring data
+                       received from the message bus.
+                     .
+                     - Generating message handlers for NASA Core Flight System
+                       applications to make external data in structs available
+                       to a Copilot monitor.
+                     .
                      The main invocation with @--help@ lists sub-commands available.
                      .
                      >$ ogma --help
@@ -70,6 +79,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >
                      >Available commands:
                      >  structs                  Generate Copilot structs from C structs
+                     >  handlers                 Generate message handlers from C structs
+                     >  cfs                      Generate a complete CFS/Copilot application
                      >  fret-component-spec      Generate a Copilot file from a FRET Component
                      >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
@@ -83,6 +94,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      - <https://github.com/NASA-SW-VnV/fret The FRET repository>.
                      .
+                     - <https://cfs.gsfc.nasa.gov/ The NASA Core Flight System web page>.
+                     .
                      - <https://ntrs.nasa.gov/citations/20200003164 "Copilot 3">, Perez, Dedden and Goodloe. 2020.
                      .
                      - <https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf "From Requirements to Autonomous Flight">, Dutle et al. 2020.
@@ -93,7 +106,9 @@ executable ogma
     Main.hs
 
   other-modules:
+    CLI.CommandCFSApp
     CLI.CommandCStructs2Copilot
+    CLI.CommandCStructs2MsgHandlers
     CLI.CommandFretComponentSpec2Copilot
     CLI.CommandFretReqsDB2Copilot
     CLI.CommandTop

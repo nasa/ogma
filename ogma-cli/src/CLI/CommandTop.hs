@@ -86,7 +86,9 @@ import qualified Options.Applicative as OptParse
 import Command.Result ( Result )
 
 -- Internal imports: subcommands
+import qualified CLI.CommandCFSApp
 import qualified CLI.CommandCStructs2Copilot
+import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandFretComponentSpec2Copilot
 import qualified CLI.CommandFretReqsDB2Copilot
 
@@ -98,7 +100,9 @@ import qualified CLI.CommandFretReqsDB2Copilot
 -- @CommandOpts@ to capture their respective arguments. These types are
 -- different for each subcommand.
 data CommandOpts =
-    CommandOptsCStructs2Copilot          CLI.CommandCStructs2Copilot.CommandOpts
+    CommandOptsCFSApp                    CLI.CommandCFSApp.CommandOpts
+  | CommandOptsCStructs2Copilot          CLI.CommandCStructs2Copilot.CommandOpts
+  | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
   | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
   | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
 
@@ -113,6 +117,8 @@ commandDesc =
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = subparser
   (  subcommandCStructs
+  <> subcommandMsgHandlers
+  <> subcommandCFSApp
   <> subcommandFretComponentSpec
   <> subcommandFretReqs
   )
@@ -127,6 +133,25 @@ subcommandCStructs =
     (CommandOptsCStructs2Copilot
        <$> CLI.CommandCStructs2Copilot.commandOptsParser)
     CLI.CommandCStructs2Copilot.commandDesc
+
+-- | Modifier for the msg handler generation subcommand, linking the subcommand
+-- options and description to the command @handlers@ at top level.
+subcommandMsgHandlers :: Mod CommandFields CommandOpts
+subcommandMsgHandlers =
+  subcommand
+    "handlers"
+    (CommandOptsCStructs2MsgHandlers
+       <$> CLI.CommandCStructs2MsgHandlers.commandOptsParser)
+    CLI.CommandCStructs2MsgHandlers.commandDesc
+
+-- | Modifier for the CFS app expansion subcommand, linking the subcommand
+-- options and description to the command @cfs@ at top level.
+subcommandCFSApp :: Mod CommandFields CommandOpts
+subcommandCFSApp =
+  subcommand
+    "cfs"
+    (CommandOptsCFSApp <$> CLI.CommandCFSApp.commandOptsParser)
+    CLI.CommandCFSApp.commandDesc
 
 
 -- | Modifier for the FRET component spec to copilot subcommand, linking the
@@ -173,8 +198,12 @@ subcommandFretReqs =
 -- Neither this nor the internal commands not know, and need to know, that they
 -- run in CLI.
 command :: CommandOpts -> IO (Result ErrorCode)
+command (CommandOptsCFSApp c) =
+  id <$> CLI.CommandCFSApp.command c
 command (CommandOptsCStructs2Copilot c) =
   id <$> CLI.CommandCStructs2Copilot.command c
+command (CommandOptsCStructs2MsgHandlers c) =
+  id <$> CLI.CommandCStructs2MsgHandlers.command c
 command (CommandOptsFretComponentSpec2Copilot c) =
   id <$> CLI.CommandFretComponentSpec2Copilot.command c
 command (CommandOptsFretReqsDB2Copilot c) =

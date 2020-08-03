@@ -1,0 +1,2 @@
+("position", "position_t", "ICAROUS_POSITION_MID", "IcarousPosition")
+("velocity", "velocity_t", "ICAROUS_VELOCITY_MID", "IcarousVelocity")
