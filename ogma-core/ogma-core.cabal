@@ -50,10 +50,23 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      This package implements the internal commands of ogma.
 
+data-files:          templates/copilot-cfs/CMakeLists.txt
+                     templates/copilot-cfs/fsw/for_build/Makefile
+                     templates/copilot-cfs/fsw/mission_inc/copilot_cfs_perfids.h
+                     templates/copilot-cfs/fsw/platform_inc/copilot_cfs_msgids.h
+                     templates/copilot-cfs/fsw/src/Properties.hs
+                     templates/copilot-cfs/fsw/src/copilot_cfs_msg.h
+                     templates/copilot-cfs/fsw/src/copilot_cfs.c
+                     templates/copilot-cfs/fsw/src/copilot_cfs_version.h
+                     templates/copilot-cfs/fsw/src/copilot_cfs.h
+                     templates/copilot-cfs/fsw/src/copilot_cfs_events.h
+
 library
 
   exposed-modules:
+    Command.CFSApp
     Command.CStructs2Copilot
+    Command.CStructs2MsgHandlers
     Command.FRETComponentSpec2Copilot
     Command.FRETReqsDB2Copilot
     Command.Result
@@ -63,13 +76,21 @@ library
     Language.Trans.CoCoSpec2Copilot
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
+    Language.Trans.CStructs2MsgHandlers
     Language.Trans.FRETComponentSpec2Copilot
     Language.Trans.FRETReqsDB2Copilot
     Language.Trans.SMV2Copilot
 
+  other-modules:
+    Paths_ogma_core
+
+  autogen-modules:
+    Paths_ogma_core
+
   build-depends:
       base                    >= 4.11.0.0 && < 5
     , aeson
+    , filepath
 
     , ogma-extra              >= 0.0.1 && < 0.1
     , ogma-language-c         >= 0.0.1 && < 0.1
