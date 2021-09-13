@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS."
+-- IT "AS IS." 
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -28,20 +28,41 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Auxiliary functions for working with values of type '[]'.
-module Data.List.Extra where
+-- | Test SMV language library.
+module Main where
 
--- | Safely extract the head of a list.
-headEither :: [a] -> Either String a
-headEither (a:_) = Right a
-headEither []    = Left "Empty list"
+-- External imports
+import Data.Either                          ( isLeft, isRight )
+import Test.Framework                       ( Test, defaultMainWithOpts )
+import Test.Framework.Providers.QuickCheck2 ( testProperty )
+import Test.QuickCheck                      ( Property )
+import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 
--- | Apply a transformation only to the head of a list.
-toHead :: (a -> a) -> [a] -> [a]
-toHead f (x:xs) = f x : xs
-toHead _ xs     = xs
+-- Internal imports
+import qualified Language.SMV.ParSMV as SMV ( myLexer, pBoolSpec )
 
--- | Apply a transformation only to the tail of a list.
-toTail :: (a -> a) -> [a] -> [a]
-toTail f (x:xs) = x : fmap f xs
-toTail _ xs     = xs
+-- | Run all unit tests for the SMV parser.
+main :: IO ()
+main =
+  defaultMainWithOpts tests mempty
+
+-- | All unit tests for the SMV parser.
+tests :: [Test.Framework.Test]
+tests =
+  [ testProperty "Parse SMV (correct case)"   propParseSMVOk
+  , testProperty "Parse SMV (incorrect case)" propParseSMVFail
+  ]
+
+-- | Test the SMV parser on a well-formed boolean specification.
+propParseSMVOk :: Property
+propParseSMVOk = monadicIO $ do
+  content <- run $ readFile "tests/smv_good"
+  let program = SMV.pBoolSpec $ SMV.myLexer content
+  assert (isRight program)
+
+-- | Test the SMV parser on an incorrect boolean specification.
+propParseSMVFail :: Property
+propParseSMVFail = monadicIO $ do
+  content <- run $ readFile "tests/smv_bad"
+  let program = SMV.pBoolSpec $ SMV.myLexer content
+  assert (isLeft program)

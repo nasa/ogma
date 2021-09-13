@@ -28,20 +28,30 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Auxiliary functions for working with values of type '[]'.
-module Data.List.Extra where
+-- | Auxiliary functions for working with values of type 'ByteString'.
+module Data.ByteString.Extra where
 
--- | Safely extract the head of a list.
-headEither :: [a] -> Either String a
-headEither (a:_) = Right a
-headEither []    = Left "Empty list"
+import           Control.Exception    ( catch )
+import qualified Data.ByteString.Lazy as B
+import           System.IO.Error      ( isDoesNotExistError )
 
--- | Apply a transformation only to the head of a list.
-toHead :: (a -> a) -> [a] -> [a]
-toHead f (x:xs) = f x : xs
-toHead _ xs     = xs
+-- * Safe I/O
 
--- | Apply a transformation only to the tail of a list.
-toTail :: (a -> a) -> [a] -> [a]
-toTail f (x:xs) = x : fmap f xs
-toTail _ xs     = xs
+-- | Safely read a file into a lazy 'ByteString', returning a 'Left' error
+-- message if the file cannot be opened.
+safeReadFile :: FilePath -> IO (Either String B.ByteString)
+safeReadFile fp =
+  catch (return <$> B.readFile fp) $ \e ->
+           if isDoesNotExistError e
+             then return $ Left $ strByteStringFileNotFound fp
+             else return $ Left $ strByteStringCannotOpenFile fp
+
+-- ** Error messages
+
+-- | File-not-found message.
+strByteStringFileNotFound :: FilePath -> String
+strByteStringFileNotFound fp = "File not found: " ++ fp
+
+-- | Cannot-open-file message.
+strByteStringCannotOpenFile :: FilePath -> String
+strByteStringCannotOpenFile fp = "Error opening file " ++ fp

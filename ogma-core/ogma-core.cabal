@@ -54,19 +54,30 @@ library
 
   exposed-modules:
     Command.CStructs2Copilot
+    Command.FRETComponentSpec2Copilot
+    Command.FRETReqsDB2Copilot
     Command.Result
 
     Data.Location
 
+    Language.Trans.CoCoSpec2Copilot
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
+    Language.Trans.FRETComponentSpec2Copilot
+    Language.Trans.FRETReqsDB2Copilot
+    Language.Trans.SMV2Copilot
 
   build-depends:
-      base                  >= 4.11.0.0 && < 5
+      base                    >= 4.11.0.0 && < 5
+    , aeson
 
-    , ogma-extra            >= 0.0.1 && < 0.1
-    , ogma-language-c       >= 0.0.1 && < 0.1
-    , ogma-language-copilot >= 0.0.1 && < 0.1
+    , ogma-extra              >= 0.0.1 && < 0.1
+    , ogma-language-c         >= 0.0.1 && < 0.1
+    , ogma-language-cocospec  >= 0.0.1 && < 0.1
+    , ogma-language-copilot   >= 0.0.1 && < 0.1
+    , ogma-language-fret-cs   >= 0.0.1 && < 0.1
+    , ogma-language-fret-reqs >= 0.0.1 && < 0.1
+    , ogma-language-smv       >= 0.0.1 && < 0.1
 
   hs-source-dirs:
     src

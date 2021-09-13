@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS."
+-- IT "AS IS." 
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -28,20 +28,42 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Auxiliary functions for working with values of type '[]'.
-module Data.List.Extra where
+-- | Test CoCoSpec language library.
+module Main where
 
--- | Safely extract the head of a list.
-headEither :: [a] -> Either String a
-headEither (a:_) = Right a
-headEither []    = Left "Empty list"
+-- External imports
+import Data.Either                          ( isLeft, isRight )
+import Test.Framework                       ( Test, defaultMainWithOpts )
+import Test.Framework.Providers.QuickCheck2 ( testProperty )
+import Test.QuickCheck                      ( Property )
+import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 
--- | Apply a transformation only to the head of a list.
-toHead :: (a -> a) -> [a] -> [a]
-toHead f (x:xs) = f x : xs
-toHead _ xs     = xs
+-- Internal imports
+import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
+                                                             pBoolSpec )
 
--- | Apply a transformation only to the tail of a list.
-toTail :: (a -> a) -> [a] -> [a]
-toTail f (x:xs) = x : fmap f xs
-toTail _ xs     = xs
+-- | Run all unit tests for the CoCoSpec parser.
+main :: IO ()
+main =
+  defaultMainWithOpts tests mempty
+
+-- | All unit tests for the CoCoSpec parser.
+tests :: [Test.Framework.Test]
+tests =
+  [ testProperty "Parse CoCoSpec (correct case)"   propParseCoCoSpecOk
+  , testProperty "Parse CoCoSpec (incorrect case)" propParseCoCoSpecFail
+  ]
+
+-- | Test the CoCoSpec parser on a well-formed boolean specification.
+propParseCoCoSpecOk :: Property
+propParseCoCoSpecOk = monadicIO $ do
+  content <- run $ readFile "tests/cocospec_good"
+  let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
+  assert (isRight program)
+
+-- | Test the CoCoSpec parser on an incorrect boolean specification.
+propParseCoCoSpecFail :: Property
+propParseCoCoSpecFail = monadicIO $ do
+  content <- run $ readFile "tests/cocospec_bad"
+  let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
+  assert (isLeft program)

@@ -31,7 +31,7 @@
 cabal-version:       2.0
 build-type:          Simple
 
-name:                ogma-cli
+name:                ogma-language-fret-cs
 version:             0.0.1
 homepage:            http://nasa.gov
 license:             AllRightsReserved
@@ -40,69 +40,31 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
+                     tests/fret_good.json
+                     tests/fret_bad.json
 
-synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+synopsis:            Ogma: Runtime Monitor translator: FRET Component Specification Frontend
 
 description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
                      other systems. Ogma extends
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     Some use cases supported by Ogma include:
-                     .
-                     - Translating requirements defined in
-                       <https://github.com/NASA-SW-VnV/fret NASA requirements elicitation tool FRET>
-                       into corresponding monitors in Copilot.
-                     .
-                     - Generating the glue code necessary to work with C
-                       structs in Copilot.
-                     .
-                     The main invocation with @--help@ lists sub-commands available.
-                     .
-                     >$ ogma --help
-                     >ogma - an anything-to-Copilot application generator
-                     >
-                     >Usage: ogma COMMAND
-                     >  Generate complete or partial Copilot applications from multiple languages
-                     >
-                     >Available options:
-                     >  -h,--help                Show this help text
-                     >
-                     >Available commands:
-                     >  structs                  Generate Copilot structs from C structs
-                     >  fret-component-spec      Generate a Copilot file from a FRET Component
-                     >                           Specification
-                     >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
-                     >                           Database
-                     .
-                     For further information, see:
-                     .
-                     - <https://github.com/nasa/ogma The Ogma repository>.
-                     .
-                     - <https://copilot-language.github.io/ The Copilot web page>.
-                     .
-                     - <https://github.com/NASA-SW-VnV/fret The FRET repository>.
-                     .
-                     - <https://ntrs.nasa.gov/citations/20200003164 "Copilot 3">, Perez, Dedden and Goodloe. 2020.
-                     .
-                     - <https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf "From Requirements to Autonomous Flight">, Dutle et al. 2020.
+                     This library contains a frontend to read FRET Component Specifications.
 
-executable ogma
+library
 
-  main-is:
-    Main.hs
-
-  other-modules:
-    CLI.CommandCStructs2Copilot
-    CLI.CommandFretComponentSpec2Copilot
-    CLI.CommandFretReqsDB2Copilot
-    CLI.CommandTop
-    CLI.Result
+  exposed-modules:
+    Language.FRETComponentSpec.AST
 
   build-depends:
-      base                 >= 4.11.0.0
-    , optparse-applicative
-    , ogma-core            >= 0.0.1 && < 0.1
+      base                   >= 4.11.0.0 && < 5
+    , aeson
+    , text
+    , unordered-containers
+
+    , ogma-language-cocospec >= 0.0.1 && < 0.1
+    , ogma-language-smv      >= 0.0.1 && < 0.1
 
   hs-source-dirs:
     src
@@ -113,7 +75,7 @@ executable ogma
   ghc-options:
     -Wall
 
-test-suite test-ogma
+test-suite unit-tests
   type:
     exitcode-stdio-1.0
 
@@ -121,12 +83,15 @@ test-suite test-ogma
     Main.hs
 
   build-depends:
-      base
-    , HUnit
-    , process
+      base                       >= 4.11.0.0 && < 5
+
+    , aeson
+    , QuickCheck
     , test-framework
-    , test-framework-hunit
-    , unix
+    , test-framework-quickcheck2
+
+    , ogma-extra                 >= 0.0.1 && < 0.1
+    , ogma-language-fret-cs
 
   hs-source-dirs:
     tests

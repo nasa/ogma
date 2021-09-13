@@ -32,12 +32,13 @@
 module Main where
 
 -- External imports
+import Data.Either                          ( isLeft, isRight )
 import Test.Framework                       ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.QuickCheck2 ( testProperty )
 import Test.QuickCheck                      ( Property, (==>), Fun (Fun) )
 
 -- Internal imports
-import Data.List.Extra ( toHead, toTail )
+import Data.List.Extra ( headEither, toHead, toTail )
 
 -- | Run all unit tests on Ogma's core.
 main :: IO ()
@@ -55,6 +56,8 @@ tests =
   , testProperty "Data.List.Extra.toTail (identity)"           propToTailId
   , testProperty "Data.List.Extra.toTail (composition)"        propToTailCmp
   , testProperty "Data.List.Extra.toTail (length)"             propToTailSameLength
+  , testProperty "Data.List.Extra.headEither (Right case)"     propHeadEitherRight
+  , testProperty "Data.List.Extra.headEither (Left case)"      propHeadEitherLeft
   ]
 
 -- * Data.List.Extra
@@ -90,3 +93,12 @@ propToTailCmp xs (Fun _ f) (Fun _ g) = toTail (f . g) xs == toTail f (toTail g x
 -- | Test that 'toTail' does not alter the length of the list.
 propToTailSameLength :: [Int] -> Fun Int Int -> Bool
 propToTailSameLength xs (Fun _ f) = length xs == length (toTail f xs)
+
+-- | Test that 'headEither' returns a 'Right' value if applied to a non-empty
+-- list.
+propHeadEitherRight :: [Int] -> Property
+propHeadEitherRight xs = not (null xs) ==> isRight (headEither xs)
+
+-- | Test that 'headEither' returns a 'Left' value if applied to an empty list.
+propHeadEitherLeft :: [Int] -> Property
+propHeadEitherLeft xs = null xs ==> isLeft (headEither xs)

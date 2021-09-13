@@ -55,11 +55,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
 library
 
   exposed-modules:
+    Data.ByteString.Extra
     Data.List.Extra
     Data.String.Extra
 
   build-depends:
-    base >= 4.11.0.0 && < 5
+      base       >= 4.11.0.0 && < 5
+    , bytestring
 
   hs-source-dirs:
     src

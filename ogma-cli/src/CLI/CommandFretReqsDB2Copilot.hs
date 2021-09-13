@@ -28,20 +28,70 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Auxiliary functions for working with values of type '[]'.
-module Data.List.Extra where
+-- | CLI interface to the CStructs2Copilot subcommand
+module CLI.CommandFretReqsDB2Copilot
+    (
+      -- * Direct command access
+      command
+    , CommandOpts
+    , ErrorCode
 
--- | Safely extract the head of a list.
-headEither :: [a] -> Either String a
-headEither (a:_) = Right a
-headEither []    = Left "Empty list"
+      -- * CLI
+    , commandDesc
+    , commandOptsParser
+    )
+  where
 
--- | Apply a transformation only to the head of a list.
-toHead :: (a -> a) -> [a] -> [a]
-toHead f (x:xs) = f x : xs
-toHead _ xs     = xs
+-- External imports
+import Options.Applicative ( Parser, help, long, metavar, strOption, switch )
 
--- | Apply a transformation only to the tail of a list.
-toTail :: (a -> a) -> [a] -> [a]
-toTail f (x:xs) = x : fmap f xs
-toTail _ xs     = xs
+-- External imports: command results
+import Command.Result ( Result )
+
+-- External imports: actions or commands supported
+import Command.FRETReqsDB2Copilot ( ErrorCode, fretReqsDB2Copilot )
+
+-- * Command
+
+-- | Options to generate Copilot from FRET Requirements Databases.
+data CommandOpts = CommandOpts
+  { fretReqsDBFileName :: FilePath
+  , fretReqsDBCoCoSpec :: Bool
+  }
+
+-- | Transform a FRET requirements database containing a temporal logic
+-- specification into a Copilot specification.
+--
+-- This is just an uncurried version of "Command.FRETReqsDB2Copilot".
+command :: CommandOpts -> IO (Result ErrorCode)
+command c =
+  fretReqsDB2Copilot (fretReqsDBFileName c) (fretReqsDBCoCoSpec c)
+
+-- * CLI
+
+-- | Command description for CLI help.
+commandDesc :: String
+commandDesc =
+  "Generate a Copilot file from a FRET Requirements Database"
+
+-- | Subparser for the @fret-reqs-db@ command, used to generate a Copilot
+-- specification from a FRET file containing requirements only.
+commandOptsParser :: Parser CommandOpts
+commandOptsParser = CommandOpts
+  <$> strOption
+        (  long "fret-file-name"
+        <> metavar "FILENAME"
+        <> help strFretArgDesc
+        )
+  <*> switch
+        (  long "cocospec"
+        <> help strFretCoCoDesc
+        )
+
+-- | Argument FRET command description
+strFretArgDesc :: String
+strFretArgDesc = "FRET file with requirements."
+
+-- | CoCoSpec flag description
+strFretCoCoDesc :: String
+strFretCoCoDesc = "Use CoCoSpec variant of TL properties"

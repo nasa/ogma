@@ -7,6 +7,10 @@ verification framework that generates hard real-time C99 code.
 
 # Features
 
+- Translating requirements defined in [NASA requirements elicitation tool
+  FRET](https://github.com/NASA-SW-VnV/fret) into corresponding monitors in
+  Copilot.
+
 - Generating the glue code necessary to work with C structs in Copilot.
 
 ## Table of Contents
@@ -15,6 +19,7 @@ verification framework that generates hard real-time C99 code.
   - [Pre-requisites](#pre-requisites)
   - [Compilation](#compilation)
 - [Usage](#usage)
+  - [Language Transformations: FRET](#language-transformations-fret)
   - [Struct Interface Generation](#struct-interface-generation)
 - [Contributions](#contributions)
 - [Acknowledgements](#acknowledgements)
@@ -77,7 +82,131 @@ Available options:
 
 Available commands:
   structs                  Generate Copilot structs from C structs
+  fret-component-spec      Generate a Copilot file from a FRET Component
+                           Specification
+  fret-reqs-db             Generate a Copilot file from a FRET Requirements
+                           Database
 ```
+
+## Language transformations: FRET
+<sup>[(Back to top)](#table-of-contents)</sup>
+
+Ogma can convert specifications written in other languages to Copilot monitors,
+such as the ones supported by [NASA's requirements elicitation tool
+FRET](https://github.com/NASA-SW-VnV/fret). The commands `fret-component-spec`
+and `fret-reqs-db` allow users to interact with the different kinds of files
+produced by FRET.
+
+FRET files include properties encoded using Temporal Logic, both in
+[SMV](http://www.cs.cmu.edu/~modelcheck/smv.html) and in
+[CoCoSpec](https://link.springer.com/chapter/10.1007%2F978-3-319-41591-8_24),
+the latter of which is based on Lustre. Ogma uses the SMV expressions by
+default, but the CLI flag `--cocospec` can be used to select the CoCoSpec
+variant of requirements instead.
+
+For example, from the following FRET requirement:
+```
+test_component shall satisfy (input_signal <= 5)
+```
+
+Ogma generates the following Copilot specification:
+
+```haskell
+import Copilot.Compile.C99
+import Copilot.Language          hiding (prop)
+import Copilot.Language.Prelude
+import Copilot.Library.LTL       (next)
+import Copilot.Library.MTL       hiding (since, alwaysBeen, trigger)
+import Copilot.Library.PTLTL     (since, previous, alwaysBeen)
+import Language.Copilot          (reify)
+import Prelude                   hiding ((&&), (||), (++), not, (<=), (>=), (<), (>))
+
+input_signal :: Stream Double
+input_signal = extern "input_signal" Nothing
+
+-- | propTestCopilot_001
+--   @
+--   test_component shall satisfy (input_signal <= 5)
+--   @
+propTestCopilot_001 :: Stream Bool
+propTestCopilot_001 = ( alwaysBeen (( ( ( input_signal <= 5 ) ) )) )
+
+-- | Complete specification. Calls the C function void  handler(); when
+-- the property is violated.
+spec :: Spec
+spec = do
+  trigger "handlerpropTestCopilot_001" (not propTestCopilot_001) []
+
+main :: IO ()
+main = reify spec >>= compile "fret"
+```
+
+This program can be compiled using Copilot to generate a `fret.c` file that
+includes a hard real-time C99 implementation of the monitor. The FRET
+specification example above is included with the Ogma distribution, and can be
+tested with:
+
+```sh
+$ ogma fret-component-spec --cocospec --fret-file-name examples/fret-reqs-small.json > FretCopilot.hs
+$ cabal v1-exec -- runhaskell FretCopilot.hs
+```
+
+The first step executes ogma, generating a Copilot monitor in a file called
+`FretCopilot.hs`. The second step executes the Copilot compiler, generating a C
+implementation `fret.c` and C header file `fret.h`.
+
+The resulting `fret.c` file can be tested with the main provided in
+`examples/fret-reqs-small-main.c`, which defines a handler for Copilot to call
+when the property monitored is violated, and a main function that steps through
+the execution, providing new data for the Copilot monitor:
+
+```c
+#include <stdio.h>
+
+double input_signal;  // Input data made available for the monitor
+void step(void);      // Copilot monitor's main entry point
+
+void handlerpropTestCopilot_001(void) {
+  printf("Monitor condition violated\n");
+}
+
+int main (int argc, char** argv) {
+  int i = 0;
+
+  input_signal = 0;
+
+  for (i=0; i<10; i++) {
+    printf("Running step %d\n", i);
+    input_signal += 1;
+    step();
+  }
+  return 0;
+}
+```
+
+To compile both files, run `gcc examples/fret-reqs-small-main.c fret.c -o
+main`. Executing the resulting `main` shows that the condition is violated
+after a number of steps:
+```
+Running step 0
+Running step 1
+Running step 2
+Running step 3
+Running step 4
+Running step 5
+Monitor condition violated
+Running step 6
+Monitor condition violated
+Running step 7
+Monitor condition violated
+Running step 8
+Monitor condition violated
+Running step 9
+Monitor condition violated
+```
+
+Take a peek inside the intermediate files `FretCopilot.hs`, `fret.c` and
+`fret.h` to see what is being generated by Ogma and by Copilot.
 
 ## Struct Interface Generation
 
@@ -125,6 +254,13 @@ individual `x` and `y` fields of a `Point` in a stream.
 The best way to contribute to Ogma is to report any issues you find via the
 issue tracker, and to use Ogma to build applications or in your own research
 and let us know about your results.
+
+# Acknowledgements
+<sup>[(Back to top)](#table-of-contents)</sup>
+
+The Ogma team would like to thank Dimitra Giannakopoulou, Anastasia Mavridou,
+and Thomas Pressburger, from the FRET Team at NASA Ames, for the continued
+input during the development of Ogma.
 
 # License
 <sup>[(Back to top)](#table-of-contents)</sup>

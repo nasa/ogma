@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS."
+-- IT "AS IS." 
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -28,51 +28,54 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Ogma: Tool to interoperate between <https://cfs.gsfc.nasa.gov/ Copilot>
--- and other languages.
---
--- Ogma is a tool to facilitate integration of safe runtime monitors into other
--- systems. It takes information from a system created in a language (e.g.,
--- CoCoSpec ) and produces specifications for the runtime verification
--- framework <https://cfs.gsfc.nasa.gov/ Copilot>. Currently, features
--- supported are:
---
--- * Translation of ptLTL and Cocospec properties defined in a
--- <https://github.com/NASA-SW-VnV/fret FRET> file into corresponding
--- expressions in Copilot.
---
--- * Translation of C headers declaring structs into the corresponding Copilot
--- Struct definitions.
---
--- More information can be obtained by calling ogma with the argument @--help@.
-module Main
-    ( main )
-  where
+-- | Test FRETCS language library.
+module Main where
 
 -- External imports
-import Options.Applicative ( execParser )
+import Data.Aeson                           ( eitherDecode )
+import Data.Either                          ( isLeft, isRight )
+import Test.Framework                       ( Test, defaultMainWithOpts )
+import Test.Framework.Providers.QuickCheck2 ( testProperty )
+import Test.QuickCheck                      ( Property )
+import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 
--- External imports
-import Options.Applicative ( ParserInfo, fullDesc, header, helper, info,
-                             progDesc, (<**>) )
+-- External imports: auxiliary
+import Data.ByteString.Extra as B ( safeReadFile )
 
--- Internal imports: CLI parsing, handling, and processing of results.
-import CLI.CommandTop ( CommandOpts, command, commandDesc, commandOptsParser )
-import CLI.Result     ( processResult )
+-- Internal imports
+import Language.FRETComponentSpec.AST ( FRETComponentSpec )
 
--- | Ogma: Helper tool to interoperate between Copilot and other languages.
+-- | Run all unit tests for the FRETCS parser.
 main :: IO ()
-main = execParser fullCLIOpts >>= command >>= processResult
+main =
+  defaultMainWithOpts tests mempty
 
--- | Full program options.
-fullCLIOpts :: ParserInfo CommandOpts
-fullCLIOpts = info (commandOptsParser <**> helper)
-  (  fullDesc
-  <> progDesc commandDesc
-  <> header strProgramSummary
-  )
+-- | All unit tests for the FRETCS parser.
+tests :: [Test.Framework.Test]
+tests =
+  [ testProperty "Parse FRETCS (correct case)"   propParseFRETCSOk
+  , testProperty "Parse FRETCS (incorrect case)" propParseFRETCSFail
+  ]
 
--- | Short program description
-strProgramSummary :: String
-strProgramSummary =
-  "ogma - an anything-to-Copilot application generator"
+-- | Test the FRETCS parser on a well-formed boolean specification.
+propParseFRETCSOk :: Property
+propParseFRETCSOk = monadicIO $ do
+  content <- run $ parseFretComponentSpec "tests/fret_good.json"
+  assert (isRight content)
+
+-- | Test the FRETCS parser on an incorrect boolean specification.
+propParseFRETCSFail :: Property
+propParseFRETCSFail = monadicIO $ do
+  componentSpec <- run $ parseFretComponentSpec "tests/fret_bad.json"
+  assert (isLeft componentSpec)
+
+-- | Parse a JSON file containing a FRET component specification.
+--
+-- Returns a 'Left' with an error message if the file does not have the correct
+-- format.
+--
+-- Throws an exception if the file cannot be read.
+parseFretComponentSpec :: FilePath -> IO (Either String FRETComponentSpec)
+parseFretComponentSpec fp = do
+  componentSpec <- B.safeReadFile fp
+  return $ eitherDecode =<< componentSpec

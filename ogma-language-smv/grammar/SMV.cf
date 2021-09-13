@@ -27,21 +27,66 @@
 -- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
+
+-- This is a simplified grammar of SMV temporal logic expressions, extended
+-- with the tags that FRET uses around names.
 --
--- | Auxiliary functions for working with values of type '[]'.
-module Data.List.Extra where
+-- The format of FRET files itself uses JSON, so this grammar applies
+-- only to specific fields in those files.
 
--- | Safely extract the head of a list.
-headEither :: [a] -> Either String a
-headEither (a:_) = Right a
-headEither []    = Left "Empty list"
+entrypoints BoolSpec;
 
--- | Apply a transformation only to the head of a list.
-toHead :: (a -> a) -> [a] -> [a]
-toHead f (x:xs) = f x : xs
-toHead _ xs     = xs
+BoolSpecPar.    BoolSpec ::= "(" BoolSpec ")";
+BoolSpecBPar.   BoolSpec ::= "<b>" BoolSpec "</b>";
+BoolSpecIPar.   BoolSpec ::= "<i>" BoolSpec "</i>";
+BoolSpecConst.  BoolSpec ::= BoolConst ;
+BoolSpecNum.    BoolSpec ::= NumConst ;
+BoolSpecSignal. BoolSpec ::= Ident;
+BoolSpecOp1.    BoolSpec ::= OpOne BoolSpec;
+BoolSpecOp2.    BoolSpec ::= BoolSpec OpTwo BoolSpec;
 
--- | Apply a transformation only to the tail of a list.
-toTail :: (a -> a) -> [a] -> [a]
-toTail f (x:xs) = x : fmap f xs
-toTail _ xs     = xs
+BoolConstTrue.  BoolConst ::= "TRUE";
+BoolConstFalse. BoolConst ::= "FALSE";
+BoolConstFTP.   BoolConst ::= "FTP";
+BoolConstLAST.  BoolConst ::= "LAST";
+
+NumConst . NumConst ::= Integer;
+
+Op1Alone . OpOne ::= Op1Name;
+Op1MTL.    OpOne ::= Op1Name "[" OrdOp Number "]";
+
+NumberInt . Number ::= Integer;
+NumberB   . Number ::= "<b>" Number "</b>";
+NumberI   . Number ::= "<i>" Number "</i>";
+
+OrdOpLT . OrdOp ::= "<";
+OrdOpLE . OrdOp ::= "<=";
+OrdOpEQ . OrdOp ::= "=";
+OrdOpGT . OrdOp ::= ">";
+OrdOpGE . OrdOp ::= ">=";
+
+Op1Not.  Op1Name ::= "!";
+Op1Pre.  Op1Name ::= "pre";
+Op1X.    Op1Name ::= "X";
+Op1G.    Op1Name ::= "G";
+Op1F.    Op1Name ::= "F";
+Op1Y.    Op1Name ::= "Y";
+Op1Z.    Op1Name ::= "Z";
+Op1Hist. Op1Name ::= "H";
+Op1O.    Op1Name ::= "O";
+
+Op2S.     OpTwo ::= "S";
+Op2T.     OpTwo ::= "T";
+Op2V.     OpTwo ::= "V";
+Op2U.     OpTwo ::= "U";
+Op2And.   OpTwo ::= "&";
+Op2Or.    OpTwo ::= "|";
+Op2Eq.    OpTwo ::= "=";
+Op2Lt.    OpTwo ::= "<";
+Op2Gt.    OpTwo ::= ">";
+Op2Le.    OpTwo ::= "<=";
+Op2Ge.    OpTwo ::= ">=";
+Op2Xor.   OpTwo ::= "xor";
+Op2XNor.  OpTwo ::= "xnor";
+Op2Impl.  OpTwo ::= "->";
+Op2Equiv. OpTwo ::= "<->";
