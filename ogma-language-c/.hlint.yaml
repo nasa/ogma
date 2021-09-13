@@ -1,0 +1,5 @@
+- functions:
+  - {name: unsafePerformIO, within: []} # unsafePerformIO cannot appear in any modules
+
+# Ignore in automatically generated files.
+- ignore: {within: [Language.C.AbsC, Language.C.ErrM, Language.C.LexC, Language.C.ParC, Language.C.PrintC, Language.C.SkelC]}
