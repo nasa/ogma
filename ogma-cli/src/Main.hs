@@ -44,6 +44,12 @@
 -- * Translation of C headers declaring structs into the corresponding Copilot
 -- Struct definitions.
 --
+-- * Translation of C headers declaring structs into CFS message handlers that
+-- copy data in global variables.
+--
+-- * Generate NASA core Flight System (cFS) applications for runtime monitoring
+-- using Copilot.
+--
 -- More information can be obtained by calling ogma with the argument @--help@.
 module Main
     ( main )

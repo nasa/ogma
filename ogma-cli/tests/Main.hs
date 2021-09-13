@@ -30,6 +30,18 @@ tests =
   , testCase "cli-cmd-structs-fail" (runErrorCode ["structs", "--incorrect-argument"] False)
     -- Should fail due to arguments being incorrect
 
+  , testCase "cli-cmd-handlers" (runErrorCode ["handlers", "--help" ] True)
+    -- Should pass
+
+  , testCase "cli-cmd-handlers-fail" (runErrorCode ["handlers", "--incorrect-argument"] False)
+    -- Should fail due to arguments being incorrect
+
+  , testCase "cli-cmd-cfs" (runErrorCode ["cfs", "--help" ] True)
+    -- Should pass
+
+  , testCase "cli-cmd-cfs-fail" (runErrorCode ["cfs", "--incorrect-argument"] False)
+    -- Should fail due to arguments being incorrect
+
   , testCase "cli-cmd-fret-component-spec" (runErrorCode ["fret-component-spec", "--help" ] True)
     -- Should pass
 

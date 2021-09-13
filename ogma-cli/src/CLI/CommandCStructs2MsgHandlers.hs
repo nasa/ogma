@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS." 
+-- IT "AS IS."
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -27,75 +27,59 @@
 -- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
+--
+-- | CLI interface to the CStructs2Copilot subcommand
+module CLI.CommandCStructs2MsgHandlers
+    (
+      -- * Direct command access
+      command
+    , CommandOpts
+    , ErrorCode
 
-cabal-version:       2.0
-build-type:          Simple
+      -- * CLI
+    , commandDesc
+    , commandOptsParser
+    )
+  where
 
-name:                ogma-extra
-version:             0.0.1
-homepage:            http://nasa.gov
-license:             AllRightsReserved
-license-file:        LICENSE.pdf
-author:              Ivan Perez, Alwyn Goodloe
-maintainer:          ivan.perezdominguez@nasa.gov
-category:            Aerospace
-extra-source-files:  CHANGELOG.md
+-- External imports
+import Options.Applicative ( Parser, help, long, metavar, strOption )
 
-synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+-- External imports: command results
+import Command.Result ( Result )
 
-description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
-                     other systems. Ogma extends
-                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
-                     verification framework that generates hard real-time C99 code.
-                     .
-                     This package implements internal extensions to existing libraries
-                     and modules that are used in several ogma packages and their
-                     testing facilities.
+-- External imports: actions or commands supported
+import Command.CStructs2MsgHandlers ( ErrorCode, cstructs2MsgHandlers )
 
-library
+-- * Command
 
-  exposed-modules:
-    Data.ByteString.Extra
-    Data.List.Extra
-    Data.String.Extra
-    System.Directory.Extra
+-- | Options to generate message handlers from C struct definitions.
+newtype CommandOpts = CommandOpts
+  { msgHandlersFileName :: FilePath }
 
-  build-depends:
-      base       >= 4.11.0.0 && < 5
-    , bytestring
-    , Cabal
-    , directory
-    , filepath
+-- | Generate C methods that process NASA Core Flight System messages dealing
+-- with the structs defined in a header file.
+--
+-- This is just an uncurried version of "Command.CStructs2MsgHandlers".
+command :: CommandOpts -> IO (Result ErrorCode)
+command c = cstructs2MsgHandlers (msgHandlersFileName c)
 
-  hs-source-dirs:
-    src
+-- * CLI
 
-  default-language:
-    Haskell2010
+-- | Command description for CLI help.
+commandDesc :: String
+commandDesc = "Generate message handlers from C structs"
 
-  ghc-options:
-    -Wall
+-- | Subparser for the @handlers@ command, used to generate message handers
+-- from C structs.
+commandOptsParser :: Parser CommandOpts
+commandOptsParser = CommandOpts
+  <$> strOption
+        (  long "header-file-name"
+        <> metavar "FILENAME"
+        <> help strMsgHandlersHeaderArgDesc
+        )
 
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
-
-    , ogma-extra
-
-  hs-source-dirs:
-    tests
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
+-- | Argument C header file to handler generation command
+strMsgHandlersHeaderArgDesc :: String
+strMsgHandlersHeaderArgDesc = "C header file with struct definitions"

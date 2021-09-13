@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS." 
+-- IT "AS IS."
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -27,75 +27,50 @@
 -- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
+--
+-- | Generate C methods that process message dealing with the structs
+-- defined in a header file.
+--
+-- This module contains the pure conversion from CStructs into C code.
+-- Normally, this module would be implemented as a conversion between C ASTs,
+-- but we want to add comments to the generated code, which are not
+-- representable in the abstract syntax tree.
+module Language.Trans.CStructs2MsgHandlers where
 
-cabal-version:       2.0
-build-type:          Simple
+-- Internal imports: C AST representation.
+import qualified Language.C.AbsC as C ( TranslationUnit (MkTranslationUnit) )
 
-name:                ogma-extra
-version:             0.0.1
-homepage:            http://nasa.gov
-license:             AllRightsReserved
-license-file:        LICENSE.pdf
-author:              Ivan Perez, Alwyn Goodloe
-maintainer:          ivan.perezdominguez@nasa.gov
-category:            Aerospace
-extra-source-files:  CHANGELOG.md
+-- Internal imports: Copilot's own CStruct representation.
+import Language.Copilot.CStruct ( CStruct (cStructName) )
 
-synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+import Language.Trans.CStruct2CopilotStruct ( camelCaseTypeName, mkCStruct )
 
-description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
-                     other systems. Ogma extends
-                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
-                     verification framework that generates hard real-time C99 code.
-                     .
-                     This package implements internal extensions to existing libraries
-                     and modules that are used in several ogma packages and their
-                     testing facilities.
+-- | Generate a C methods that process message dealing with the structs
+-- defined in a header file.
+cstructs2MsgHandlers :: C.TranslationUnit -> Either String String
+cstructs2MsgHandlers (C.MkTranslationUnit gs) =
+  unlines <$> mapM (fmap cstruct2MsgHandler . mkCStruct) gs
 
-library
-
-  exposed-modules:
-    Data.ByteString.Extra
-    Data.List.Extra
-    Data.String.Extra
-    System.Directory.Extra
-
-  build-depends:
-      base       >= 4.11.0.0 && < 5
-    , bytestring
-    , Cabal
-    , directory
-    , filepath
-
-  hs-source-dirs:
-    src
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
-
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
-
-    , ogma-extra
-
-  hs-source-dirs:
-    tests
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
+-- | Generate a C method that processes one message dealing with one
+-- kind of struct.
+cstruct2MsgHandler :: CStruct -> String
+cstruct2MsgHandler cstruct = unlines
+    [ nameCStruct ++ " " ++ nameLocalVar ++ ";"
+    , ""
+    , "/**"
+    , "* Make ICAROUS data available to Copilot and run monitors."
+    , "*/"
+    , "void COPILOT_Process" ++ nameVar ++ "Monitor(void)"
+    , "{"
+    , "  " ++ nameCStruct ++ "* msg;"
+    , "  msg = (" ++ nameCStruct  ++ "*) COPILOTMsgPtr;"
+    , "  " ++ nameLocalVar ++ " = *msg;"
+    , ""
+    , "  // Run all copilot monitors."
+    , "  step();"
+    , "}"
+    ]
+  where
+    nameCStruct  = cStructName cstruct
+    nameVar      = camelCaseTypeName nameCStruct
+    nameLocalVar = 'm' : 'y' : camelCaseTypeName nameCStruct
