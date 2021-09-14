@@ -1,3 +1,6 @@
+cabal-version:       3.0
+build-type:          Simple
+
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -28,13 +31,10 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 
-cabal-version:       2.0
-build-type:          Simple
-
 name:                ogma-core
 version:             1.0.9
 homepage:            http://nasa.gov
-license:             OtherLicense
+license:             NASA-1.3
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
