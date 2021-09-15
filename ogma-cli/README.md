@@ -40,7 +40,8 @@ verification framework that generates hard real-time C99 code.
 <sup>[(Back to top)](#table-of-contents)</sup>
 
 To install Ogma from source, users must have the tools GHC and Cabal installed.
-At this time, we recommend GHC 8.6 and a version of Cabal between 2.4 and 3.2.
+At this time, we recommend GHC 8.6 and a version of Cabal between 2.4 and 3.2
+(however, these instructions have been tested with GHC 8.10 and Cabal to 3.6).
 
 On Debian or Ubuntu Linux, both can be installed with:
 
@@ -61,17 +62,14 @@ Once GHC and cabal are installed, the simplest way to install ogma is with:
 ```sh
 $ git clone https://github.com/nasa/ogma.git
 $ cd ogma
-$ cabal v1-sandbox init
-$ cabal v1-sandbox add-source ogma-*/
+$ export PATH="$HOME/.cabal/bin/:$PATH"
 $ cabal v1-install alex happy
-$ cabal v1-install ogma-cli/ copilot
+$ cabal v1-install BNFC copilot
+$ cabal v1-install ogma-*/
 ```
 
-After that, the ogma executable will be generated in the directory
-`./.cabal-sandbox/bin/`, which one can add to the `PATH` with:
-```
-$ export PATH="$PWD/.cabal-sandbox/bin/:$PATH"
-```
+After that, the ogma executable will be placed in the directory
+`$HOME/.cabal/bin/`, where `$HOME` represents your user's home directory.
 
 # Usage
 <sup>[(Back to top)](#table-of-contents)</sup>
@@ -157,7 +155,7 @@ tested with:
 
 ```sh
 $ ogma fret-component-spec --cocospec --fret-file-name examples/fret-reqs-small.json > FretCopilot.hs
-$ cabal v1-exec -- runhaskell FretCopilot.hs
+$ runhaskell FretCopilot.hs
 ```
 
 The first step executes ogma, generating a Copilot monitor in a file called
