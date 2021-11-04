@@ -62,9 +62,10 @@ boolSpec2Copilot b = case b of
   BoolSpecOp1 op spec ->
     opOne2Copilot op ++ " (" ++ boolSpec2Copilot spec ++ ")"
 
-  BoolSpecOp2 spec1 op2 spec2 ->
-    boolSpec2Copilot spec1 ++ " " ++ opTwo2Copilot op2 ++ " "
-    ++ boolSpec2Copilot spec2
+  BoolSpecOp2 spec1 op2 spec2 -> "(" ++ boolSpec2Copilot spec1
+                              ++ " " ++ opTwo2Copilot op2
+                              ++ " " ++ boolSpec2Copilot spec2
+                              ++ ")"
 
 -- | Return the Copilot representation of a FRET boolean constant.
 const2Copilot :: BoolConst -> String
