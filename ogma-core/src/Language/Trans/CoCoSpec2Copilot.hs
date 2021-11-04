@@ -70,14 +70,14 @@ boolSpec2Copilot b = case b of
                                                     ++ " " ++ boolSpec2Copilot spec2
 
   BoolSpecOp2HT  num1 num2 spec  -> "MTL.alwaysBeen"
-                                       ++ " " ++ numExpr2Copilot num1
                                        ++ " " ++ numExpr2Copilot num2
+                                       ++ " " ++ numExpr2Copilot num1
                                        ++ " clock 1" -- clock and min time distance
                                        ++ " " ++ boolSpec2Copilot spec
 
   BoolSpecOp2OT  num1 num2 spec  -> "MTL.eventuallyPrev"
-                                       ++ " " ++ numExpr2Copilot num1
                                        ++ " " ++ numExpr2Copilot num2
+                                       ++ " " ++ numExpr2Copilot num1
                                        ++ " clock 1" -- clock and min time distance
                                        ++ " " ++ boolSpec2Copilot spec
 
