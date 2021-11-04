@@ -59,7 +59,7 @@ library
 
   build-depends:
       base                   >= 4.11.0.0 && < 5
-    , aeson
+    , aeson                  < 2
     , text
 
     , ogma-language-cocospec >= 0.0.1 && < 0.1
@@ -84,7 +84,7 @@ test-suite unit-tests
   build-depends:
       base                       >= 4.11.0.0 && < 5
 
-    , aeson
+    , aeson                      < 2
     , QuickCheck
     , test-framework
     , test-framework-quickcheck2

@@ -89,7 +89,7 @@ library
 
   build-depends:
       base                    >= 4.11.0.0 && < 5
-    , aeson
+    , aeson                   < 2
     , filepath
 
     , ogma-extra              >= 0.0.1 && < 0.1
