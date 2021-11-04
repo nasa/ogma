@@ -240,6 +240,7 @@ fretComponentSpec2Copilot' useCoCoSpec fretComponentSpec =
 -- having the same precision and overflow/underflow points.
 fretTypeToCopilotType :: String -> String
 fretTypeToCopilotType "bool"    = "Bool"
+fretTypeToCopilotType "int"     = "Int64"
 fretTypeToCopilotType "integer" = "Int64"
 fretTypeToCopilotType "real"    = "Float"
 fretTypeToCopilotType "string"  = "String"
