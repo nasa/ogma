@@ -61,8 +61,10 @@ boolSpec2Copilot b = case b of
   BoolSpecOp2In spec1 Op2InPre spec2
     -> "mux ftp (constant " ++ lit2Copilot spec1 ++ ") (" ++ boolSpec2Copilot spec2 ++ ")"
 
-  BoolSpecOp2In spec1 op2 spec2  -> boolSpec2Copilot spec1 ++ " " ++ opTwoIn2Copilot op2
-                                                           ++ " " ++ boolSpec2Copilot spec2
+  BoolSpecOp2In spec1 op2 spec2  -> "(" ++ boolSpec2Copilot spec1
+                                 ++ " " ++ opTwoIn2Copilot op2
+                                 ++ " " ++ boolSpec2Copilot spec2
+                                 ++ ")"
 
   BoolSpecOp2Pre op2 spec1 spec2 -> opTwoPre2Copilot op2 ++ " " ++ boolSpec2Copilot spec1
                                                     ++ " " ++ boolSpec2Copilot spec2
