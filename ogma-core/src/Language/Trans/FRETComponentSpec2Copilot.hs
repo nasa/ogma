@@ -95,7 +95,7 @@ fretComponentSpec2Copilot' useCoCoSpec fretComponentSpec =
       , "import qualified Copilot.Library.MTL       as MTL"
       , "import           Language.Copilot          (reify)"
       , "import           Prelude                   hiding ((&&), (||), (++),"
-        ++ " (<=), (>=), (<), (>), not)"
+        ++ " (<=), (>=), (<), (>), (==), not)"
       , ""
       ]
 
