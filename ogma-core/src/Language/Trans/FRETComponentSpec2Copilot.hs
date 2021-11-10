@@ -51,21 +51,31 @@ import           Language.FRETComponentSpec.AST  as FRET
 import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec ( boolSpec2Copilot )
 import           Language.Trans.SMV2Copilot      as SMV ( boolSpec2Copilot )
 
+-- | Options used to customize the conversion of FRET Component Specifications
+-- to Copilot code.
+data FRETComponentSpec2CopilotOptions = FRETComponentSpec2CopilotOptions
+  { fretCS2CopilotUseCoCoSpec :: Bool
+  }
+
 -- | Transform a FRET TL specification into a Copilot specification.
 --
 -- This function may fail with a 'Left' value if the resulting Copilot
 -- specification would contain name clashes or other errors.
-fretComponentSpec2Copilot :: Bool -> FRETComponentSpec -> Either String String
-fretComponentSpec2Copilot useCoCoSpec parseResult =
-  fretComponentSpec2Copilot' useCoCoSpec =<< fret2CopilotAnalyze parseResult
+fretComponentSpec2Copilot :: FRETComponentSpec2CopilotOptions
+                          -> FRETComponentSpec
+                          -> Either String String
+fretComponentSpec2Copilot prefs parseResult =
+  fretComponentSpec2Copilot' prefs =<< fret2CopilotAnalyze parseResult
 
 -- | For a given FRET file, return the corresponding Copilot file, or an error
 -- message if such file cannot be generated.
 --
 -- PRE: there are no name clashes between the variables and names used in the
 -- FRET specification and any definitions in Haskell's Prelude or in Copilot.
-fretComponentSpec2Copilot' :: Bool -> FRETComponentSpec -> Either String String
-fretComponentSpec2Copilot' useCoCoSpec fretComponentSpec =
+fretComponentSpec2Copilot' :: FRETComponentSpec2CopilotOptions
+                           -> FRETComponentSpec
+                           -> Either String String
+fretComponentSpec2Copilot' prefs fretComponentSpec =
     unlines . concat <$> sequence
       [ pure imports
       , pure externs
@@ -163,7 +173,9 @@ fretComponentSpec2Copilot' useCoCoSpec fretComponentSpec =
                              ++ " :: " ++ "Stream" ++ " " ++ "Bool"
 
             -- Definition implementation, either in SMV or in CoCoSpec
-            reqBody = if useCoCoSpec then reqBodyCoCo else reqBodyPT
+            reqBody = if fretCS2CopilotUseCoCoSpec prefs
+                        then reqBodyCoCo
+                        else reqBodyPT
 
             reqBodyPT = fmap (\e -> FRET.fretRequirementName i ++ " = "
                                       ++ SMV.boolSpec2Copilot e

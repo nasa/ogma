@@ -91,6 +91,7 @@ library
       base                    >= 4.11.0.0 && < 5
     , aeson                   < 2
     , filepath
+    , IfElse
 
     , ogma-extra              >= 0.0.1 && < 0.1
     , ogma-language-c         >= 0.0.1 && < 0.1

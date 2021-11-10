@@ -50,6 +50,7 @@ import Command.Result ( Result )
 
 -- External imports: actions or commands supported
 import Command.FRETComponentSpec2Copilot ( ErrorCode,
+                                           FRETComponentSpec2CopilotOptions(..),
                                            fretComponentSpec2Copilot )
 
 -- * Command
@@ -65,9 +66,16 @@ data CommandOpts = CommandOpts
 -- This is just an uncurried version of "Command.FRETComponentSpec2Copilot".
 command :: CommandOpts -> IO (Result ErrorCode)
 command c =
-  fretComponentSpec2Copilot
-    (fretComponentSpecFileName c)
-    (fretComponentSpecCoCoSpec c)
+    fretComponentSpec2Copilot
+      (fretComponentSpecFileName c)
+      internalCommandOpts
+
+  where
+
+    internalCommandOpts :: FRETComponentSpec2CopilotOptions
+    internalCommandOpts = FRETComponentSpec2CopilotOptions
+      { fretCS2CopilotUseCoCoSpec = fretComponentSpecCoCoSpec c
+      }
 
 -- * CLI
 
