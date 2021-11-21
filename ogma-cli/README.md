@@ -381,6 +381,10 @@ The best way to contribute to Ogma is to report any issues you find via the
 issue tracker, and to use Ogma to build applications or in your own research
 and let us know about your results.
 
+We kindly ask users not to send PRs to this project. Instead, please document
+the bugs you find or other suggestions as issues and we will make the necessary
+changes.
+
 # Acknowledgements
 <sup>[(Back to top)](#table-of-contents)</sup>
 
