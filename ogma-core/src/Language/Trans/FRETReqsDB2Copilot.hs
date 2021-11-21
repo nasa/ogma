@@ -116,7 +116,7 @@ fret2CopilotModule' useCoCoSpec smvSpec cocoSpec = unlines $ concat sections
 
     clock    = [ ""
                , "-- | Clock that increases in one-unit steps."
-               , "clock :: Stream Int64"
+               , "clock :: (Eq t, Num t, Typed t) => Stream t"
                , "clock = [0] ++ (clock + 1)"
                , ""
                ]

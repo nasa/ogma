@@ -182,7 +182,7 @@ fretComponentSpec2Copilot' useCoCoSpec fretComponentSpec =
     clock :: [String]
     clock = [ ""
             , "-- | Clock that increases in one-unit steps."
-            , "clock :: Stream Int64"
+            , "clock :: (Eq t, Num t, Typed t) => Stream t"
             , "clock = [0] ++ (clock + 1)"
             , ""
             ]
