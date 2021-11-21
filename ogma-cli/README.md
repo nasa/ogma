@@ -339,8 +339,8 @@ void COPILOT_ProcessIcarousPosition(void)
 
 A lot of the information that must be monitored in real-world C applications is
 packed in structs. Copilot allows accessing specific fields of C structs, but
-requires additional definitions in the Copilot language to make the structure
-of those structs known to the compiler.
+requires additional definitions in the Copilot language to make the shape of
+those structs known to the compiler.
 
 Ogma is able to generate the boilerplate code needed to work with C structs in
 Copilot. For example, to use the following struct as the type of an extern
