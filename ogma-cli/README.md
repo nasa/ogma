@@ -7,7 +7,7 @@ verification framework that generates hard real-time C99 code.
 
 # Features
 
-- Translating requirements defined in [NASA requirements elicitation tool
+- Translating requirements defined in [NASA's requirements elicitation tool
   FRET](https://github.com/NASA-SW-VnV/fret) into corresponding monitors in
   Copilot.
 
@@ -41,7 +41,8 @@ verification framework that generates hard real-time C99 code.
 
 To install Ogma from source, users must have the tools GHC and Cabal installed.
 At this time, we recommend GHC 8.6 and a version of Cabal between 2.4 and 3.2
-(however, these instructions have been tested with GHC 8.10 and Cabal to 3.6).
+(however, these instructions have been tested with GHC 8.10 and Cabal versions
+up to 3.6).
 
 On Debian or Ubuntu Linux, both can be installed with:
 
@@ -58,7 +59,7 @@ $ brew install ghc cabal
 ## Compilation
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-Once GHC and cabal are installed, the simplest way to install ogma is with:
+Once GHC and cabal are installed, the simplest way to install Ogma is with:
 ```sh
 $ git clone https://github.com/nasa/ogma.git
 $ cd ogma
@@ -68,13 +69,13 @@ $ cabal v1-install BNFC copilot
 $ cabal v1-install ogma-*/
 ```
 
-After that, the ogma executable will be placed in the directory
+After that, the `ogma` executable will be placed in the directory
 `$HOME/.cabal/bin/`, where `$HOME` represents your user's home directory.
 
 # Usage
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-The main invocation of ogma with `--help` lists sub-commands available:
+The main invocation of `ogma` with `--help` lists sub-commands available:
 ```sh
 $ ogma --help
 ogma - an anything-to-Copilot application generator
@@ -158,7 +159,7 @@ $ ogma fret-component-spec --cocospec --fret-file-name examples/fret-reqs-small.
 $ runhaskell FretCopilot.hs
 ```
 
-The first step executes ogma, generating a Copilot monitor in a file called
+The first step executes `ogma`, generating a Copilot monitor in a file called
 `FretCopilot.hs`. The second step executes the Copilot compiler, generating a C
 implementation `fret.c` and C header file `fret.h`.
 
@@ -338,8 +339,8 @@ void COPILOT_ProcessIcarousPosition(void)
 
 A lot of the information that must be monitored in real-world C applications is
 packed in structs. Copilot allows accessing specific fields of C structs, but
-requires additional definitions in the Copilot language to make the structure
-of those structs known to the compiler.
+requires additional definitions in the Copilot language to make the shape of
+those structs known to the compiler.
 
 Ogma is able to generate the boilerplate code needed to work with C structs in
 Copilot. For example, to use the following struct as the type of an extern
