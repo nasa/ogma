@@ -43,13 +43,15 @@ module CLI.CommandFretComponentSpec2Copilot
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, strOption, switch )
+import Options.Applicative (Parser, help, long, metavar, short, showDefault,
+                            strOption, switch, value)
 
 -- External imports: command results
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
 import Command.FRETComponentSpec2Copilot ( ErrorCode,
+                                           FRETComponentSpec2CopilotOptions(..),
                                            fretComponentSpec2Copilot )
 
 -- * Command
@@ -58,6 +60,8 @@ import Command.FRETComponentSpec2Copilot ( ErrorCode,
 data CommandOpts = CommandOpts
   { fretComponentSpecFileName :: FilePath
   , fretComponentSpecCoCoSpec :: Bool
+  , fretComponentSpecIntType  :: String
+  , fretComponentSpecRealType :: String
   }
 
 -- | Transform a FRET component specification into a Copilot specification.
@@ -65,9 +69,18 @@ data CommandOpts = CommandOpts
 -- This is just an uncurried version of "Command.FRETComponentSpec2Copilot".
 command :: CommandOpts -> IO (Result ErrorCode)
 command c =
-  fretComponentSpec2Copilot
-    (fretComponentSpecFileName c)
-    (fretComponentSpecCoCoSpec c)
+    fretComponentSpec2Copilot
+      (fretComponentSpecFileName c)
+      internalCommandOpts
+
+  where
+
+    internalCommandOpts :: FRETComponentSpec2CopilotOptions
+    internalCommandOpts = FRETComponentSpec2CopilotOptions
+      { fretCS2CopilotUseCoCoSpec = fretComponentSpecCoCoSpec c
+      , fretCS2CopilotIntType     = fretComponentSpecIntType  c
+      , fretCS2CopilotRealType    = fretComponentSpecRealType c
+      }
 
 -- * CLI
 
@@ -89,6 +102,22 @@ commandOptsParser = CommandOpts
         (  long "cocospec"
         <> help strFretCoCoDesc
         )
+  <*> strOption
+        (  long "map-int-to"
+        <> short 'i'
+        <> metavar "TYPE_NAME"
+        <> help strFretIntTypeDesc
+        <> showDefault
+        <> value "Int64"
+        )
+  <*> strOption
+        (  long "map-real-to"
+        <> short 'r'
+        <> metavar "TYPE_NAME"
+        <> help strFretRealTypeDesc
+        <> showDefault
+        <> value "Float"
+        )
 
 -- | Argument FRET command description
 strFretArgDesc :: String
@@ -97,3 +126,11 @@ strFretArgDesc = "FRET file with requirements."
 -- | CoCoSpec flag description
 strFretCoCoDesc :: String
 strFretCoCoDesc = "Use CoCoSpec variant of TL properties"
+
+-- | Int type mapping flag description.
+strFretIntTypeDesc :: String
+strFretIntTypeDesc = "Map integer variables to the given type"
+
+-- | Real type mapping flag description.
+strFretRealTypeDesc :: String
+strFretRealTypeDesc = "Map real variables to the given type"

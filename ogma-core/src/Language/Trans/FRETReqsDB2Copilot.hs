@@ -35,7 +35,11 @@
 -- Ideally, this module would be implemented as a conversion between ASTs, but
 -- we want to add comments to the generated code, which are not representable
 -- in the abstract syntax tree.
-module Language.Trans.FRETReqsDB2Copilot ( fret2CopilotModule ) where
+module Language.Trans.FRETReqsDB2Copilot
+    ( FRETReqsDB2CopilotOptions(..)
+    , fret2CopilotModule
+    )
+  where
 
 -- External imports
 import Data.List ( nub, sort )
@@ -54,35 +58,41 @@ import qualified Language.FRETReqsDB.AST as FRET ( FRETReqsDB, semantics,
                                                    semanticsCoCoSpec,
                                                    semanticsFretish )
 
+-- | Options used to customize the conversion of FRET Component Specifications
+-- to Copilot code.
+data FRETReqsDB2CopilotOptions = FRETReqsDB2CopilotOptions
+  { fretReqsDB2CopilotUseCoCoSpec :: Bool
+  }
+
 -- | Return a string with the contents of the Copilot module that implements a
 -- CoCoSpec BoolSpec.
 --
 -- PRE: The BoolSpec does not use any identifiers that exist in Copilot,
 -- or any of @prop@, @clock@, @ftp@, @ot@, @pre@. All identifiers used are
 -- valid C99 identifiers.
-fret2CopilotModule :: Bool
+fret2CopilotModule :: FRETReqsDB2CopilotOptions
                    -> FRET.FRETReqsDB
                    -> Either String String
-fret2CopilotModule useCoCoSpec x = do
+fret2CopilotModule prefs x = do
   cocoSpec <- FRET.semanticsCoCoSpec $ FRET.semantics x
   smvSpec  <- FRET.semanticsFretish  $ FRET.semantics x
-  pure $ fret2CopilotModule' useCoCoSpec smvSpec cocoSpec
+  pure $ fret2CopilotModule' prefs smvSpec cocoSpec
 
-fret2CopilotModule' :: Bool
+fret2CopilotModule' :: FRETReqsDB2CopilotOptions
                     -> SMV.BoolSpec
                     -> CoCoSpec.BoolSpec
                     -> String
-fret2CopilotModule' useCoCoSpec smvSpec cocoSpec = unlines $ concat sections
+fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
   where
-    specS = if useCoCoSpec
+    specS = if fretReqsDB2CopilotUseCoCoSpec prefs
               then CoCoSpec.boolSpec2Copilot cocoSpec
               else SMV.boolSpec2Copilot smvSpec
 
-    idents   = nub $ sort $ if useCoCoSpec
+    idents   = nub $ sort $ if fretReqsDB2CopilotUseCoCoSpec prefs
                               then CoCoSpec.boolSpecNames cocoSpec
                               else SMV.boolSpecNames smvSpec
 
-    sections | useCoCoSpec
+    sections | fretReqsDB2CopilotUseCoCoSpec prefs
              = [ imports, propDef, externs, clock, ftp, undef, spec, main' ]
 
              | otherwise

@@ -34,12 +34,14 @@
 -- "Language.Trans.FRETComponentSpec2Copilot", which does most of the work.
 module Command.FRETComponentSpec2Copilot
     ( fretComponentSpec2Copilot
+    , FRETComponentSpec2CopilotOptions(..)
     , ErrorCode
     )
   where
 
 -- External imports
-import Data.Aeson ( eitherDecode )
+import Control.Monad.IfElse ( awhen )
+import Data.Aeson           ( eitherDecode )
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B ( safeReadFile )
@@ -50,7 +52,10 @@ import Data.Location  ( Location (..) )
 
 -- Internal imports
 import           Language.FRETComponentSpec.AST           ( FRETComponentSpec )
-import qualified Language.Trans.FRETComponentSpec2Copilot as T ( fretComponentSpec2Copilot )
+import qualified Language.Trans.FRETComponentSpec2Copilot as T
+  ( fretComponentSpec2Copilot
+  , FRETComponentSpec2CopilotOptions(FRETComponentSpec2CopilotOptions)
+  )
 
 -- | Print the contents of a Copilot module that implements the Past-time TL
 -- formula in a FRET file.
@@ -61,21 +66,35 @@ import qualified Language.Trans.FRETComponentSpec2Copilot as T ( fretComponentSp
 -- used are valid C99 identifiers.
 fretComponentSpec2Copilot :: FilePath -- ^ Path to a file containing a FRET
                                       -- Component Specification
-                          -> Bool     -- ^ Use the CoCoSpec variant of the formula
+                          -> FRETComponentSpec2CopilotOptions
+                                      -- ^ Customization options
+                                      -- formula
                           -> IO (Result ErrorCode)
-fretComponentSpec2Copilot fp useCoCoSpec = do
+fretComponentSpec2Copilot fp options = do
 
   -- All of the following operations use Either to return error messages. The
   -- use of the monadic bind to pass arguments from one function to the next
   -- will cause the program to stop at the earliest error.
-  --
-  -- The guard (checking whether the result is Left or Right) must happen
-  -- before the first side effects (output file creation), or the file may be
-  -- (over) written even when processing fails.
   fret <- parseFretComponentSpec fp
-  case T.fretComponentSpec2Copilot useCoCoSpec =<< fret of
-    Left msg -> return $ Error ecFretCSError msg (LocationFile fp)
-    Right t  -> putStrLn t >> return Success
+
+  -- Extract internal command options from external command options
+  let internalOptions = fretComponentSpec2CopilotOptions options
+
+  let copilot = T.fretComponentSpec2Copilot internalOptions =<< fret
+
+  let (mOutput, result) =
+        fretComponentSpec2CopilotResult options fp copilot
+
+  awhen mOutput putStrLn
+  return result
+
+-- | Options used to customize the conversion of FRET Component Specifications
+-- to Copilot code.
+data FRETComponentSpec2CopilotOptions = FRETComponentSpec2CopilotOptions
+  { fretCS2CopilotUseCoCoSpec :: Bool
+  , fretCS2CopilotIntType     :: String
+  , fretCS2CopilotRealType    :: String
+  }
 
 -- | Parse a JSON file containing a FRET component specification.
 --
@@ -99,3 +118,26 @@ type ErrorCode = Int
 -- unreadable or the format being incorrect.
 ecFretCSError :: ErrorCode
 ecFretCSError = 1
+
+-- * Input arguments
+
+-- | Convert command input argument options to internal transformation function
+-- input arguments.
+fretComponentSpec2CopilotOptions :: FRETComponentSpec2CopilotOptions
+                                 -> T.FRETComponentSpec2CopilotOptions
+fretComponentSpec2CopilotOptions options =
+  T.FRETComponentSpec2CopilotOptions
+      (fretCS2CopilotUseCoCoSpec options)
+      (fretCS2CopilotIntType options)
+      (fretCS2CopilotRealType options)
+
+-- * Result
+
+-- | Process the result of the transformation function.
+fretComponentSpec2CopilotResult :: FRETComponentSpec2CopilotOptions
+                                -> FilePath
+                                -> Either String String
+                                -> (Maybe String, Result ErrorCode)
+fretComponentSpec2CopilotResult options fp result = case result of
+  Left msg -> (Nothing, Error ecFretCSError msg (LocationFile fp))
+  Right t  -> (Just t, Success)

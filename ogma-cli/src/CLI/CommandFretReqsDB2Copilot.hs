@@ -49,7 +49,8 @@ import Options.Applicative ( Parser, help, long, metavar, strOption, switch )
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import Command.FRETReqsDB2Copilot ( ErrorCode, fretReqsDB2Copilot )
+import Command.FRETReqsDB2Copilot ( ErrorCode, FRETReqsDB2CopilotOptions (..),
+                                    fretReqsDB2Copilot )
 
 -- * Command
 
@@ -65,7 +66,16 @@ data CommandOpts = CommandOpts
 -- This is just an uncurried version of "Command.FRETReqsDB2Copilot".
 command :: CommandOpts -> IO (Result ErrorCode)
 command c =
-  fretReqsDB2Copilot (fretReqsDBFileName c) (fretReqsDBCoCoSpec c)
+    fretReqsDB2Copilot
+      (fretReqsDBFileName c)
+      internalCommandOpts
+
+  where
+
+    internalCommandOpts :: FRETReqsDB2CopilotOptions
+    internalCommandOpts = FRETReqsDB2CopilotOptions
+      { fretReqsDB2CopilotUseCoCoSpec = fretReqsDBCoCoSpec c
+      }
 
 -- * CLI
 
