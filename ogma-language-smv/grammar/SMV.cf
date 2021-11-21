@@ -86,8 +86,8 @@ Op1Alone . OpOne ::= Op1Name;
 Op1MTL.    OpOne ::= Op1Name "[" OrdOp Number "]";
 
 NumberInt . Number ::= Integer;
-NumberB   . Number ::= "<b>" Number "</b>";
-NumberI   . Number ::= "<i>" Number "</i>";
+_ . Number ::= "<b>" Number "</b>";
+_ . Number ::= "<i>" Number "</i>";
 
 OrdOpLT . OrdOp ::= "<";
 OrdOpLE . OrdOp ::= "<=";
