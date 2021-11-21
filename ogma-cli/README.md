@@ -69,13 +69,13 @@ $ cabal v1-install BNFC copilot
 $ cabal v1-install ogma-*/
 ```
 
-After that, the ogma executable will be placed in the directory
+After that, the `ogma` executable will be placed in the directory
 `$HOME/.cabal/bin/`, where `$HOME` represents your user's home directory.
 
 # Usage
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-The main invocation of ogma with `--help` lists sub-commands available:
+The main invocation of `ogma` with `--help` lists sub-commands available:
 ```sh
 $ ogma --help
 ogma - an anything-to-Copilot application generator
@@ -159,7 +159,7 @@ $ ogma fret-component-spec --cocospec --fret-file-name examples/fret-reqs-small.
 $ runhaskell FretCopilot.hs
 ```
 
-The first step executes ogma, generating a Copilot monitor in a file called
+The first step executes `ogma`, generating a Copilot monitor in a file called
 `FretCopilot.hs`. The second step executes the Copilot compiler, generating a C
 implementation `fret.c` and C header file `fret.h`.
 
