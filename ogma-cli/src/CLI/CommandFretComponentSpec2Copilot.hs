@@ -43,7 +43,8 @@ module CLI.CommandFretComponentSpec2Copilot
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, strOption, switch )
+import Options.Applicative (Parser, help, long, metavar, short, showDefault,
+                            strOption, switch, value)
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -59,6 +60,8 @@ import Command.FRETComponentSpec2Copilot ( ErrorCode,
 data CommandOpts = CommandOpts
   { fretComponentSpecFileName :: FilePath
   , fretComponentSpecCoCoSpec :: Bool
+  , fretComponentSpecIntType  :: String
+  , fretComponentSpecRealType :: String
   }
 
 -- | Transform a FRET component specification into a Copilot specification.
@@ -75,6 +78,8 @@ command c =
     internalCommandOpts :: FRETComponentSpec2CopilotOptions
     internalCommandOpts = FRETComponentSpec2CopilotOptions
       { fretCS2CopilotUseCoCoSpec = fretComponentSpecCoCoSpec c
+      , fretCS2CopilotIntType     = fretComponentSpecIntType  c
+      , fretCS2CopilotRealType    = fretComponentSpecRealType c
       }
 
 -- * CLI
@@ -97,6 +102,22 @@ commandOptsParser = CommandOpts
         (  long "cocospec"
         <> help strFretCoCoDesc
         )
+  <*> strOption
+        (  long "map-int-to"
+        <> short 'i'
+        <> metavar "TYPE_NAME"
+        <> help strFretIntTypeDesc
+        <> showDefault
+        <> value "Int64"
+        )
+  <*> strOption
+        (  long "map-real-to"
+        <> short 'r'
+        <> metavar "TYPE_NAME"
+        <> help strFretRealTypeDesc
+        <> showDefault
+        <> value "Float"
+        )
 
 -- | Argument FRET command description
 strFretArgDesc :: String
@@ -105,3 +126,11 @@ strFretArgDesc = "FRET file with requirements."
 -- | CoCoSpec flag description
 strFretCoCoDesc :: String
 strFretCoCoDesc = "Use CoCoSpec variant of TL properties"
+
+-- | Int type mapping flag description.
+strFretIntTypeDesc :: String
+strFretIntTypeDesc = "Map integer variables to the given type"
+
+-- | Real type mapping flag description.
+strFretRealTypeDesc :: String
+strFretRealTypeDesc = "Map real variables to the given type"

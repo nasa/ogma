@@ -55,6 +55,8 @@ import           Language.Trans.SMV2Copilot      as SMV ( boolSpec2Copilot )
 -- to Copilot code.
 data FRETComponentSpec2CopilotOptions = FRETComponentSpec2CopilotOptions
   { fretCS2CopilotUseCoCoSpec :: Bool
+  , fretCS2CopilotIntType     :: String
+  , fretCS2CopilotRealType    :: String
   }
 
 -- | Transform a FRET TL specification into a Copilot specification.
@@ -115,8 +117,11 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
       where
         externVarToDecl i = [ FRET.fretExternalVariableName i
                                 ++ " :: Stream "
+                                ++ "("
                                 ++ fretTypeToCopilotType
+                                     prefs
                                      (FRET.fretExternalVariableType i)
+                                ++ ")"
 
                             , FRET.fretExternalVariableName i
                                 ++ " = "
@@ -136,8 +141,11 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
         internalVarToDecl i = fmap (\implem ->
                                 [ FRET.fretInternalVariableName i
                                     ++ " :: Stream "
+                                    ++ "("
                                     ++ fretTypeToCopilotType
+                                         prefs
                                          (FRET.fretInternalVariableType i)
+                                    ++ ")"
 
                                 , FRET.fretInternalVariableName i
                                     ++ " = "
@@ -245,18 +253,13 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
             ]
 
 -- | Return the corresponding type in Copilot matching a given FRET type.
---
--- Note: this will default to a particular word size for fractionals (@float@)
--- and integers (64 bits) , which may make resulting programs incompatible with
--- some architectures, or exhibit unexpected results due to arithmetic not
--- having the same precision and overflow/underflow points.
-fretTypeToCopilotType :: String -> String
-fretTypeToCopilotType "bool"    = "Bool"
-fretTypeToCopilotType "int"     = "Int64"
-fretTypeToCopilotType "integer" = "Int64"
-fretTypeToCopilotType "real"    = "Float"
-fretTypeToCopilotType "string"  = "String"
-fretTypeToCopilotType x         = x
+fretTypeToCopilotType :: FRETComponentSpec2CopilotOptions -> String -> String
+fretTypeToCopilotType _options "bool"    = "Bool"
+fretTypeToCopilotType options  "int"     = fretCS2CopilotIntType options
+fretTypeToCopilotType options  "integer" = fretCS2CopilotIntType options
+fretTypeToCopilotType options  "real"    = fretCS2CopilotRealType options
+fretTypeToCopilotType _options "string"  = "String"
+fretTypeToCopilotType _options x         = x
 
 -- | Analyze a FRET-Copilot file and determine if there will be any name
 -- clashes after the conversion to Copilot.
