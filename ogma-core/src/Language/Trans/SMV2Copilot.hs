@@ -163,8 +163,6 @@ opOneMTL2Copilot operator _comparison number =
 
 -- | Return the Copilot representation of a FRET number.
 number2Copilot :: Number -> String
-number2Copilot (NumberB   n) = number2Copilot n
-number2Copilot (NumberI   n) = number2Copilot n
 number2Copilot (NumberInt n) = show n
 
 -- | Return the Copilot representation of a binary logical non-MTL FRET
