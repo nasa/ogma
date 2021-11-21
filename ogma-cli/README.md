@@ -41,7 +41,8 @@ verification framework that generates hard real-time C99 code.
 
 To install Ogma from source, users must have the tools GHC and Cabal installed.
 At this time, we recommend GHC 8.6 and a version of Cabal between 2.4 and 3.2
-(however, these instructions have been tested with GHC 8.10 and Cabal to 3.6).
+(however, these instructions have been tested with GHC 8.10 and Cabal versions
+up to 3.6).
 
 On Debian or Ubuntu Linux, both can be installed with:
 
