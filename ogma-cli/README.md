@@ -59,7 +59,7 @@ $ brew install ghc cabal
 ## Compilation
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-Once GHC and cabal are installed, the simplest way to install ogma is with:
+Once GHC and cabal are installed, the simplest way to install Ogma is with:
 ```sh
 $ git clone https://github.com/nasa/ogma.git
 $ cd ogma
