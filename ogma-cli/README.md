@@ -384,6 +384,8 @@ and let us know about your results.
 # Acknowledgements
 <sup>[(Back to top)](#table-of-contents)</sup>
 
+Ogma has been created by Ivan Perez and Alwyn Goodloe.
+
 The Ogma team would like to thank Dimitra Giannakopoulou, Anastasia Mavridou,
 and Thomas Pressburger, from the FRET Team at NASA Ames, for the continued
 input during the development of Ogma.
