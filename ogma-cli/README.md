@@ -396,7 +396,8 @@ with the cFS backend.
 # License
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-Copyright 2020 United States Government as represented by the Administrator
-of the National Aeronautics and Space Administration. All Rights Reserved.
+Copyright 2020-2021 United States Government as represented by the
+Administrator of the National Aeronautics and Space Administration. All Rights
+Reserved.
 
 See the file LICENSE.pdf for details.
