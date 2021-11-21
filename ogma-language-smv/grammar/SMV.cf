@@ -87,6 +87,5 @@ Op2Gt.    OpTwo ::= ">";
 Op2Le.    OpTwo ::= "<=";
 Op2Ge.    OpTwo ::= ">=";
 Op2Xor.   OpTwo ::= "xor";
-Op2XNor.  OpTwo ::= "xnor";
 Op2Impl.  OpTwo ::= "->";
 Op2Equiv. OpTwo ::= "<->";
