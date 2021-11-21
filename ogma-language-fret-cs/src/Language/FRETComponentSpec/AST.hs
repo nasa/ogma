@@ -178,18 +178,55 @@ applySubstitution sub file =
     mapBoolSpecIdent :: (String -> String) -> SMV.BoolSpec -> SMV.BoolSpec
     mapBoolSpecIdent f boolSpec =
       case boolSpec of
-        SMV.BoolSpecPar bs -> SMV.BoolSpecPar (mapBoolSpecIdent f bs)
-
-        SMV.BoolSpecBPar bs -> SMV.BoolSpecBPar (mapBoolSpecIdent f bs)
-
-        SMV.BoolSpecIPar bs -> SMV.BoolSpecIPar (mapBoolSpecIdent f bs)
+        SMV.BoolSpecSignal (SMV.Ident i) -> SMV.BoolSpecSignal (SMV.Ident (f i))
 
         SMV.BoolSpecConst bc -> SMV.BoolSpecConst bc
 
-        SMV.BoolSpecSignal (SMV.Ident i) -> SMV.BoolSpecSignal (SMV.Ident (f i))
+        SMV.BoolSpecNum e -> SMV.BoolSpecNum (mapNumExprIdent f e)
+
+        SMV.BoolSpecCmp spec1 op2 spec2 -> SMV.BoolSpecCmp
+                                             (mapBoolSpecIdent f spec1) op2
+                                             (mapBoolSpecIdent f spec2)
+
+        SMV.BoolSpecNeg spec -> SMV.BoolSpecNeg (mapBoolSpecIdent f spec)
+
+        SMV.BoolSpecAnd spec1 spec2 -> SMV.BoolSpecAnd
+                                             (mapBoolSpecIdent f spec1)
+                                             (mapBoolSpecIdent f spec2)
+
+        SMV.BoolSpecOr spec1 spec2 -> SMV.BoolSpecOr
+                                            (mapBoolSpecIdent f spec1)
+                                            (mapBoolSpecIdent f spec2)
+
+        SMV.BoolSpecXor spec1 spec2 -> SMV.BoolSpecXor
+                                             (mapBoolSpecIdent f spec1)
+                                             (mapBoolSpecIdent f spec2)
+
+        SMV.BoolSpecImplies spec1 spec2 -> SMV.BoolSpecImplies
+                                                 (mapBoolSpecIdent f spec1)
+                                                 (mapBoolSpecIdent f spec2)
+
+        SMV.BoolSpecEquivs spec1 spec2 -> SMV.BoolSpecEquivs
+                                                (mapBoolSpecIdent f spec1)
+                                                (mapBoolSpecIdent f spec2)
 
         SMV.BoolSpecOp1 op spec -> SMV.BoolSpecOp1 op (mapBoolSpecIdent f spec)
 
         SMV.BoolSpecOp2 spec1 op2 spec2 -> SMV.BoolSpecOp2
                                              (mapBoolSpecIdent f spec1) op2
                                              (mapBoolSpecIdent f spec2)
+
+    -- Traverse a numeric expression applying a function to all identifiers
+    mapNumExprIdent :: (String -> String) -> SMV.NumExpr -> SMV.NumExpr
+    mapNumExprIdent f numExpr =
+      case numExpr of
+        SMV.NumId (SMV.Ident i)    -> SMV.NumId (SMV.Ident (f i))
+        SMV.NumConst c             -> SMV.NumConst c
+        SMV.NumAdd expr1 op expr2  -> SMV.NumAdd
+                                            (mapNumExprIdent f expr1)
+                                            op
+                                            (mapNumExprIdent f expr2)
+        SMV.NumMult expr1 op expr2 -> SMV.NumMult
+                                            (mapNumExprIdent f expr1)
+                                            op
+                                            (mapNumExprIdent f expr2)
