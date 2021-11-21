@@ -7,7 +7,7 @@ verification framework that generates hard real-time C99 code.
 
 # Features
 
-- Translating requirements defined in [NASA requirements elicitation tool
+- Translating requirements defined in [NASA's requirements elicitation tool
   FRET](https://github.com/NASA-SW-VnV/fret) into corresponding monitors in
   Copilot.
 
