@@ -16,8 +16,6 @@
 #include "copilot_cfs_msg.h"
 #include "copilot_cfs_events.h"
 #include "copilot_cfs_version.h"
-#include "msgids/ardupilot_msgids.h"
-#include <msgdef/ardupilot_msg.h>
 
 position_t my_position;
 void split(void);
