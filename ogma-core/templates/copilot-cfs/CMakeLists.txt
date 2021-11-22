@@ -10,5 +10,5 @@ aux_source_directory(fsw/src APP_SRC_FILES)
 # Create the app module
 add_cfe_app(copilot_cfs ${APP_SRC_FILES})
 
-add_custom_target(HASKELL_COPILOT COMMAND cabal sandbox init COMMAND cabal update COMMAND cabal install copilot COMMAND cabal exec "--" ghc --make Properties.hs COMMAND ./Properties WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/ SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/Properties.hs)
+add_custom_target(HASKELL_COPILOT COMMAND cabal v1-sandbox init COMMAND cabal update COMMAND cabal v1-install copilot COMMAND cabal v1-exec "--" ghc --make Properties.hs COMMAND ./Properties WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/ SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/Properties.hs)
 add_dependencies(copilot_cfs HASKELL_COPILOT)
