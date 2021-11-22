@@ -202,7 +202,7 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
     clock :: [String]
     clock = [ ""
             , "-- | Clock that increases in one-unit steps."
-            , "clock :: (Eq t, Num t, Typed t) => Stream t"
+            , "clock :: Stream Int64"
             , "clock = [0] ++ (clock + 1)"
             , ""
             ]
