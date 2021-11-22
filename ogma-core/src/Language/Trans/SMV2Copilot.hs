@@ -156,10 +156,22 @@ opOneAlone2Copilot Op1O    = "PTLTL.eventuallyPrev"
 -- | Return the Copilot representation of a unary logical MTL FRET operator.
 opOneMTL2Copilot :: Op1Name -> OrdOp -> Number -> String
 opOneMTL2Copilot operator _comparison number =
-  opOneAlone2Copilot operator ++ " " ++ show (0 :: Int)
-                              ++ " " ++ number2Copilot number
-                              ++ " " ++ "clock" ++ " "
-                              ++ show (1 :: Int)
+  opOneMTL2Copilot' operator ++ " " ++ show (0 :: Int)
+                             ++ " " ++ number2Copilot number
+                             ++ " " ++ "clock" ++ " "
+                             ++ show (1 :: Int)
+
+-- | Return the Copilot representation of a unary logical possibly MTL FRET
+-- operator.
+opOneMTL2Copilot' :: Op1Name -> String
+opOneMTL2Copilot' Op1Pre  = "pre"
+opOneMTL2Copilot' Op1X    = "next"
+opOneMTL2Copilot' Op1G    = "always"
+opOneMTL2Copilot' Op1F    = "eventually"
+opOneMTL2Copilot' Op1Y    = "MTL.previous"
+opOneMTL2Copilot' Op1Z    = "notPreviousNot"
+opOneMTL2Copilot' Op1Hist = "MTL.alwaysBeen"
+opOneMTL2Copilot' Op1O    = "MTL.eventuallyPrev"
 
 -- | Return the Copilot representation of a FRET number.
 number2Copilot :: Number -> String
