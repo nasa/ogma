@@ -1,0 +1,22 @@
+{
+  "test_componentSpec": {
+    "Functions": [
+    ],
+    "Internal_variables": [
+    ],
+    "Other_variables": [
+      {
+        "name": "input_signal",
+        "type": "Double"
+      }
+    ],
+    "Requirements": [
+      {
+        "CoCoSpecCode": "(O((( input_signal <= 5 ))))",
+        "fretish": "test_component shall satisfy (input_signal <= 5)",
+        "name": "testCopilot-001",
+        "ptLTL": "(O (( input_signal <= 5 )))"
+      }
+    ]
+  }
+}

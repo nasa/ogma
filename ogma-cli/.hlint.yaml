@@ -1,0 +1,2 @@
+- functions:
+  - {name: unsafePerformIO, within: []} # unsafePerformIO cannot appear in any modules

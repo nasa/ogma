@@ -1,0 +1,153 @@
+-- Copyright 2020 United States Government as represented by the Administrator
+-- of the National Aeronautics and Space Administration. All Rights Reserved.
+--
+-- Disclaimers
+--
+-- No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY
+-- OF ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+-- LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+-- SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+-- PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE
+-- SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF
+-- PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN
+-- ANY MANNER, CONSTITUTE AN ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR
+-- RECIPIENT OF ANY RESULTS, RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR
+-- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
+-- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
+-- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
+-- IT "AS IS." 
+--
+-- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+-- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
+-- ANY PRIOR RECIPIENT. IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS IN
+-- ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH USE,
+-- INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM, RECIPIENT'S
+-- USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD HARMLESS THE
+-- UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS ANY
+-- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
+-- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
+-- AGREEMENT.
+
+cabal-version:       2.0
+build-type:          Simple
+
+name:                ogma-cli
+version:             1.0.0
+homepage:            http://nasa.gov
+license:             AllRightsReserved
+license-file:        LICENSE.pdf
+author:              Ivan Perez, Alwyn Goodloe
+maintainer:          ivan.perezdominguez@nasa.gov
+category:            Aerospace
+extra-source-files:  CHANGELOG.md
+
+synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+
+description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
+                     other systems. Ogma extends
+                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
+                     verification framework that generates hard real-time C99 code.
+                     .
+                     Some use cases supported by Ogma include:
+                     .
+                     - Translating requirements defined in
+                       <https://github.com/NASA-SW-VnV/fret NASA requirements elicitation tool FRET>
+                       into corresponding monitors in Copilot.
+                     .
+                     - Generating the glue code necessary to work with C
+                       structs in Copilot.
+                     .
+                     - Generating
+                       <https://cfs.gsfc.nasa.gov/ NASA Core Flight System>
+                       applications that use Copilot for monitoring data
+                       received from the message bus.
+                     .
+                     - Generating message handlers for NASA Core Flight System
+                       applications to make external data in structs available
+                       to a Copilot monitor.
+                     .
+                     The main invocation with @--help@ lists sub-commands available.
+                     .
+                     >$ ogma --help
+                     >ogma - an anything-to-Copilot application generator
+                     >
+                     >Usage: ogma COMMAND
+                     >  Generate complete or partial Copilot applications from multiple languages
+                     >
+                     >Available options:
+                     >  -h,--help                Show this help text
+                     >
+                     >Available commands:
+                     >  structs                  Generate Copilot structs from C structs
+                     >  handlers                 Generate message handlers from C structs
+                     >  cfs                      Generate a complete CFS/Copilot application
+                     >  fret-component-spec      Generate a Copilot file from a FRET Component
+                     >                           Specification
+                     >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
+                     >                           Database
+                     .
+                     For further information, see:
+                     .
+                     - <https://github.com/nasa/ogma The Ogma repository>.
+                     .
+                     - <https://copilot-language.github.io/ The Copilot web page>.
+                     .
+                     - <https://github.com/NASA-SW-VnV/fret The FRET repository>.
+                     .
+                     - <https://cfs.gsfc.nasa.gov/ The NASA Core Flight System web page>.
+                     .
+                     - <https://ntrs.nasa.gov/citations/20200003164 "Copilot 3">, Perez, Dedden and Goodloe. 2020.
+                     .
+                     - <https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf "From Requirements to Autonomous Flight">, Dutle et al. 2020.
+
+executable ogma
+
+  main-is:
+    Main.hs
+
+  other-modules:
+    CLI.CommandCFSApp
+    CLI.CommandCStructs2Copilot
+    CLI.CommandCStructs2MsgHandlers
+    CLI.CommandFretComponentSpec2Copilot
+    CLI.CommandFretReqsDB2Copilot
+    CLI.CommandTop
+    CLI.Result
+
+  build-depends:
+      base                 >= 4.11.0.0
+    , optparse-applicative
+    , ogma-core            >= 1.0.0 && < 1.1
+
+  hs-source-dirs:
+    src
+
+  default-language:
+    Haskell2010
+
+  ghc-options:
+    -Wall
+
+test-suite test-ogma
+  type:
+    exitcode-stdio-1.0
+
+  main-is:
+    Main.hs
+
+  build-depends:
+      base
+    , HUnit
+    , process
+    , test-framework
+    , test-framework-hunit
+    , unix
+
+  hs-source-dirs:
+    tests
+
+  default-language:
+    Haskell2010
+
+  ghc-options:
+    -Wall

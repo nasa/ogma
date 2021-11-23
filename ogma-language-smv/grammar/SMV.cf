@@ -1,0 +1,110 @@
+-- Copyright 2020 United States Government as represented by the Administrator
+-- of the National Aeronautics and Space Administration. All Rights Reserved.
+--
+-- Disclaimers
+--
+-- No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY
+-- OF ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+-- LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+-- SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+-- PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE
+-- SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF
+-- PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN
+-- ANY MANNER, CONSTITUTE AN ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR
+-- RECIPIENT OF ANY RESULTS, RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR
+-- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
+-- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
+-- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
+-- IT "AS IS."
+--
+-- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+-- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
+-- ANY PRIOR RECIPIENT. IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS IN
+-- ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH USE,
+-- INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM, RECIPIENT'S
+-- USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD HARMLESS THE
+-- UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS ANY
+-- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
+-- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
+-- AGREEMENT.
+
+-- This is a simplified grammar of SMV temporal logic expressions, extended
+-- with the tags that FRET uses around names.
+--
+-- The format of FRET files itself uses JSON, so this grammar applies
+-- only to specific fields in those files.
+
+entrypoints BoolSpec;
+
+BoolSpecSignal.  BoolSpec9 ::= Ident;
+BoolSpecConst.   BoolSpec9 ::= BoolConst ;
+BoolSpecNum.     BoolSpec9 ::= NumExpr;
+BoolSpecCmp.     BoolSpec8 ::= BoolSpec8 OrdOp BoolSpec9;
+BoolSpecNeg.     BoolSpec7 ::= "!" BoolSpec8;
+BoolSpecAnd.     BoolSpec6 ::= BoolSpec6 "&" BoolSpec7;
+BoolSpecOr.      BoolSpec5 ::= BoolSpec5 "|" BoolSpec6;
+BoolSpecXor.     BoolSpec4 ::= BoolSpec4 "xor" BoolSpec5;
+BoolSpecImplies. BoolSpec3 ::= BoolSpec3 "->" BoolSpec4;
+BoolSpecEquivs.  BoolSpec2 ::= BoolSpec2 "<->" BoolSpec3;
+BoolSpecOp1.     BoolSpec1 ::= OpOne BoolSpec2;
+BoolSpecOp2.     BoolSpec  ::= BoolSpec OpTwo BoolSpec1;
+
+_ . BoolSpec9 ::= "(" BoolSpec ")";
+_ . BoolSpec9 ::= "<b>" BoolSpec "</b>";
+_ . BoolSpec9 ::= "<i>" BoolSpec "</i>";
+_ . BoolSpec8 ::= BoolSpec9 ;
+_ . BoolSpec7 ::= BoolSpec8 ;
+_ . BoolSpec6 ::= BoolSpec7 ;
+_ . BoolSpec5 ::= BoolSpec6 ;
+_ . BoolSpec4 ::= BoolSpec5 ;
+_ . BoolSpec3 ::= BoolSpec4 ;
+_ . BoolSpec2 ::= BoolSpec3 ;
+_ . BoolSpec1 ::= BoolSpec2 ;
+_ . BoolSpec  ::= BoolSpec1 ;
+
+NumId    . NumExpr2 ::= Ident ;
+NumConst . NumExpr2 ::= Integer ;
+NumAdd   . NumExpr1 ::= NumExpr1 AdditiveOp NumExpr2;
+NumMult  . NumExpr  ::= NumExpr MultOp NumExpr1;
+
+_ . NumExpr2 ::= "(" NumExpr ")" ;
+_ . NumExpr1 ::= NumExpr2 ;
+_ . NumExpr  ::= NumExpr1;
+
+OpPlus  . AdditiveOp ::= "+" ;
+OpMinus . AdditiveOp ::= "-" ;
+
+OpTimes . MultOp ::= "*" ;
+OpDiv   . MultOp ::= "/" ;
+
+BoolConstTrue.  BoolConst ::= "TRUE";
+BoolConstFalse. BoolConst ::= "FALSE";
+BoolConstFTP.   BoolConst ::= "FTP";
+BoolConstLAST.  BoolConst ::= "LAST";
+
+Op1Alone . OpOne ::= Op1Name;
+Op1MTL.    OpOne ::= Op1Name "[" OrdOp Number "]";
+
+NumberInt . Number ::= Integer;
+_ . Number ::= "<b>" Number "</b>";
+_ . Number ::= "<i>" Number "</i>";
+
+OrdOpLT . OrdOp ::= "<";
+OrdOpLE . OrdOp ::= "<=";
+OrdOpEQ . OrdOp ::= "=";
+OrdOpGT . OrdOp ::= ">";
+OrdOpGE . OrdOp ::= ">=";
+
+Op1Pre.  Op1Name ::= "pre";
+Op1X.    Op1Name ::= "X";
+Op1G.    Op1Name ::= "G";
+Op1F.    Op1Name ::= "F";
+Op1Y.    Op1Name ::= "Y";
+Op1Z.    Op1Name ::= "Z";
+Op1Hist. Op1Name ::= "H";
+Op1O.    Op1Name ::= "O";
+
+Op2S.     OpTwo ::= "S";
+Op2T.     OpTwo ::= "T";
+Op2V.     OpTwo ::= "V";
+Op2U.     OpTwo ::= "U";

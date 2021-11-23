@@ -1,0 +1,19 @@
+{
+  "RTSASpec": {
+    "Internal_variables": [],
+    "Other_variables": [
+      {"name":"param_is_short", "type":"bool"},
+      {"name":"param_value_short", "type":"real"},
+      {"name":"param_value_long", "type":"real"},
+      {"name":"upper_param_limit", "type":"real"},
+      {"name":"lower_param_limit", "type":"real"},
+      {"name":"envelope_issue", "type":"bool"}
+    ],
+    "Requirements": [
+      {
+        "name": "behnazOne",
+        "CoCoSpecCode": "(H(((( ( param_is_short and ( ( ( param_value_short * 1048576 ) >= upper_param_limit ) or ( ( param_value_short * 1048576 ) <= lower_param_limit ) ) ) or ( not param_is_short and ( ( ( param_value_long * 1048576 ) >= upper_param_limit ) or ( ( param_value_long * 1048576 ) <= lower_param_limit ) ) ) )) and ((pre ( not (( ( param_is_short and ( ( ( param_value_short * 1048576 ) >= upper_param_limit ) or ( ( param_value_short * 1048576 ) <= lower_param_limit ) ) ) or ( not param_is_short and ( ( ( param_value_long * 1048576 ) >= upper_param_limit ) or ( ( param_value_long * 1048576 ) <= lower_param_limit ) ) ) )))) or FTP)) => (envelope_issue)))"
+      }
+    ]
+  }
+}
