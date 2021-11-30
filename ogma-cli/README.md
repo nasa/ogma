@@ -19,6 +19,19 @@ verification framework that generates hard real-time C99 code.
 
 - Generating the glue code necessary to work with C structs in Copilot.
 
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/nasa/ogma/gh-pages/images/fret-to-c.gif" alt="Conversion of requirements into C code">
+  <br />
+  <i>Conversion of FRET requirements into C code.</i>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/nasa/ogma/gh-pages/images/simulator.gif" alt="Monitoring within simulation video">
+  <br />
+  <i>Integration of monitors into larger applications (e.g., simulators).</i>
+</p>
+
 ## Table of Contents
 
 - [Installation](#installation)
