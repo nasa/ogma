@@ -34,7 +34,7 @@ module Command.Result
     , isSuccess
     , isError
     )
-   where
+  where
 
 -- Internal imports
 import Data.Location ( Location )
