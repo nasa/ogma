@@ -148,8 +148,8 @@ variableMap varDB varName =
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
-  { varDeclName    :: String
-  , varDeclType    :: String
+  { varDeclName :: String
+  , varDeclType :: String
   }
 
 -- | The message ID to subscribe to.
@@ -165,7 +165,7 @@ data MsgInfo = MsgInfo
 -- | Information on the data provided by a message with a given description,
 -- and the type of the data it carries.
 data MsgData = MsgData
-  { msgDataDesc :: String
+  { msgDataDesc    :: String
   , msgDataVarName :: String
   , msgDataVarType :: String
   }
