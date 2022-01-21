@@ -42,9 +42,9 @@ import           System.IO.Error      ( isDoesNotExistError )
 safeReadFile :: FilePath -> IO (Either String B.ByteString)
 safeReadFile fp =
   catch (return <$> B.readFile fp) $ \e ->
-           if isDoesNotExistError e
-             then return $ Left $ strByteStringFileNotFound fp
-             else return $ Left $ strByteStringCannotOpenFile fp
+    if isDoesNotExistError e
+      then return $ Left $ strByteStringFileNotFound fp
+      else return $ Left $ strByteStringCannotOpenFile fp
 
 -- ** Error messages
 

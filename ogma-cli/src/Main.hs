@@ -56,11 +56,8 @@ module Main
   where
 
 -- External imports
-import Options.Applicative ( execParser )
-
--- External imports
-import Options.Applicative ( ParserInfo, fullDesc, header, helper, info,
-                             progDesc, (<**>) )
+import Options.Applicative (ParserInfo, execParser, fullDesc, header, helper,
+                            info, progDesc, (<**>))
 
 -- Internal imports: CLI parsing, handling, and processing of results.
 import CLI.CommandTop ( CommandOpts, command, commandDesc, commandOptsParser )
