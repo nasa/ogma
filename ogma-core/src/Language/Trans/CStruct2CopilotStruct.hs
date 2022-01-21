@@ -64,8 +64,8 @@ mkCStruct (C.MkExternalDeclarationDeclaration (C.MkDeclaration specifiers initDe
 -- -- | Convert a declaration within a struct into a field declaration.
 buildCField :: C.StructDeclaration -> Either String CField
 buildCField (C.MkStructDeclaration field name)
-   | fieldLength > 0 = CArray <$> fieldType <*> fieldName <*> pure fieldLength
-   | otherwise       = CPlain <$> fieldType <*> fieldName
+    | fieldLength > 0 = CArray <$> fieldType <*> fieldName <*> pure fieldLength
+    | otherwise       = CPlain <$> fieldType <*> fieldName
   where
     fieldType   = extractFieldType (head field)
     fieldName   = extractFieldName (head name)
