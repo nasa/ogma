@@ -8,8 +8,12 @@ import Test.HUnit                     ( assertBool )
 
 -- Internal imports
 import Command.CStructs2Copilot          ( cstructs2Copilot )
-import Command.FRETComponentSpec2Copilot ( fretComponentSpec2Copilot )
-import Command.FRETReqsDB2Copilot        ( fretReqsDB2Copilot )
+import Command.FRETComponentSpec2Copilot ( FRETComponentSpec2CopilotOptions (..)
+                                         , fretComponentSpec2Copilot
+                                         )
+import Command.FRETReqsDB2Copilot        ( FRETReqsDB2CopilotOptions (..)
+                                         , fretReqsDB2Copilot
+                                         )
 import Command.Result                    ( isSuccess )
 
 -- | Run all unit tests on ogma-core.
@@ -102,7 +106,12 @@ testFretComponentSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON requirements
                               -> Bool
                               -> IO ()
 testFretComponentSpec2Copilot file success = do
-    result <- fretComponentSpec2Copilot file False
+    let opts = FRETComponentSpec2CopilotOptions
+                 { fretCS2CopilotUseCoCoSpec = False
+                 , fretCS2CopilotIntType     = "Int64"
+                 , fretCS2CopilotRealType    = "Float"
+                 }
+    result <- fretComponentSpec2Copilot file opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
@@ -128,7 +137,10 @@ testFretReqsDBCoCoSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON
                                -> Bool
                                -> IO ()
 testFretReqsDBCoCoSpec2Copilot file success = do
-    result <- fretReqsDB2Copilot file True
+    let opts = FRETReqsDB2CopilotOptions
+                 { fretReqsDB2CopilotUseCoCoSpec = True
+                 }
+    result <- fretReqsDB2Copilot file opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
