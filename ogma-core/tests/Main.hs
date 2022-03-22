@@ -82,7 +82,7 @@ testCStructs2Copilot file success = do
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
-    let testPass = success == (isSuccess result)
+    let testPass = success == isSuccess result
 
     assertBool errorMsg testPass
   where
@@ -106,7 +106,7 @@ testFretComponentSpec2Copilot file success = do
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
-    let testPass = success == (isSuccess result)
+    let testPass = success == isSuccess result
 
     assertBool errorMsg testPass
   where
@@ -132,7 +132,7 @@ testFretReqsDBCoCoSpec2Copilot file success = do
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
-    let testPass = success == (isSuccess result)
+    let testPass = success == isSuccess result
 
     assertBool errorMsg testPass
   where
