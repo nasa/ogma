@@ -1,5 +1,11 @@
 # Revision history for ogma-core
 
+## [1.0.2] - 2022-03-21
+
+* Version bump 1.0.2 (#43).
+* Fix compilation error in unit tests (#42).
+* Remove reduntant parenthesis (#40).
+
 ## [1.0.1] - 2022-01-21
 
 * Version bump 1.0.1 (#39).
