@@ -40,6 +40,7 @@ import System.IO   ( hPutStrLn, stderr )
 import Command.Result ( Result (Error, Success) )
 import Data.Location  ( Location (..) )
 
+{- HLINT ignore "Use exitSuccess" -}
 -- | Process a result, report any pending messages, and exit with an error code
 -- if necessary.
 processResult :: Result Int -> IO ()
