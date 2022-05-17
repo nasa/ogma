@@ -15,7 +15,7 @@ position = extern "my_position" Nothing
 -- tmlHeaderSize) for array lengths.
 data Position = Position
   { tlmHeader   :: Field "TlmHeader" (Array 16 Word8)
-  , aircraft_id :: Field "aircraft_id" Word32 
+  , aircraft_id :: Field "aircraft_id" Word32
   , time_gps    :: Field "time_gps" Double
   , time_boot   :: Field "time_boot" Double
   , latitute    :: Field "latitude"  Double
