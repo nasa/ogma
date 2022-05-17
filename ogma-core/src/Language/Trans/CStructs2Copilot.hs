@@ -197,7 +197,6 @@ typedInstance cstruct =
 
     instanceBody   = [ instanceTypeOf ]
 
-
     instanceTypeOf = "typeOf" ++ " = " ++ "Struct" ++ " "
                   ++ "(" ++ dataConstructorName ++ " " ++ unwords vs ++ ")"
 
