@@ -85,7 +85,6 @@ cstructs2Copilot fp = do
     printDecls :: [ String ] -> IO ()
     printDecls = putStrLn . unlines
 
-
 -- * Error codes
 
 -- | Encoding of reasons why the command can fail.
