@@ -153,7 +153,6 @@ subcommandCFSApp =
     (CommandOptsCFSApp <$> CLI.CommandCFSApp.commandOptsParser)
     CLI.CommandCFSApp.commandDesc
 
-
 -- | Modifier for the FRET component spec to copilot subcommand, linking the
 -- subcommand options and description to the command @fret-component-spec@ at
 -- top level.
