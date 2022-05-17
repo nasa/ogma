@@ -75,7 +75,6 @@ cstructs2MsgHandlers fp = do
       content <- S.safeReadFile fp'
       return $ C.pTranslationUnit . C.myLexer =<< content
 
-
 -- * Error codes
 
 -- | Encoding of reasons why the command can fail.
