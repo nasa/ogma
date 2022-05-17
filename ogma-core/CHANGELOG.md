@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [Upcoming] - 2022-05-17
+
+* Conformance with style guide (partial) (#45).
+
 ## [1.0.2] - 2022-03-21
 
 * Version bump 1.0.2 (#43).
