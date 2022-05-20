@@ -117,6 +117,7 @@ executable ogma
     CLI.CommandCFSApp
     CLI.CommandCStructs2Copilot
     CLI.CommandCStructs2MsgHandlers
+    CLI.CommandFPrimeApp
     CLI.CommandFretComponentSpec2Copilot
     CLI.CommandFretReqsDB2Copilot
     CLI.CommandROSApp

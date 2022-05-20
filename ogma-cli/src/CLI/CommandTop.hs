@@ -89,6 +89,7 @@ import Command.Result ( Result )
 import qualified CLI.CommandCFSApp
 import qualified CLI.CommandCStructs2Copilot
 import qualified CLI.CommandCStructs2MsgHandlers
+import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandFretComponentSpec2Copilot
 import qualified CLI.CommandFretReqsDB2Copilot
 import qualified CLI.CommandROSApp
@@ -104,6 +105,7 @@ data CommandOpts =
     CommandOptsCFSApp                    CLI.CommandCFSApp.CommandOpts
   | CommandOptsCStructs2Copilot          CLI.CommandCStructs2Copilot.CommandOpts
   | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
+  | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
   | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
   | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
@@ -121,6 +123,7 @@ commandOptsParser = subparser
   (  subcommandCStructs
   <> subcommandMsgHandlers
   <> subcommandCFSApp
+  <> subcommandFPrimeApp
   <> subcommandFretComponentSpec
   <> subcommandFretReqs
   <> subcommandROSApp
@@ -187,6 +190,15 @@ subcommandROSApp =
     (CommandOptsROSApp <$> CLI.CommandROSApp.commandOptsParser)
     CLI.CommandROSApp.commandDesc
 
+-- | Modifier for the FPrime app expansion subcommand, linking the subcommand
+-- options and description to the command @fprime@ at top level.
+subcommandFPrimeApp :: Mod CommandFields CommandOpts
+subcommandFPrimeApp =
+  subcommand
+    "fprime"
+    (CommandOptsFPrimeApp <$> CLI.CommandFPrimeApp.commandOptsParser)
+    CLI.CommandFPrimeApp.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -215,6 +227,8 @@ command (CommandOptsCStructs2Copilot c) =
   id <$> CLI.CommandCStructs2Copilot.command c
 command (CommandOptsCStructs2MsgHandlers c) =
   id <$> CLI.CommandCStructs2MsgHandlers.command c
+command (CommandOptsFPrimeApp c) =
+  id <$> CLI.CommandFPrimeApp.command c
 command (CommandOptsFretComponentSpec2Copilot c) =
   id <$> CLI.CommandFretComponentSpec2Copilot.command c
 command (CommandOptsFretReqsDB2Copilot c) =
