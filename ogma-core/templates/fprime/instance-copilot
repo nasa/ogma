@@ -1,0 +1,3 @@
+  instance copilotMonitor: Ref.Copilot base id 0x2700 \
+    queue size Default.queueSize
+

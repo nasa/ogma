@@ -63,12 +63,16 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/ros/CMakeLists.txt
                      templates/ros/src/.keep
                      templates/ros/package.xml
+                     templates/fprime/CMakeLists.txt
+                     templates/fprime/Dockerfile
+                     templates/fprime/instance-copilot
 library
 
   exposed-modules:
     Command.CFSApp
     Command.CStructs2Copilot
     Command.CStructs2MsgHandlers
+    Command.FPrimeApp
     Command.FRETComponentSpec2Copilot
     Command.FRETReqsDB2Copilot
     Command.Result
