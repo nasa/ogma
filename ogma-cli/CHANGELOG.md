@@ -1,7 +1,8 @@
 # Revision history for ogma-cli
 
-## [Upcoming] - 2022-05-21
+## [1.0.3] - 2022-05-21
 
+* Version bump 1.0.3 (#49).
 * Enable CI (#47).
 * Conformance with style guide (partial) (#45).
 
