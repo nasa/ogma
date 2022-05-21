@@ -8,10 +8,14 @@ import Prelude hiding ((>), (<), div, (++))
 position :: Stream Position
 position = extern "my_position" Nothing
 
--- FIXME: 16 is a magic number
+-- | Position information received from cFS application.
+
+-- We hardcode 16 as the length of the array for the field TmlHeader because
+-- the Haskell compiler does not accept using an identifier (e.g.,
+-- tmlHeaderSize) for array lengths.
 data Position = Position
   { tlmHeader   :: Field "TlmHeader" (Array 16 Word8)
-  , aircraft_id :: Field "aircraft_id" Word32 
+  , aircraft_id :: Field "aircraft_id" Word32
   , time_gps    :: Field "time_gps" Double
   , time_boot   :: Field "time_boot" Double
   , latitute    :: Field "latitude"  Double
