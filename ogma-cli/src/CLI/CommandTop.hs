@@ -208,6 +208,13 @@ command (CommandOptsFretComponentSpec2Copilot c) =
 command (CommandOptsFretReqsDB2Copilot c) =
   id <$> CLI.CommandFretReqsDB2Copilot.command c
 
+-- We indicate to HLint that the use of (id <$>) above should not trigger a
+-- warning. Conceptually, there is a transformation taking place, but no change
+-- is required because the types used by the internal functions and the
+-- top-level command to represent results are the same, and the error codes are
+-- non-overlapping.
+{-# ANN command "HLint: ignore Functor law" #-}
+
 -- * Error codes
 
 -- | Encoding of reasons why the command can fail.
