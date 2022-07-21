@@ -1,5 +1,10 @@
 # Revision history for ogma-cli
 
+## [1.0.4] - 2022-07-21
+
+* Version bump 1.0.4 (#53).
+* Address all hlint suggestions (#51).
+
 ## [1.0.3] - 2022-05-21
 
 * Version bump 1.0.3 (#49).
