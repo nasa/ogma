@@ -1,0 +1,246 @@
+entrypoints Program;
+
+comment "--" ;
+comment "(*" "*)" ;
+
+token Bound ('-'? digit+) ;
+token NegDouble ( '-' digit+ '.' digit+ ('e' '-'? digit+)? ) ;
+token ID        ( (letter | '_' | '~' ) (letter | digit | '_' | '~')* );
+
+RealConst   . RealConst   ::= Double ;
+RealNeg     . RealConst   ::= NegDouble ;
+
+-- grammar Lustre;
+-- 
+Program  . Program ::= [ProgramEntry] ;
+
+[]  . [ProgramEntry] ::= ;
+(:) . [ProgramEntry] ::= ProgramEntry [ProgramEntry] ;
+
+ProgramEntryTypeDef  . ProgramEntry ::= TypeDef;
+ProgramEntryConstant . ProgramEntry ::= Constant;
+ProgramEntryNode     . ProgramEntry ::= Node;
+ProgramEntryFunction . ProgramEntry ::= Function;
+
+TypeDef . TypeDef ::= "type" ID "=" TopLevelType ";" ;
+
+-- constant: 'const' ID (':' type)? '=' expr ';';
+Contant . Constant ::= "const" ID OptType "=" Expr ";" ;
+
+OptType0 . OptType ::= ; 
+OptType1 . OptType ::= ":" Type ; 
+
+-- node:
+--   'node' ID '(' input=varDeclList? ')'
+--   'returns' '(' output=varDeclList? ')' ';'
+--   ('var' local=varDeclList ';')?
+--   'let'
+--     (equation | property | assertion | main | realizabilityInputs | ivc)*
+--   'tel' ';'?
+-- ;
+
+Node . Node ::= "node" ID "(" VarDeclListOpt ")" "returns" "(" VarDeclListOpt ")" ";"
+                VarDeclBlockOpt "let" LetSeq0 "tel" SCOpt ;
+
+VarDeclListOpt0 . VarDeclListOpt ::= ;
+VarDeclListOpt1 . VarDeclListOpt ::= VarDeclList ;
+
+VarDeclBlockOpt0 . VarDeclBlockOpt ::= ;
+VarDeclBlockOpt1 . VarDeclBlockOpt ::= "var" VarDeclList ";" ;
+
+LetSeq0 . LetSeq0 ::= ;
+LetSeq1 . LetSeq0 ::= LetSeq0 LetSeqItem ;
+
+LetSeqItemEquation   . LetSeqItem ::= Equation ;
+LetSeqItemProperty   . LetSeqItem ::= Property ;
+LetSeqItemAssertion  . LetSeqItem ::= Assertion ;
+LetSeqItemMain       . LetSeqItem ::= Main ;
+LetSeqItemRealInputs . LetSeqItem ::= RealizabilityInputs ;
+LetSeqItemIVC        . LetSeqItem ::= IVC ;
+
+-- function:
+--   'function' eID '(' input=varDeclList? ')'
+--   'returns' '(' output=varDeclList? ')' ';'
+-- ;
+Function . Function ::= "function" EID "(" VarDeclListOpt ")" "returns" "(" VarDeclListOpt ")" ";" ;
+
+-- varDeclList: varDeclGroup (';' varDeclGroup)*;
+VarDeclList1 . VarDeclList ::= VarDeclGroup ;
+VarDeclListN . VarDeclList ::= VarDeclList ";" VarDeclGroup ;
+
+-- varDeclGroup: eID (',' eID)* ':' type;
+VarDeclGroup . VarDeclGroup ::= EIDSeq1 ":" Type ;
+
+EIDSeq1Base . EIDSeq1 ::= EID ;
+EIDSeq1Req  . EIDSeq1 ::= EIDSeq1 "," EID ;
+
+-- topLevelType: type                                       # plainType
+--     | 'struct' '{' (ID ':' type) (';' ID ':' type)* '}'  # recordType
+--     | 'enum' '{' ID (',' ID)* '}'                        # enumType
+--     ;
+
+TopLeveTypeSimple . TopLevelType ::= Type ;
+TopLeveTypeStruct . TopLevelType ::= "struct" "{" ID ":" Type StructFields0 "}" ;
+TopLeveTypeEnum   . TopLevelType ::= "enum"   "{" ID EnumFields0 "}" ;
+
+StructFields0 . StructFields0 ::= ;
+StructFieldsN . StructFields0 ::= StructFields0 ";" ID ":" Type ;
+
+EnumFields0 . EnumFields0 ::= ;
+EnumFieldsN . EnumFields0 ::= EnumFields0 "," ID ;
+
+-- type: 'int'                                              # intType
+--     | 'subrange' '[' bound ',' bound ']' 'of' 'int'      # subrangeType
+--     | 'bool'                                             # boolType
+--     | 'real'                                             # realType
+--     | type '[' INT ']'                                   # arrayType
+--     | ID                                                 # userType
+--     ;
+
+SubRangeType . Type ::= "subrange" "[" Bound "," Bound "]" "of" "int" ;
+BoolType     . Type ::= "bool";
+RealType     . Type ::= "real";
+IntType      . Type ::= "int";
+ArrayType    . Type ::= Type "[" Bound "]";
+UserType     . Type ::= ID;
+
+-- property: '--%PROPERTY' eID ';';
+
+Property . Property ::= "--%PROPERTY" EID ";" ;
+
+-- realizabilityInputs: '--%REALIZABLE' (ID (',' ID)*)? ';';
+RealizabilityInputs . RealizabilityInputs ::= "--%REALIZABLE" IdList0 ";" ;
+
+IdList0  . IdList0 ::= ;
+IdListN  . IdList0 ::= IdList1 "," ID ;
+IdList1  . IdList1 ::= ID ;
+IdListN1 . IdList1 ::= IdList1 "," ID ;
+
+-- ivc: '--%IVC' (eID (',' eID)*)? ';';
+IVC . IVC ::= "--%IVC" EIDList0 ";" ;
+
+EIDList0  . EIDList0 ::= ;
+EIDListN  . EIDList0 ::= EIDList1 "," EID ;
+EIDList1  . EIDList1 ::= EID ;
+EIDListN1 . EIDList1 ::= EIDList1 "," EID ;
+
+-- main: '--%MAIN' ';'?;
+Main . Main ::= "--%MAIN" SCOpt ;
+
+SCOpt0 . SCOpt ::= ;
+SCOpt1 . SCOpt ::= ";" ;
+
+-- assertion: 'assert' expr ';';
+
+Assertion . Assertion ::= "assert" Expr ";" ;
+
+-- equation: (lhs | '(' lhs? ')') '=' expr ';';
+
+Equation . Equation ::= EqLHS "=" Expr ";" ;
+
+EqLHS1   . EqLHS ::= Lhs ;
+EqLHSPar . EqLHS ::= "(" ")" ;
+EqLHSLhs . EqLHS ::= "(" Lhs ")" ;
+
+-- lhs: eID (',' eID)*;
+Lhs . Lhs ::= EIDList1;
+
+-- expr: ID                                                       # idExpr
+--     | INT                                                      # intExpr
+--     | REAL                                                     # realExpr
+--     | BOOL                                                     # boolExpr
+--     | op=('real' | 'floor') '(' expr ')'                       # castExpr
+--     | eID '(' (expr (',' expr)*)? ')'                          # callExpr
+--     | 'condact' '(' expr (',' expr)+ ')'                       # condactExpr
+--     | expr '.' ID                                              # recordAccessExpr
+--     | expr '{' ID ':=' expr '}'                                # recordUpdateExpr
+--     | expr '[' expr ']'                                        # arrayAccessExpr
+--     | expr '[' expr ':=' expr ']'                              # arrayUpdateExpr
+--     | 'pre' expr                                               # preExpr
+--     | 'not' expr                                               # notExpr
+--     | '-' expr                                                 # negateExpr
+--     | expr op=('*' | '/' | 'div' | 'mod') expr                 # binaryExpr
+--     | expr op=('+' | '-') expr                                 # binaryExpr
+--     | expr op=('<' | '<=' | '>' | '>=' | '=' | '<>') expr      # binaryExpr
+--     | expr op='and' expr                                       # binaryExpr
+--     | expr op=('or' | 'xor') expr                              # binaryExpr
+--     | <assoc=right> expr op='=>' expr                          # binaryExpr
+--     | <assoc=right> expr op='->' expr                          # binaryExpr
+--     | 'if' expr 'then' expr 'else' expr                        # ifThenElseExpr
+--     | ID '{' ID '=' expr (';' ID '=' expr)* '}'                # recordExpr
+--     | '[' expr (',' expr)* ']'                                 # arrayExpr
+--     | '(' expr (',' expr)* ')'                                 # tupleExpr
+--     ;
+
+IdExpr           . Expr ::= ID;
+IntExpr          . Expr ::= NumConst;
+RealExpr         . Expr ::= RealConst;
+BoolExpr         . Expr ::= BoolConst;
+CastExpr         . Expr ::= CastType "(" Expr ")";
+CondactExpr      . Expr ::= "condact" "(" ExprList1 ")";
+AppExpression    . Expr ::= Expr App;
+PreExpr          . Expr ::= "pre" Expr;
+NotExpr          . Expr ::= "not" Expr;
+NegateExpr       . Expr ::= "-" Expr;
+IfThenElseExpr   . Expr ::= "if" Expr "then" Expr "else" Expr;
+RecordExpr       . Expr ::= ID "{" AssignList1 "}";
+ArrayExpr        . Expr ::= "[" ExprList1 "]" ;
+TupleExpr        . Expr ::= "(" ExprList1 ")" ;
+
+RecordAccessExpr . App ::= "." ID;
+RecordUpdateExpr . App ::= "{" ID ":=" Expr "}";
+ArrayAccessExpr  . App ::= "[" Expr "]" ;
+ArrayUpdateExpr  . App ::= "[" Expr ":=" Expr "]" ;
+CallExpr         . App ::= "(" ExprList0 ")";  -- Changed from EID to Expr
+BinaryExpr       . App ::= OP2 Expr;
+
+CastTypeReal     . CastType ::= "real" ;
+CastTypeInt      . CastType ::= "floor" ;
+
+AssignList1      . AssignList1 ::= ID "=" Expr ;
+AssignListN      . AssignList1 ::= AssignList1 ";" ID "=" Expr ;
+
+
+ExprList0Base . ExprList0 ::= ;
+ExprList0Seq  . ExprList0 ::= ExprList1 ;
+
+ExprList1Base . ExprList1 ::= Expr ;
+ExprList1Seq  . ExprList1 ::= ExprList1 "," Expr ;
+
+
+-- // eID used internally. Users should only use ID.
+-- eID: ID                                                        # baseEID
+--    | eID '[' INT ']'                                           # arrayEID
+--    | eID '.' ID                                                # recordEID
+--    ;
+EIDId     . EID ::= ID ;
+EIDArray  . EID ::= EID "[" Bound "]" ;
+EIDRecord . EID ::= EID "." ID ;
+
+-- ID . ID ::= Ident;
+
+NumConst . NumConst ::= Bound ;
+
+-- REAL: INT '.' INT;
+
+-- BOOL: 'true' | 'false';
+BoolFalse . BoolConst ::= "false";
+BoolTrue  . BoolConst ::= "true";
+
+Op2And   . OP2 ::= "and" ;
+Op2Or    . OP2 ::= "or" ;
+Op2XOr   . OP2 ::= "xor" ;
+Op2Delay . OP2 ::= "->" ;
+Op2Impl  . OP2 ::= "=>" ;
+Op2Eq    . OP2 ::= "=" ;
+Op2NEq   . OP2 ::= "<>" ;
+Op2LT    . OP2 ::= "<" ;
+Op2LE    . OP2 ::= "<=" ;
+Op2GT    . OP2 ::= ">" ;
+Op2GE    . OP2 ::= ">=" ;
+Op2Div   . OP2 ::= "div" ;
+Op2Mod   . OP2 ::= "mod" ;
+Op2Min   . OP2 ::= "-" ;
+Op2Plus  . OP2 ::= "+" ;
+Op2Div   . OP2 ::= "/" ;
+Op2Mult  . OP2 ::= "*" ;
