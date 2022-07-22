@@ -30,7 +30,7 @@
 
 cabal-version:       2.0
 build-type:          Custom
-name:                ogma-language-cocospec
+name:                ogma-language-lustre
 version:             1.6.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
@@ -40,19 +40,20 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
-                     grammar/CoCoSpec.cf
+                     grammar/Lustre.cf
                      src/.keep
-                     tests/cocospec_good
-                     tests/cocospec_bad
+                     tests/lustre_good
+                     tests/lustre_bad
 
-synopsis:            Ogma: Runtime Monitor translator: CoCoSpec Language Frontend
+synopsis:            Ogma: Runtime Monitor translator: Lustre Language Frontend
 
 description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
                      other systems. Ogma extends
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     This library contains a frontend to read CoCoSpec Boolean expressions.
+                     This library contains a frontend to read Lustre Boolean expressions,
+                     extended with several operators related to temporal logic.
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -64,7 +65,7 @@ x-curation: uncurated
 source-repository head
   type:     git
   location: git@github.com:nasa/ogma.git
-  subdir:   ogma-language-cocospec
+  subdir:   ogma-language-lustre
 
 custom-setup
   setup-depends:
@@ -76,16 +77,16 @@ library
 
   exposed-modules:
     -- Automatically generated
-    Language.CoCoSpec.AbsCoCoSpec
-    Language.CoCoSpec.LexCoCoSpec
-    Language.CoCoSpec.ParCoCoSpec
-    Language.CoCoSpec.PrintCoCoSpec
+    Language.Lustre.AbsLustre
+    Language.Lustre.LexLustre
+    Language.Lustre.ParLustre
+    Language.Lustre.PrintLustre
 
   autogen-modules:
-    Language.CoCoSpec.AbsCoCoSpec
-    Language.CoCoSpec.LexCoCoSpec
-    Language.CoCoSpec.ParCoCoSpec
-    Language.CoCoSpec.PrintCoCoSpec
+    Language.Lustre.AbsLustre
+    Language.Lustre.LexLustre
+    Language.Lustre.ParLustre
+    Language.Lustre.PrintLustre
 
   build-depends:
       base  >= 4.11.0.0 && < 5
@@ -115,7 +116,7 @@ test-suite unit-tests
     , test-framework             >= 0.8.2    && < 0.9
     , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4
 
-    , ogma-language-cocospec
+    , ogma-language-lustre
 
   hs-source-dirs:
     tests

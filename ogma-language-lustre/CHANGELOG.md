@@ -1,4 +1,4 @@
-# Revision history for ogma-language-cocospec
+# Revision history for ogma-language-lustre
 
 ## [1.X.Y] - 2025-02-01
 

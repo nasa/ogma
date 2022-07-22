@@ -1,0 +1,5 @@
+- functions:
+  - {name: unsafePerformIO, within: []} # unsafePerformIO cannot appear in any modules
+
+# Ignore in automatically generated files.
+- ignore: {within: [Language.Lustre.AbsLustre, Language.Lustre.ErrM, Language.Lustre.LexLustre, Language.Lustre.ParLustre, Language.Lustre.PrintLustre, Language.Lustre.SkelLustre]}
