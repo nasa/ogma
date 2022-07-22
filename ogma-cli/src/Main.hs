@@ -33,7 +33,7 @@
 --
 -- Ogma is a tool to facilitate integration of safe runtime monitors into other
 -- systems. It takes information from a system created in a language (e.g.,
--- CoCoSpec ) and produces specifications for the runtime verification
+-- Lustre) and produces specifications for the runtime verification
 -- framework <https://cfs.gsfc.nasa.gov/ Copilot>. Currently, features
 -- supported are:
 --

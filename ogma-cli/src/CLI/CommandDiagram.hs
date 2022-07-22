@@ -124,7 +124,8 @@ command c
     parseDiagramMode _           = Nothing
 
     parseDiagramPropFormat :: String -> Maybe Command.Diagram.DiagramPropFormat
-    parseDiagramPropFormat "cocospec" = Just Command.Diagram.CoCoSpec
+    parseDiagramPropFormat "lustre"   = Just Command.Diagram.Lustre
+    parseDiagramPropFormat "cocospec" = parseDiagramPropFormat "lustre"
     parseDiagramPropFormat "inputs"   = Just Command.Diagram.Inputs
     parseDiagramPropFormat "literal"  = Just Command.Diagram.Literal
     parseDiagramPropFormat "smv"      = Just Command.Diagram.SMV
