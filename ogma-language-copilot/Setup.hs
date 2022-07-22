@@ -16,7 +16,7 @@ main :: IO ()
 main = defaultMainWithHooks $ simpleUserHooks
   { hookedPrograms = [ bnfcProgram ]
   , postConf       = \args flags packageDesc localBuildInfo -> do
-      _ <- system "bnfc --haskell -p Language.Copilot -o src/ grammar/Copilot.cf"
+      _ <- system "bnfc --force --haskell -p Language.Copilot -o src/ grammar/Copilot.cf"
       postConf simpleUserHooks args flags packageDesc localBuildInfo
   }
 

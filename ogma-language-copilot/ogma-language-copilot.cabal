@@ -40,6 +40,7 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
+                     grammar/Copilot.cf
 
 synopsis:            Ogma: Runtime Monitor translator: Copilot Language Endpoints
 
@@ -62,13 +63,21 @@ library
 
   exposed-modules:
     Language.Copilot.CStruct
+
+    -- Automatically generated
+    Language.Copilot.AbsCopilot
+    Language.Copilot.LexCopilot
+    Language.Copilot.ParCopilot
+    Language.Copilot.PrintCopilot
+
+  autogen-modules:
     Language.Copilot.AbsCopilot
     Language.Copilot.LexCopilot
     Language.Copilot.ParCopilot
     Language.Copilot.PrintCopilot
 
   build-depends:
-      base >= 4.11.0.0 && < 5
+      base  >= 4.11.0.0 && < 5
     , array >= 0.5.2.0
 
   hs-source-dirs:
