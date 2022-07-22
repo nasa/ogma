@@ -29,7 +29,7 @@
 -- AGREEMENT.
 
 cabal-version:       2.0
-build-type:          Simple
+build-type:          Custom
 
 name:                ogma-language-copilot
 version:             1.0.10
@@ -62,9 +62,14 @@ library
 
   exposed-modules:
     Language.Copilot.CStruct
+    Language.Copilot.AbsCopilot
+    Language.Copilot.LexCopilot
+    Language.Copilot.ParCopilot
+    Language.Copilot.PrintCopilot
 
   build-depends:
-    base >= 4.11.0.0 && < 5
+      base >= 4.11.0.0 && < 5
+    , array >= 0.5.2.0
 
   hs-source-dirs:
     src

@@ -1,0 +1,66 @@
+entrypoints Def, TypedDef;
+
+token VBOOL  ( ( {"True"} | {"False"} ) ) ;
+token VFLOAT ( '-'? digit+ '.' digit+ ('e' '-'? digit+)? ) ;
+token VINT   ( '-'? digit+ ) ;
+
+token OPOne ({"not"}|{"abs"}|{"signum"}|{"complement"}|{"recip"}|{"exp"}|{"sqrt"}|{"log"}|{"sin"}|{"cos"}|{"tan"}|{"asin"}|{"acos"}|{"atan"}|{"sinh"}|{"cosh"}|{"tanh"}|{"asinh"}|{"acosh"}|{"atanh"}|{"cast"}|{"unsafeCast"}) ;
+
+token OPTwo ({"+"}|{"-"}|{"*"}|{"`mod`"}|{"`div`"}|{"/"}|{"**"}|{"`logBase`"}|{"<"}|{"<="}|{"=="}|{"/="}|{">="}|{">"}|{"&&"}|{"||"}|{"`xor`"}|{"==>"}|{".&."}|{"."}|{"."}|{".^."}|{".>>."}|{".<<."}|{".!!"}) ;
+
+token OPThree {"mux"};
+
+[]           . [Def] ::= ;
+(:)          . [Def] ::= Def "\n" [Def];
+
+TypedDef     . TypedDef ::= DefSignatureOpt DefBody ;
+
+DefSignatureOptNothing . DefSignatureOpt ::= ;
+DefSignatureOptJust    . DefSignatureOpt ::= Ident "::" Type "\n" ;
+
+PlainType . Type ::= "Stream" Ident ;
+ArrayType . Type ::= "Stream" "(" "Array" "'" VINT ")" ;
+
+DefBody . DefBody ::= Def ;
+
+MkDef        . Def ::= Ident [Ident] "=" Stream LocalDefs;
+
+[]  . [Ident] ::= ;
+(:) . [Ident] ::= Ident [Ident];
+
+LocalDefNothing . LocalDefs ::= ;
+LocalDefJust    . LocalDefs ::= "where" DefList;
+
+layout "where";
+
+DefList0 . DefList ::= ;
+DefListN . DefList ::= DefList ";" Def;
+
+StreamPar    . Stream ::= "(" Stream ")";
+StreamIdent  . Stream ::= Ident ;
+ConstStream  . Stream ::= "constant" "(" Value ")";
+ExternStream . Stream ::= "extern" String SampleV;
+StreamAppend . Stream ::= ValueList "++" Stream;
+StreamDrop   . Stream ::= "drop" "(" VINT ")" Stream;
+StreamOP1    . Stream ::= OPOne Stream;
+StreamOP2    . Stream ::= Stream OPTwo Stream;
+StreamOP3    . Stream ::= OPThree Stream Stream Stream;
+StreamStruct . Stream ::= Stream "#" Ident;
+
+SampleVNothing . SampleV ::= "Nothing";
+SampleVJust    . SampleV ::= "(" "Just" ValueList ")";
+
+MkValueList    . ValueList ::= "[" [Value] "]" ;
+(:[])          . [Value]   ::= "(" Value ")";
+(:)            . [Value]   ::= "(" Value ")" "," [Value];
+
+ValueBool      . Value     ::= VBOOL;
+ValueFloat     . Value     ::= VFLOAT;
+ValueInt       . Value     ::= VINT;
+ValueArray     . Value     ::= "array" ValueList;
+ValueUID       . Value     ::= Ident [Field];
+
+[]             . [Field]   ::= ;
+(:)            . [Field]   ::= Field [Field];
+
+MkField        . Field     ::= "(" "Field" "(" Value ")" ")";
