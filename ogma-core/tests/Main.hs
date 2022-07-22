@@ -50,7 +50,7 @@ tests =
       )
     -- Should fail because a field is missing in an internal variable
 
-  , testCase "standalone-reqs-db-cocospec"
+  , testCase "standalone-reqs-db-lustre"
       (testStandaloneFDB "tests/fdb-example1.json" True)
     -- Should pass
 
@@ -126,7 +126,7 @@ testStandaloneFCS file success = do
 
 -- | Test standalone backend with FDB format.
 --
--- This test uses the standalone backend with the FDB format and the CoCoSpec
+-- This test uses the standalone backend with the FDB format and the Lustre
 -- property format.
 --
 -- This IO action fails if any of the following are true:
@@ -142,7 +142,7 @@ testStandaloneFDB file success = do
     let opts = CommandOptions
                  { commandInputFile   = file
                  , commandFormat      = "fdb"
-                 , commandPropFormat  = "cocospec"
+                 , commandPropFormat  = "lustre"
                  , commandTypeMapping = []
                  , commandFilename    = "monitor"
                  , commandTargetDir   = targetDir
