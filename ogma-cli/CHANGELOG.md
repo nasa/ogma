@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.0.X] - 2022-09-01
+
+* Update README to reflect that GHC 9.2 is supported (#55).
+
 ## [1.0.4] - 2022-07-21
 
 * Version bump 1.0.4 (#53).
