@@ -60,8 +60,6 @@ library
   build-depends:
       base                   >= 4.11.0.0 && < 5
     , aeson                  >= 2.0.0.0  && < 2.2
-    , text
-    , unordered-containers
 
     , ogma-language-cocospec >= 1.0.0 && < 1.1
     , ogma-language-smv      >= 1.0.0 && < 1.1
