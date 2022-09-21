@@ -62,10 +62,11 @@ _ . BoolSpec2 ::= BoolSpec3 ;
 _ . BoolSpec1 ::= BoolSpec2 ;
 _ . BoolSpec  ::= BoolSpec1 ;
 
-NumId    . NumExpr2 ::= Ident ;
-NumConst . NumExpr2 ::= Integer ;
-NumAdd   . NumExpr1 ::= NumExpr1 AdditiveOp NumExpr2;
-NumMult  . NumExpr  ::= NumExpr MultOp NumExpr1;
+NumId     . NumExpr2 ::= Ident ;
+NumConstI . NumExpr2 ::= Integer ;
+NumConstD . NumExpr2 ::= Double;
+NumAdd    . NumExpr1 ::= NumExpr1 AdditiveOp NumExpr2;
+NumMult   . NumExpr  ::= NumExpr MultOp NumExpr1;
 
 _ . NumExpr2 ::= "(" NumExpr ")" ;
 _ . NumExpr1 ::= NumExpr2 ;
