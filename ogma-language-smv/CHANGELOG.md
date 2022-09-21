@@ -1,5 +1,8 @@
 # Revision history for ogma-language-smv
 
+## [1.0.X] - 2022-09-21
+* Support floating point numbers in SMV expressions (#58).
+
 ## [1.0.4] - 2022-07-21
 
 * Version bump 1.0.4 (#53).
