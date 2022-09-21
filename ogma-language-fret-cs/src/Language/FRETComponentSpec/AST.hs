@@ -221,7 +221,8 @@ applySubstitution sub file =
     mapNumExprIdent f numExpr =
       case numExpr of
         SMV.NumId (SMV.Ident i)    -> SMV.NumId (SMV.Ident (f i))
-        SMV.NumConst c             -> SMV.NumConst c
+        SMV.NumConstI c            -> SMV.NumConstI c
+        SMV.NumConstD c            -> SMV.NumConstD c
         SMV.NumAdd expr1 op expr2  -> SMV.NumAdd
                                             (mapNumExprIdent f expr1)
                                             op
