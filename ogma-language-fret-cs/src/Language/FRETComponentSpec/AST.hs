@@ -41,8 +41,8 @@ module Language.FRETComponentSpec.AST where
 -- External imports
 import           Data.Aeson          ( FromJSON (..), Value (Object), (.:) )
 import           Data.Aeson.Types    ( prependFailure, typeMismatch )
-import qualified Data.HashMap.Strict as M
-import qualified Data.Text           as T
+import           Data.Aeson.Key      ( toString )
+import qualified Data.Aeson.KeyMap   as M
 
 -- Internal imports
 import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
@@ -65,7 +65,7 @@ data FRETComponentSpec = FRETComponentSpec
 instance FromJSON FRETComponentSpec where
   parseJSON (Object v)
       | (specName, Object specValues) <- head (M.toList v)
-      = FRETComponentSpec (T.unpack specName)
+      = FRETComponentSpec (toString specName)
       <$> specValues .: "Internal_variables"
       <*> specValues .: "Other_variables"
       <*> specValues .: "Requirements"
@@ -221,7 +221,8 @@ applySubstitution sub file =
     mapNumExprIdent f numExpr =
       case numExpr of
         SMV.NumId (SMV.Ident i)    -> SMV.NumId (SMV.Ident (f i))
-        SMV.NumConst c             -> SMV.NumConst c
+        SMV.NumConstI c            -> SMV.NumConstI c
+        SMV.NumConstD c            -> SMV.NumConstD c
         SMV.NumAdd expr1 op expr2  -> SMV.NumAdd
                                             (mapNumExprIdent f expr1)
                                             op

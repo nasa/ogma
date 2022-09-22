@@ -106,7 +106,8 @@ const2Copilot BoolConstLAST  = "last"
 -- | Return the Copilot representation of a numeric expression.
 numExpr2Copilot :: NumExpr -> String
 numExpr2Copilot (NumId i)        = ident2Copilot i
-numExpr2Copilot (NumConst i)     = show i
+numExpr2Copilot (NumConstI i)    = show i
+numExpr2Copilot (NumConstD i)    = show i
 numExpr2Copilot (NumAdd x op y)  = "("
                                    ++ numExpr2Copilot x
                                    ++ additiveOp2Copilot op
@@ -209,6 +210,7 @@ boolSpecNames b = case b of
 numExprNames :: NumExpr -> [String]
 numExprNames numExpr = case numExpr of
   NumId (Ident i)         -> [i]
-  NumConst _c             -> []
+  NumConstI _c            -> []
+  NumConstD _c            -> []
   NumAdd expr1 _op expr2  -> numExprNames expr1 ++ numExprNames expr2
   NumMult expr1 _op expr2 -> numExprNames expr1 ++ numExprNames expr2
