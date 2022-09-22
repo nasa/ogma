@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.0.X] - 2022-09-21
+## [1.0.5] - 2022-09-21
 
+* Version bump 1.0.5 (#60).
 * Bump version bounds of Aeson (#55).
 * Support floating point numbers in SMV expressions (#58).
 
