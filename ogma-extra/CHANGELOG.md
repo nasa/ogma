@@ -1,5 +1,9 @@
 # Revision history for ogma-extra
 
+## [1.0.5] - 2022-09-21
+
+* Version bump 1.0.5 (#60).
+
 ## [1.0.4] - 2022-07-21
 
 * Version bump 1.0.4 (#53).
