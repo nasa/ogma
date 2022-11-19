@@ -1,5 +1,9 @@
 # Revision history for ogma-language-cocospec
 
+## [1.0.X] - 2022-11-18
+
+* Update license in cabal file to OtherLicense (#62).
+
 ## [1.0.5] - 2022-09-21
 
 * Version bump 1.0.5 (#60).
