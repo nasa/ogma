@@ -41,6 +41,7 @@ maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
                      grammar/CoCoSpec.cf
+                     src/.keep
                      tests/cocospec_good
                      tests/cocospec_bad
 
