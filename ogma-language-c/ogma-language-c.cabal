@@ -41,6 +41,7 @@ maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
                      grammar/C.cf
+                     src/.keep
                      tests/reduced_geofence_msgs.h
                      tests/reduced_geofence_msgs_bad.h
 
