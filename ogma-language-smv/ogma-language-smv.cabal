@@ -41,6 +41,7 @@ maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
                      grammar/SMV.cf
+                     src/.keep
                      tests/smv_good
                      tests/smv_bad
 
