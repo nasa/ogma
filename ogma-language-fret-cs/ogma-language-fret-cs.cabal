@@ -32,9 +32,9 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-language-fret-cs
-version:             1.0.5
+version:             1.0.6
 homepage:            http://nasa.gov
-license:             AllRightsReserved
+license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov

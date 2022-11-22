@@ -1,5 +1,11 @@
 # Revision history for ogma-language-smv
 
+## [1.0.6] - 2022-11-21
+
+* Version bump 1.0.6 (#64).
+* Update license in cabal file to OtherLicense (#62).
+* Add empty file to keep directory structure in distributable package (#65).
+
 ## [1.0.5] - 2022-09-21
 
 * Version bump 1.0.5 (#60).
