@@ -115,7 +115,7 @@ executable ogma
     CLI.Result
 
   build-depends:
-      base                 >= 4.11.0.0
+      base                 >= 4.11.0.0 && < 5
     , optparse-applicative
     , ogma-core            >= 1.0.0 && < 1.1
 
