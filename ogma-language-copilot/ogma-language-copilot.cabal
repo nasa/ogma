@@ -57,7 +57,7 @@ library
     Language.Copilot.CStruct
 
   build-depends:
-    base
+    base >= 4.11.0.0 && < 5
 
   hs-source-dirs:
     src
