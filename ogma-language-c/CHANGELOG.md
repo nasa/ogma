@@ -1,7 +1,8 @@
 # Revision history for ogma-language-c
 
-## [1.0.X] - 2022-11-21
+## [1.0.6] - 2022-11-21
 
+* Version bump 1.0.6 (#64).
 * Update license in cabal file to OtherLicense (#62).
 * Add empty file to keep directory structure in distributable package (#65).
 

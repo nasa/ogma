@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.0.5
+version:             1.0.6
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -115,7 +115,7 @@ executable ogma
     CLI.Result
 
   build-depends:
-      base                 >= 4.11.0.0
+      base                 >= 4.11.0.0 && < 5
     , optparse-applicative
     , ogma-core            >= 1.0.0 && < 1.1
 
