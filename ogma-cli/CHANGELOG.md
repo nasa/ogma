@@ -3,6 +3,7 @@
 ## [1.0.X] - 2022-11-18
 
 * Update license in cabal file to OtherLicense (#62).
+* Add empty file to keep directory structure in distributable package (#65).
 
 ## [1.0.5] - 2022-09-21
 
