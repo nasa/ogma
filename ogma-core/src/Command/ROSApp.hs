@@ -82,8 +82,10 @@ rosApp :: FilePath       -- ^ Target directory where the application
        -> Maybe FilePath -- ^ File containing a list of handlers used in the
                          --   Copilot specification. The handlers are assumed
                          --   to receive no arguments.
+       -> [String]       -- ^ Additional applications to turn on during testing
+       -> [String]       -- ^ Limited list of variables to use for testing
        -> IO (Result ErrorCode)
-rosApp targetDir fretCSFile varNameFile varDBFile handlersFile =
+rosApp targetDir fretCSFile varNameFile varDBFile handlersFile testingAdditionalApps testingLimitedVars  =
   processResult $ do
     cs    <- parseOptionalFRETCS fretCSFile
     vs    <- parseOptionalVariablesFile varNameFile
@@ -148,6 +150,15 @@ rosApp' targetDir varNames varDB monitors =
         rosFileContents =
           unlines $
             rosLoggerContents varNames vars ids infos datas monitors
+
+    writeFile rosFileName rosFileContents
+
+    let rosFileName =
+          targetDir </> "src" </> "test_requirements.cpp"
+
+        limitedVars = if null testingLimitedVars then varNames else testingLimitedVars
+        rosFileContents =
+          unlines $ testClass varNames vars ids infos datas monitors testingAdditionalApps limitedVars
 
     writeFile rosFileName rosFileContents
 
@@ -728,3 +739,308 @@ fretFormat = JSONFormat
   , specRequirementDesc = Just ".fretish"
   , specRequirementExpr = ".ptLTL"
   }
+
+testClass :: [String]
+          -> [VarDecl]
+          -> [MsgInfoId]
+          -> [MsgInfo]
+          -> [MsgData]
+          -> [String]     -- Monitors
+          -> [String]     -- apps
+          -> [String]     -- vars
+          -> [String]
+testClass varNames variables msgIds msgNames msgDatas monitors otherApps limitedVars =
+    [ "#include <functional>"
+    , "#include <memory>"
+    , ""
+    , "#include \"gtest/gtest.h\""
+    , ""
+    , "#include \"rclcpp/rclcpp.hpp\""
+    , ""
+    , "#include \"std_msgs/msg/bool.hpp\""
+    , "#include \"std_msgs/msg/empty.hpp\""
+    , "#include \"std_msgs/msg/u_int8.hpp\""
+    , "#include \"std_msgs/msg/u_int16.hpp\""
+    , "#include \"std_msgs/msg/u_int32.hpp\""
+    , "#include \"std_msgs/msg/u_int64.hpp\""
+    , "#include \"std_msgs/msg/int8.hpp\""
+    , "#include \"std_msgs/msg/int16.hpp\""
+    , "#include \"std_msgs/msg/int32.hpp\""
+    , "#include \"std_msgs/msg/int64.hpp\""
+    , "#include \"std_msgs/msg/float32.hpp\""
+    , "#include \"std_msgs/msg/float64.hpp\""
+    , "#include <cstdint>"
+    , ""
+    , "using std::placeholders::_1;"
+    , ""
+    , "class RequirementsTest : public rclcpp::Node {"
+    , "  public:"
+    , "    RequirementsTest() : Node(\"requirementstest\") {"
+    , ""
+    , "      declare_parameter(\"testing_seed\", 0); // defaults to 0"
+    , "      declare_parameter(\"testing_deadline\", 2); // defaults to 2 secs"
+    , ""
+    ]
+    ++ publisherConstructors
+    ++ subscriptionConstructors
+    ++
+    [ ""
+    , "      get_parameter(\"testing_seed\", initial_seed);"
+    , "      get_parameter(\"testing_deadline\", deadline);"
+    , ""
+    , "      std::srand((unsigned int)this->initial_seed);"
+    , ""
+    , "      this->seed = this->initial_seed;"
+    , "      this->max_tests = calculate_num_tests();"
+    , ""
+    , "      rclcpp::Duration update_period = rclcpp::Duration::from_seconds(1);"
+    , "      timerInit = rclcpp::create_timer(this->get_node_base_interface(),"
+    , "                                       this->get_node_timers_interface(),"
+    , "                                       this->get_node_clock_interface()->get_clock(),"
+    , "                                       update_period,"
+    , "                                       std::bind(&RequirementsTest::tests_init, this)"
+    , "                                       );"
+    , "    }"
+    , ""
+    , "  private:"
+    , ""
+    ]
+    ++ violationDecls ++
+    [ "    bool violations = false;"
+    , ""
+    ]
+    ++ publisherDeclrs
+    ++ [ "" ]
+    ++ handlerDecls
+    ++ subscriptionDecls
+    ++
+    [ ""
+    , "    int initial_seed; // To be configured using a parameter."
+    , "    int seed;         // To be configured using a parameter."
+    , "    int deadline;     // To be configured using a parameter."
+    , ""
+    , "    int max_tests;"
+    , "    int num_test = 0;"
+    , ""
+    , "    // Calculate the number of tests to be executed"
+    , "    int calculate_num_tests() {"
+    , "       return abs(std::rand());"
+    , "    }"
+    , ""
+    , "    rclcpp::TimerBase::SharedPtr timerResult;"
+    , "    rclcpp::TimerBase::SharedPtr timerInit;"
+    , ""
+    , "    void tests_init () {"
+    , "        timerInit->cancel();"
+    , "        tests_step_send();"
+    , "    }"
+    , ""
+    , "    void tests_step_send () {"
+    ]
+    ++ msgPublishers ++
+    [ ""
+    , "        rclcpp::Duration update_period = rclcpp::Duration::from_seconds(deadline);"
+    , "        timerResult = rclcpp::create_timer(this->get_node_base_interface(),"
+    , "                                           this->get_node_timers_interface(),"
+    , "                                           this->get_node_clock_interface()->get_clock(),"
+    , "                                           update_period,"
+    , "                                           std::bind(&RequirementsTest::tests_step_result, this)"
+    , "                                           );"
+    , "    }"
+    , ""
+    , "    void tests_step_result () {"
+    , "        timerResult->cancel();"
+    ]
+    ++ violationDetectors ++
+    [ ""
+    , "       this->num_test++;"
+    , ""
+    , "       // Stop if out of steps or there have been violations"
+    , "       if ((this->num_test >= this->max_tests) || violations) {"
+    , "         // Terminate using the gtest mechanism to indicate the result"
+    , "         if (violations) {"
+    , "           RCLCPP_INFO(this->get_logger(), \"Tests failed\");"
+    , "           // FAIL();"
+    , "         } else {"
+    , "           RCLCPP_INFO(this->get_logger(), \"Tests succeeded\");"
+    , "           // SUCCEED();"
+    , "         }"
+    , "         rclcpp::shutdown();"
+    , "       } else {"
+    , "         tests_step_send();"
+    , "       }"
+    , "    }"
+    , ""
+    , "    float randomFloat() {"
+    , "       int numerator = rand();"
+    , "       int denominator = rand();"
+    , ""
+    , "       // Ensure that we do not divide by zero."
+    , "       if (denominator == 0) {"
+    , "           denominator = 1;"
+    , "       }"
+    , ""
+    , "       return (float)numerator / (float)denominator;"
+    , "    }"
+    , ""
+    , "    int randomInt() {"
+    , "       return rand();"
+    , "    }"
+    , ""
+    , "    bool randomBool() {"
+    , "       return rand() & 1;"
+    , "    }"
+    , ""
+    , "    void delay(int time) {"
+    , "       rclcpp::sleep_for(std::chrono::seconds(time));"
+    , "    }"
+    , ""
+    , "    void publish_violation (char* requirement) {"
+    , "        RCLCPP_INFO(this->get_logger(), \"Requirement violation. Req: %s; Seed: %d; Step: %d\\n\","
+    , "            requirement, this->initial_seed, this->num_test);"
+    , "    }"
+    , "};"
+    , ""
+    , "int main(int argc, char* argv[]) {"
+    , "  rclcpp::init(argc, argv);"
+    , "  rclcpp::spin(std::make_shared<RequirementsTest>());"
+    , "  rclcpp::shutdown();"
+    , "  return 0;"
+    , "}"
+    ]
+
+  where
+
+    publisherConstructors =
+        concatMap toMsgPublisher vars
+      where
+        vars = filter (\(x, _) -> (varDeclName x `elem` limitedVars)) $ zip variables msgIds
+
+        toMsgPublisher (nm, msgId) =
+            [ "      " ++ publisher
+                       ++ " = this->create_publisher<" ++ ty ++ ">("
+            , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ");"
+            , ""
+            ]
+          where
+            ty        = varDeclMsgType nm
+            publisher = varDeclName nm ++ "_publisher_"
+            topic     = msgId
+
+            unknownVar   :: Int
+            unknownVar   = 10
+
+    subscriptionConstructors :: [String]
+    subscriptionConstructors =
+        msgSubscriptionS
+      where
+        msgSubscriptionS :: [String]
+        msgSubscriptionS     = concat
+                             $ intersperse [""]
+                             $ map toMsgSubscription monitors
+        toMsgSubscription nm =
+            [ "      " ++ subscription
+                       ++ " = this->create_subscription<" ++ ty ++ ">("
+            , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
+            , "        std::bind(&RequirementsTest::" ++ callback ++ ", this, _1));"
+            ]
+          where
+            ty           = "std_msgs::msg::Empty"
+            topic        = "copilot/" ++ nm
+            subscription = nm ++ "_subscription_"
+            callback     = nm ++ "_callback"
+
+            unknownVar   :: Int
+            unknownVar   = 10
+
+    publisherDeclrs =
+        msgPublisherDeclrs
+      where
+
+        msgPublisherDeclrs :: [String]
+        msgPublisherDeclrs = concat
+                           $ intersperse [""]
+                           $ map toPublisherDecl
+                           $ filter (\x -> (varDeclName x `elem` limitedVars))
+                           $ variables
+        toPublisherDecl nm =
+            [ "    rclcpp::Publisher<" ++ ty ++ ">::SharedPtr "
+                ++ publisher ++ ";"
+            ]
+          where
+            ty        = varDeclMsgType nm
+            publisher = varDeclName nm ++ "_publisher_"
+
+    handlerDecls = concat
+                 $ intersperse [""]
+                 $ map toCallback monitors
+      where
+        toCallback varDecl =
+            [ "    void " ++ callback
+                          ++ "(const " ++ ty ++ "::SharedPtr msg) {"
+            , "        this->violation_" ++ varDecl ++ " = true;"
+            , "        this->violations = true;"
+            , "    }"
+            ]
+          where
+            ty = "std_msgs::msg::Empty"
+            callback = varDecl ++ "_callback"
+
+    subscriptionDecls =
+        map (\x -> "    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr " ++ x ++ "_subscription_;" ) monitors
+      where
+
+    msgPublishers =
+        concatMap msgPublisher vars
+      where
+        msgPublisher (ctype, varname, randomType, msgType, publisherName) =
+             [ "       " ++ ctype ++ " " ++ varname ++ " = " ++ randomType ++ "();"
+             , "       auto " ++ varname ++ "_msg = " ++ msgType ++ "();"
+             , "       " ++ varname ++ "_msg.data = " ++ varname ++ ";"
+             , "       " ++ publisherName ++ "->publish(" ++ varname ++ "_msg);"
+             , ""
+             ]
+
+        vars = map (\decl -> (varDeclType decl, varDeclName decl ++ "_data", randomFunction decl, varDeclMsgType decl, varDeclName decl ++ "_publisher_"))
+             $ filter (\x -> (varDeclName x `elem` limitedVars))
+             $ variables
+
+
+    violationDetectors =
+        concatMap
+          (\x -> [ "        if (this->violation_" ++ x ++ ") {"
+                 , "            this->publish_violation(\"" ++ x ++ "\");"
+                 , "        }"
+                 ])
+          monitors
+
+    violationDecls =
+        map (\x -> "    bool violation_" ++ x ++ " = false;" ) monitors
+
+    varDeclMsgType varDecl = case varDeclType varDecl of
+      "bool"     -> "std_msgs::msg::Bool"
+      "uint8_t"  -> "std_msgs::msg::UInt8"
+      "uint16_t" -> "std_msgs::msg::UInt16"
+      "uint32_t" -> "std_msgs::msg::UInt32"
+      "uint64_t" -> "std_msgs::msg::UInt64"
+      "int8_t"   -> "std_msgs::msg::Int8"
+      "int16_t"  -> "std_msgs::msg::Int16"
+      "int32_t"  -> "std_msgs::msg::Int32"
+      "int64_t"  -> "std_msgs::msg::Int64"
+      "float"    -> "std_msgs::msg::Float32"
+      "double"   -> "std_msgs::msg::Float64"
+      def        -> def
+
+    randomFunction varDecl = case varDeclType varDecl of
+      "bool"     -> "randomBool"
+      "uint8_t"  -> "randomInt"
+      "uint16_t" -> "randomInt"
+      "uint32_t" -> "randomInt"
+      "uint64_t" -> "randomInt"
+      "int8_t"   -> "randomInt"
+      "int16_t"  -> "randomInt"
+      "int32_t"  -> "randomInt"
+      "int64_t"  -> "randomInt"
+      "float"    -> "randomFloat"
+      "double"   -> "randomFloat"
+      def        -> def
