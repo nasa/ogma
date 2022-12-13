@@ -17,6 +17,10 @@ ament_target_dependencies(copilot rclcpp std_msgs)
 # add_executable(copilot_logger src/copilot_logger.cpp)
 # ament_target_dependencies(copilot_logger rclcpp std_msgs)
 
+# Uncomment to enable compiling the requirement tests
+# add_executable(test_requirements src/test_requirements.cpp)
+# ament_target_dependencies(test_requirements rclcpp std_msgs)
+
 install(TARGETS
   copilot
   DESTINATION lib/${PROJECT_NAME})
