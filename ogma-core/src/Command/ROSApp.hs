@@ -44,6 +44,7 @@
 module Command.ROSApp
     ( command
     , CommandOptions(..)
+    , Node(Node)
     , ErrorCode
     )
   where
@@ -119,9 +120,17 @@ command' options (ExprPair exprT) = do
                      (map (\x -> (x, Nothing)))
                      rs
 
-    let appData   = AppData variables monitors' copilotM
+    let appData =
+          AppData variables monitors' copilotM testingAdditionalApps testingVars
+
         variables = mapMaybe (variableMap varDB) varNames
         monitors' = mapMaybe (monitorMap varDB) monitors
+
+        testingVars
+          | null testingLimitedVars
+          = variables
+          | otherwise
+          = filter (\x -> varDeclName x `elem` testingLimitedVars) variables
 
     return appData
 
@@ -144,6 +153,9 @@ command' options (ExprPair exprT) = do
 
     processSpec spec' expr' fp' =
       Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+
+    testingAdditionalApps = commandTestingApps options
+    testingLimitedVars    = commandTestingVars options
 
 -- ** Argument processing
 
@@ -174,6 +186,10 @@ data CommandOptions = CommandOptions
   , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
                                          -- variables to make available to the
                                          -- template.
+  , commandTestingApps :: [Node]         -- ^ Additional applications to turn
+                                         -- on during testing.
+  , commandTestingVars :: [String]       -- ^ Limited list of variables to use
+                                         -- for testing.
   }
 
 -- | Return the variable information needed to generate declarations
@@ -192,7 +208,7 @@ variableMap varDB varName = do
   let typeMsg' = fromMaybe
                    (topicType topicDef)
                    (typeFromType <$> findType varDB varName "ros/message" "C")
-  return $ VarDecl varName typeVar' mid typeMsg'
+  return $ VarDecl varName typeVar' mid typeMsg' (randomBaseType typeVar')
 
 -- | Return the monitor information needed to generate declarations and
 -- publishers for the given monitor info, and variable database.
@@ -212,6 +228,7 @@ data VarDecl = VarDecl
     , varDeclType    :: String
     , varDeclId      :: String
     , varDeclMsgType :: String
+    , varDeclRandom  :: String
     }
   deriving Generic
 
@@ -228,12 +245,40 @@ data Monitor = Monitor
 
 instance ToJSON Monitor
 
+-- | A package-qualified ROS 2 node name.
+data Node = Node
+    { nodePackage :: String
+    , nodeName    :: String
+    }
+  deriving Generic
+
+instance ToJSON Node
+
 -- | Data that may be relevant to generate a ROS application.
 data AppData = AppData
-  { variables :: [VarDecl]
-  , monitors  :: [Monitor]
-  , copilot   :: Maybe Command.Standalone.AppData
+  { variables        :: [VarDecl]
+  , monitors         :: [Monitor]
+  , copilot          :: Maybe Command.Standalone.AppData
+  , testingApps      :: [Node]
+  , testingVariables :: [VarDecl]
   }
   deriving (Generic)
 
 instance ToJSON AppData
+
+-- | Name of the function to be used to generate random values of a given type.
+randomBaseType :: String -- ^ Type to generate random values of.
+               -> String
+randomBaseType ty = case ty of
+  "bool"     -> "randomBool"
+  "uint8_t"  -> "randomInt"
+  "uint16_t" -> "randomInt"
+  "uint32_t" -> "randomInt"
+  "uint64_t" -> "randomInt"
+  "int8_t"   -> "randomInt"
+  "int16_t"  -> "randomInt"
+  "int32_t"  -> "randomInt"
+  "int64_t"  -> "randomInt"
+  "float"    -> "randomFloat"
+  "double"   -> "randomFloat"
+  def        -> def
