@@ -6,6 +6,7 @@ ARG ROS_PATH=/home/${USER}/spaceros/
 
 RUN mkdir -p ${PACKAGE_PATH}/src/
 ADD copilot ${PACKAGE_PATH}/src/copilot
+ADD test_requirements ${PACKAGE_PATH}/demo/test_requirements
 USER root
 RUN chown -R ${USER} ${PACKAGE_PATH}
 USER ${USER}
