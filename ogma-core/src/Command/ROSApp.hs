@@ -154,7 +154,7 @@ rosApp' targetDir varNames varDB monitors =
     writeFile rosFileName rosFileContents
 
     let rosFileName =
-          targetDir </> "src" </> "test_requirements.cpp"
+          targetDir </> "test_requirements" </> "src" </> "test_requirements.cpp"
 
         limitedVars = if null testingLimitedVars then varNames else testingLimitedVars
         rosFileContents =

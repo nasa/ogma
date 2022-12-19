@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(copilot)
+project(test_requirements)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -10,15 +10,12 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_executable(copilot src/copilot_monitor.cpp)
-ament_target_dependencies(copilot rclcpp std_msgs)
-
-# Uncomment to enable compiling the copilot logger
-# add_executable(copilot_logger src/copilot_logger.cpp)
-# ament_target_dependencies(copilot_logger rclcpp std_msgs)
+# Uncomment to enable compiling the requirement tests
+add_executable(test_requirements src/test_requirements.cpp)
+ament_target_dependencies(test_requirements rclcpp std_msgs)
 
 install(TARGETS
-  copilot
+  test_requirements
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

@@ -64,6 +64,9 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/ros/copilot/CMakeLists.txt
                      templates/ros/copilot/src/.keep
                      templates/ros/copilot/package.xml
+                     templates/ros/test_requirements/CMakeLists.txt
+                     templates/ros/test_requirements/src/.keep
+                     templates/ros/test_requirements/package.xml
                      templates/fprime/CMakeLists.txt
                      templates/fprime/Dockerfile
                      templates/fprime/instance-copilot
