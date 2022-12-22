@@ -1,0 +1,13 @@
+deflogin off
+startup_message off
+
+chdir /demo
+screen -t "Copilot RV" bash -c 'bash --init-file <(echo "source /home/spaceros-user/spaceros/install/setup.bash; set -x; ros2 run copilot copilot")'
+
+split
+focus
+screen -t "Requirements testing" bash -c 'sleep 2; bash --init-file <( echo "source /home/spaceros-user/spaceros/install/setup.bash; set -x; ros2 run test_requirements test_requirements")'
+
+split
+focus
+screen -t "<interactive shell>" bash -c 'bash --init-file <(echo "echo This is an interactive shell. Send data to topics with ros2 topic pub \<type\> \<data\>; source /home/spaceros-user/spaceros/install/setup.bash")'
