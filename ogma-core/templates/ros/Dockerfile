@@ -15,3 +15,8 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR ${PACKAGE_PATH}
 RUN source /opt/spaceros/install/setup.bash && \
     colcon build
+
+ADD screenrc /home/spaceros-user/.screenrc
+USER root
+RUN chown -R spaceros-user /home/spaceros-user/.screenrc
+USER spaceros-user
