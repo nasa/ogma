@@ -61,6 +61,7 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/copilot-cfs/fsw/src/copilot_cfs.h
                      templates/copilot-cfs/fsw/src/copilot_cfs_events.h
                      templates/ros/Dockerfile
+                     templates/ros/screenrc
                      templates/ros/copilot/CMakeLists.txt
                      templates/ros/copilot/src/.keep
                      templates/ros/copilot/package.xml
