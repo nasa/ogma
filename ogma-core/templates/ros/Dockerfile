@@ -21,5 +21,6 @@ RUN source /home/spaceros-user/spaceros/install/setup.bash && colcon build --pac
 
 ADD screenrc /home/spaceros-user/.screenrc
 USER root
+ADD screenrc /root/.screenrc
 RUN chown -R spaceros-user /home/spaceros-user/.screenrc
 USER spaceros-user
