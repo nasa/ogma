@@ -18,5 +18,6 @@ RUN source /opt/spaceros/install/setup.bash && \
 
 ADD screenrc /home/spaceros-user/.screenrc
 USER root
+ADD screenrc /root/.screenrc
 RUN chown -R spaceros-user /home/spaceros-user/.screenrc
 USER spaceros-user
