@@ -66,6 +66,11 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                        applications to make external data in structs available
                        to a Copilot monitor.
                      .
+                     - Generating
+		       <https://ros.org Robot Operating System (ROS2)>
+		       applications that use Copilot for monitoring data
+                       received from different topics.
+                     .
                      The main invocation with @--help@ lists sub-commands available.
                      .
                      >$ ogma --help
@@ -85,6 +90,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
                      >                           Database
+                     >  ros                      Generate a ROS2 monitoring application
                      .
                      For further information, see:
                      .
@@ -95,6 +101,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      - <https://github.com/NASA-SW-VnV/fret The FRET repository>.
                      .
                      - <https://cfs.gsfc.nasa.gov/ The NASA Core Flight System web page>.
+                     .
+                     - <https://ros.org/ The Robot Operating System (ROS2) web page>.
                      .
                      - <https://ntrs.nasa.gov/citations/20200003164 "Copilot 3">, Perez, Dedden and Goodloe. 2020.
                      .
