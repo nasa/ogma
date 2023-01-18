@@ -44,7 +44,7 @@ module CLI.CommandROSApp
 
 -- External imports
 import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
-                             strOption, value )
+                             strOption, value, many)
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -61,6 +61,8 @@ data CommandOpts = CommandOpts
   , rosAppVarNames :: Maybe String
   , rosAppVarDB    :: Maybe String
   , rosAppHandlers :: Maybe String
+  , rosAppTestingApps :: [String]
+  , rosAppTestingVars :: [String]
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -76,6 +78,8 @@ command c =
     (rosAppVarNames c)
     (rosAppVarDB c)
     (rosAppHandlers c)
+    (rosAppTestingApps c)
+    (rosAppTestingVars c)
 
 -- * CLI
 
@@ -122,6 +126,19 @@ commandOptsParser = CommandOpts
             <> help strROSAppHandlerListArgDesc
             )
         )
+  <*> many (strOption
+              (  long "testing-app"
+              <> metavar "package:node"
+              <> help strROSAppROSNodesTestingListArgDesc
+              )
+           )
+  <*> many (strOption
+              (  long "testing-vars"
+              <> metavar "variable_name"
+              <> showDefault
+              <> help strROSAppHandlerListArgDesc
+              )
+           )
 
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
@@ -146,3 +163,13 @@ strROSAppVarDBArgDesc =
 strROSAppHandlerListArgDesc :: String
 strROSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Argument packages to tested list to ROS app generation command
+strROSAppROSNodesTestingListArgDesc :: String
+strROSAppROSNodesTestingListArgDesc =
+  "Turn on ROS2 package node during testing"
+
+-- | Argument variables to be tested list to ROS app generation command
+strROSAppVarsTestingListArgDesc :: String
+strROSAppVarsTestingListArgDesc =
+  "Limit random input generation to these variables"
