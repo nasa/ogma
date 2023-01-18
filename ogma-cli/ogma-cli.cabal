@@ -86,6 +86,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  structs                  Generate Copilot structs from C structs
                      >  handlers                 Generate message handlers from C structs
                      >  cfs                      Generate a complete CFS/Copilot application
+                     >  fprime                   Generate a complete F' monitoring component
                      >  fret-component-spec      Generate a Copilot file from a FRET Component
                      >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
