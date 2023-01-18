@@ -50,6 +50,9 @@
 -- * Generate NASA core Flight System (cFS) applications for runtime monitoring
 -- using Copilot.
 --
+-- * Generate Robot Operating System (ROS) applications for runtime monitoring
+-- using Copilot.
+--
 -- More information can be obtained by calling ogma with the argument @--help@.
 module Main
     ( main )
