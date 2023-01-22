@@ -1,6 +1,8 @@
 # Revision history for ogma-cli
 
-## [1.0.X] - 2023-01-21
+## [1.0.7] - 2023-01-21
+* Version bump 1.0.7 (#69).
+* Replace tabs in cabal file (#69).
 * Introduce new ROS2 backend (#56).
 
 ## [1.0.6] - 2022-11-21
