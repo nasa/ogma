@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Custom
 
 name:                ogma-language-c
-version:             1.0.6
+version:             1.0.7
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
