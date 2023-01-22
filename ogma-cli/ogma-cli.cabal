@@ -67,8 +67,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                        to a Copilot monitor.
                      .
                      - Generating
-		       <https://ros.org Robot Operating System (ROS2)>
-		       applications that use Copilot for monitoring data
+                       <https://ros.org Robot Operating System (ROS2)>
+                       applications that use Copilot for monitoring data
                        received from different topics.
                      .
                      The main invocation with @--help@ lists sub-commands available.
