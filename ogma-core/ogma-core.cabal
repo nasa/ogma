@@ -60,7 +60,9 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/copilot-cfs/fsw/src/copilot_cfs_version.h
                      templates/copilot-cfs/fsw/src/copilot_cfs.h
                      templates/copilot-cfs/fsw/src/copilot_cfs_events.h
-
+                     templates/ros/CMakeLists.txt
+                     templates/ros/src/.keep
+                     templates/ros/package.xml
 library
 
   exposed-modules:
@@ -70,6 +72,7 @@ library
     Command.FRETComponentSpec2Copilot
     Command.FRETReqsDB2Copilot
     Command.Result
+    Command.ROSApp
 
     Data.Location
 
@@ -92,6 +95,7 @@ library
     , aeson                   >= 2.0.0.0  && < 2.2
     , filepath
     , IfElse
+    , mtl
 
     , ogma-extra              >= 1.0.0 && < 1.1
     , ogma-language-c         >= 1.0.0 && < 1.1
