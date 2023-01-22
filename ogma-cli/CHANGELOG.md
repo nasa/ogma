@@ -1,5 +1,8 @@
 # Revision history for ogma-cli
 
+## [1.0.X] - 2023-01-21
+* Introduce new ROS2 backend (#56).
+
 ## [1.0.6] - 2022-11-21
 
 * Version bump 1.0.6 (#64).
