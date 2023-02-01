@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2023-02-01
+
+* Support inequality operator in SMV and CoCoSpec (#71).
+
 ## [1.0.7] - 2023-01-21
 * Version bump 1.0.7 (#69).
 * Introduce new ROS2 backend (#56).
