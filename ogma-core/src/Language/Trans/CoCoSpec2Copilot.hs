@@ -113,6 +113,7 @@ numOpTwoIn2Copilot NumOp2Mult  = "*"
 -- operator.
 opTwoNum2Copilot :: BoolNumOp -> String
 opTwoNum2Copilot BoolNumOp2Eq = "=="
+opTwoNum2Copilot BoolNumOp2Ne = "/="
 opTwoNum2Copilot BoolNumOp2Le = "<="
 opTwoNum2Copilot BoolNumOp2Lt = "<"
 opTwoNum2Copilot BoolNumOp2Gt = ">="

@@ -1,5 +1,9 @@
 # Revision history for ogma-language-cocospec
 
+## [1.X.Y] - 2023-02-01
+
+* Support inequality operator (#71).
+
 ## [1.0.7] - 2023-01-21
 * Version bump 1.0.7 (#69).
 * Specify upper bound constraint for Cabal. Refs #69.

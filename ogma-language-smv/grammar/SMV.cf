@@ -93,6 +93,7 @@ _ . Number ::= "<i>" Number "</i>";
 OrdOpLT . OrdOp ::= "<";
 OrdOpLE . OrdOp ::= "<=";
 OrdOpEQ . OrdOp ::= "=";
+OrdOpNE . OrdOp ::= "!=";
 OrdOpGT . OrdOp ::= ">";
 OrdOpGE . OrdOp ::= ">=";
 
