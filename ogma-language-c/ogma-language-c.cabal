@@ -54,6 +54,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      This library contains a frontend to read C header files.
 
+-- Ogma packages should be uncurated so that only the official maintainers make
+-- changes.
+--
+-- Because this is a NASA project, we want to make sure that users obtain
+-- exactly what we publish, unmodified by anyone external to our project.
+x-curation: uncurated
+
 custom-setup
   setup-depends:
       base    >= 4.11.0.0 && < 5
