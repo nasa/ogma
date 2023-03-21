@@ -109,6 +109,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      - <https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf "From Requirements to Autonomous Flight">, Dutle et al. 2020.
 
+-- Ogma packages should be uncurated so that only the official maintainers make
+-- changes.
+--
+-- Because this is a NASA project, we want to make sure that users obtain
+-- exactly what we publish, unmodified by anyone external to our project.
+x-curation: uncurated
+
 executable ogma
 
   main-is:
