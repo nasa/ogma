@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2023-03-21
+
+* Introduce new F' (FPrime) backend (#77).
+
 ## [1.0.7] - 2023-01-21
 * Version bump 1.0.7 (#69).
 * Replace tabs in cabal file (#69).
