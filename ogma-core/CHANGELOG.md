@@ -4,6 +4,7 @@
 
 * Support inequality operator in SMV and CoCoSpec (#71).
 * Introduce new F' (FPrime) backend (#77).
+* Mark package as uncurated (#74).
 
 ## [1.0.7] - 2023-01-21
 * Version bump 1.0.7 (#69).

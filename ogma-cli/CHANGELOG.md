@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2023-03-21
 
 * Introduce new F' (FPrime) backend (#77).
+* Mark package as uncurated (#74).
 
 ## [1.0.7] - 2023-01-21
 * Version bump 1.0.7 (#69).
