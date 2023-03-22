@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-extra
-version:             1.0.7
+version:             1.0.8
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -51,6 +51,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      This package implements internal extensions to existing libraries
                      and modules that are used in several ogma packages and their
                      testing facilities.
+
+-- Ogma packages should be uncurated so that only the official maintainers make
+-- changes.
+--
+-- Because this is a NASA project, we want to make sure that users obtain
+-- exactly what we publish, unmodified by anyone external to our project.
+x-curation: uncurated
 
 library
 

@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.0.7
+version:             1.0.8
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -86,6 +86,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  structs                  Generate Copilot structs from C structs
                      >  handlers                 Generate message handlers from C structs
                      >  cfs                      Generate a complete CFS/Copilot application
+                     >  fprime                   Generate a complete F' monitoring component
                      >  fret-component-spec      Generate a Copilot file from a FRET Component
                      >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
@@ -108,6 +109,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      - <https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf "From Requirements to Autonomous Flight">, Dutle et al. 2020.
 
+-- Ogma packages should be uncurated so that only the official maintainers make
+-- changes.
+--
+-- Because this is a NASA project, we want to make sure that users obtain
+-- exactly what we publish, unmodified by anyone external to our project.
+x-curation: uncurated
+
 executable ogma
 
   main-is:
@@ -117,6 +125,7 @@ executable ogma
     CLI.CommandCFSApp
     CLI.CommandCStructs2Copilot
     CLI.CommandCStructs2MsgHandlers
+    CLI.CommandFPrimeApp
     CLI.CommandFretComponentSpec2Copilot
     CLI.CommandFretReqsDB2Copilot
     CLI.CommandROSApp
@@ -126,7 +135,7 @@ executable ogma
   build-depends:
       base                 >= 4.11.0.0 && < 5
     , optparse-applicative
-    , ogma-core            >= 1.0.7 && < 1.1
+    , ogma-core            >= 1.0.8 && < 1.1
 
   hs-source-dirs:
     src

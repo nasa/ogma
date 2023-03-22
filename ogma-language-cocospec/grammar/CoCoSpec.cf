@@ -81,6 +81,7 @@ NumOp2Minus. NumOp2In ::= "-" ;
 NumOp2Mult . NumOp2In ::= "*" ;
 
 BoolNumOp2Eq . BoolNumOp ::= "=" ;
+BoolNumOp2Ne . BoolNumOp ::= "<>" ;
 BoolNumOp2Le . BoolNumOp ::= "<=" ;
 BoolNumOp2Lt . BoolNumOp ::= "<" ;
 BoolNumOp2Gt . BoolNumOp ::= ">" ;

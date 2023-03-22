@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.0.7
+version:             1.0.8
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -63,12 +63,24 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/ros/CMakeLists.txt
                      templates/ros/src/.keep
                      templates/ros/package.xml
+                     templates/fprime/CMakeLists.txt
+                     templates/fprime/Dockerfile
+                     templates/fprime/instance-copilot
+
+-- Ogma packages should be uncurated so that only the official maintainers make
+-- changes.
+--
+-- Because this is a NASA project, we want to make sure that users obtain
+-- exactly what we publish, unmodified by anyone external to our project.
+x-curation: uncurated
+
 library
 
   exposed-modules:
     Command.CFSApp
     Command.CStructs2Copilot
     Command.CStructs2MsgHandlers
+    Command.FPrimeApp
     Command.FRETComponentSpec2Copilot
     Command.FRETReqsDB2Copilot
     Command.Result
@@ -97,13 +109,13 @@ library
     , IfElse
     , mtl
 
-    , ogma-extra              >= 1.0.0 && < 1.1
-    , ogma-language-c         >= 1.0.0 && < 1.1
-    , ogma-language-cocospec  >= 1.0.0 && < 1.1
-    , ogma-language-copilot   >= 1.0.0 && < 1.1
-    , ogma-language-fret-cs   >= 1.0.0 && < 1.1
-    , ogma-language-fret-reqs >= 1.0.0 && < 1.1
-    , ogma-language-smv       >= 1.0.0 && < 1.1
+    , ogma-extra              >= 1.0.8 && < 1.1
+    , ogma-language-c         >= 1.0.8 && < 1.1
+    , ogma-language-cocospec  >= 1.0.8 && < 1.1
+    , ogma-language-copilot   >= 1.0.8 && < 1.1
+    , ogma-language-fret-cs   >= 1.0.8 && < 1.1
+    , ogma-language-fret-reqs >= 1.0.8 && < 1.1
+    , ogma-language-smv       >= 1.0.8 && < 1.1
 
   hs-source-dirs:
     src

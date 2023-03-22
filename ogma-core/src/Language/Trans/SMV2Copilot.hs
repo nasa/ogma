@@ -134,6 +134,7 @@ ordOp2Copilot :: OrdOp -> String
 ordOp2Copilot OrdOpLT = "<"
 ordOp2Copilot OrdOpLE = "<="
 ordOp2Copilot OrdOpEQ = "=="
+ordOp2Copilot OrdOpNE = "/="
 ordOp2Copilot OrdOpGT = ">"
 ordOp2Copilot OrdOpGE = ">="
 

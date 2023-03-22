@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Custom
 
 name:                ogma-language-cocospec
-version:             1.0.7
+version:             1.0.8
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -54,6 +54,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      This library contains a frontend to read CoCoSpec Boolean expressions, used by
                      the tool FRET to capture requirement specifications.
+
+-- Ogma packages should be uncurated so that only the official maintainers make
+-- changes.
+--
+-- Because this is a NASA project, we want to make sure that users obtain
+-- exactly what we publish, unmodified by anyone external to our project.
+x-curation: uncurated
 
 custom-setup
   setup-depends:
