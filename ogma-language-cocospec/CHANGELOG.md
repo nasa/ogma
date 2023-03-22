@@ -1,7 +1,8 @@
 # Revision history for ogma-language-cocospec
 
-## [1.X.Y] - 2023-03-21
+## [1.0.8] - 2023-03-21
 
+* Version bump 1.0.8 (#81).
 * Support inequality operator (#71).
 * Mark package as uncurated (#74).
 
