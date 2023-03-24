@@ -117,7 +117,7 @@ Available commands:
                            Specification
   fret-reqs-db             Generate a Copilot file from a FRET Requirements
                            Database
-  ros                      Generate a ROS2 monitoring package
+  ros                      Generate a ROS 2 monitoring package
 ```
 
 ## Language transformations: FRET

@@ -81,7 +81,7 @@ command c =
 
 -- | ROS command description
 commandDesc :: String
-commandDesc = "Generate a ROS2 monitoring package"
+commandDesc = "Generate a ROS 2 monitoring package"
 
 -- | Subparser for the @ros@ command, used to generate a Robot Operating System
 -- application connected to Copilot monitors.
