@@ -36,7 +36,7 @@
 
 entrypoints BoolSpec;
 
-BoolSpecSignal.  BoolSpec9 ::= Ident;
+BoolSpecSignal.  BoolSpec9 ::= Ident ArgOpt;
 BoolSpecConst.   BoolSpec9 ::= BoolConst ;
 BoolSpecNum.     BoolSpec9 ::= NumExpr;
 BoolSpecCmp.     BoolSpec8 ::= BoolSpec8 OrdOp BoolSpec9;
@@ -48,6 +48,12 @@ BoolSpecImplies. BoolSpec3 ::= BoolSpec3 "->" BoolSpec4;
 BoolSpecEquivs.  BoolSpec2 ::= BoolSpec2 "<->" BoolSpec3;
 BoolSpecOp1.     BoolSpec1 ::= OpOne BoolSpec2;
 BoolSpecOp2.     BoolSpec  ::= BoolSpec OpTwo BoolSpec1;
+
+NoArg . ArgOpt ::= ;
+Args  . ArgOpt ::= "(" [Ident] ")";
+
+(:[]) . [Ident] ::= Ident;
+(:)   . [Ident] ::= Ident "," [Ident] ;
 
 _ . BoolSpec9 ::= "(" BoolSpec ")";
 _ . BoolSpec9 ::= "<b>" BoolSpec "</b>";
