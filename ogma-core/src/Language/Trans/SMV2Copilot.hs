@@ -36,9 +36,12 @@
 -- representable in the abstract syntax tree.
 module Language.Trans.SMV2Copilot where
 
-import Language.SMV.AbsSMV (AdditiveOp (..), BoolConst (..), BoolSpec (..),
-                            Ident (..), MultOp (..), NumExpr (..), Number (..),
-                            Op1Name (..), OpOne (..), OpTwo (..), OrdOp (..))
+import Data.List (intersperse)
+
+import Language.SMV.AbsSMV ( AdditiveOp (..), ArgOpt (..), BoolConst (..),
+                             BoolSpec (..), Ident (..), MultOp (..),
+                             NumExpr (..), Number (..), Op1Name (..),
+                             OpOne (..), OpTwo (..), OrdOp (..) )
 
 -- | Return the Copilot representation of a FRET BoolSpec.
 --
@@ -51,7 +54,7 @@ boolSpec2Copilot b = case b of
 
   BoolSpecNum nc -> numExpr2Copilot nc
 
-  BoolSpecSignal i -> ident2Copilot i
+  BoolSpecSignal i args -> identWithArgs2Copilot i args
 
   BoolSpecCmp spec1 op2 spec2 -> "(" ++ boolSpec2Copilot spec1
                               ++ " " ++ ordOp2Copilot op2
@@ -191,21 +194,29 @@ opTwo2Copilot Op2U = "`until`"
 ident2Copilot :: Ident -> String
 ident2Copilot (Ident i) = i
 
+-- | Return the Copilot representation of a FRET identifier with arguments.
+identWithArgs2Copilot :: Ident -> ArgOpt -> String
+identWithArgs2Copilot i NoArg      = ident2Copilot i
+identWithArgs2Copilot i (Args ids) = ident2Copilot i ++ argsS
+  where
+    argsS :: String
+    argsS = "_" ++ concat (intersperse "_" (map ident2Copilot ids)) ++ "_"
+
 -- | Return all identifiers used in a BoolSpec that are not reserved keywords.
 boolSpecNames :: BoolSpec -> [String]
 boolSpecNames b = case b of
-  BoolSpecConst _bc            -> []
-  BoolSpecSignal (Ident i)     -> [i]
-  BoolSpecNum e                -> numExprNames e
-  BoolSpecCmp spec1 _op2 spec2 -> boolSpecNames spec1 ++ boolSpecNames spec2
-  BoolSpecNeg spec             -> boolSpecNames spec
-  BoolSpecAnd spec1 spec2      -> boolSpecNames spec1 ++ boolSpecNames spec2
-  BoolSpecOr  spec1 spec2      -> boolSpecNames spec1 ++ boolSpecNames spec2
-  BoolSpecXor spec1 spec2      -> boolSpecNames spec1 ++ boolSpecNames spec2
-  BoolSpecImplies spec1 spec2  -> boolSpecNames spec1 ++ boolSpecNames spec2
-  BoolSpecEquivs spec1 spec2   -> boolSpecNames spec1 ++ boolSpecNames spec2
-  BoolSpecOp1 _op spec         -> boolSpecNames spec
-  BoolSpecOp2 spec1 _op2 spec2 -> boolSpecNames spec1 ++ boolSpecNames spec2
+  BoolSpecConst _bc             -> []
+  BoolSpecSignal i args         -> [identWithArgs2Copilot i args]
+  BoolSpecNum e                 -> numExprNames e
+  BoolSpecCmp spec1 _op2 spec2  -> boolSpecNames spec1 ++ boolSpecNames spec2
+  BoolSpecNeg spec              -> boolSpecNames spec
+  BoolSpecAnd spec1 spec2       -> boolSpecNames spec1 ++ boolSpecNames spec2
+  BoolSpecOr  spec1 spec2       -> boolSpecNames spec1 ++ boolSpecNames spec2
+  BoolSpecXor spec1 spec2       -> boolSpecNames spec1 ++ boolSpecNames spec2
+  BoolSpecImplies spec1 spec2   -> boolSpecNames spec1 ++ boolSpecNames spec2
+  BoolSpecEquivs spec1 spec2    -> boolSpecNames spec1 ++ boolSpecNames spec2
+  BoolSpecOp1 _op spec          -> boolSpecNames spec
+  BoolSpecOp2 spec1 _op2 spec2  -> boolSpecNames spec1 ++ boolSpecNames spec2
 
 -- | Return all identifiers used in a numeric expression.
 numExprNames :: NumExpr -> [String]
