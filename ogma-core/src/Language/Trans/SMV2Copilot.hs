@@ -155,7 +155,7 @@ opOneAlone2Copilot Op1X    = "next"
 opOneAlone2Copilot Op1G    = "always"
 opOneAlone2Copilot Op1F    = "eventually"
 opOneAlone2Copilot Op1Y    = "PTLTL.previous"
-opOneAlone2Copilot Op1Z    = "notPreviousNot"
+opOneAlone2Copilot Op1Z    = "tpre"
 opOneAlone2Copilot Op1Hist = "PTLTL.alwaysBeen"
 opOneAlone2Copilot Op1O    = "PTLTL.eventuallyPrev"
 

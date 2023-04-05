@@ -39,13 +39,19 @@ BoolSpecPar.    BoolSpec ::= "(" BoolSpec ")" ;
 BoolSpecConstI. BoolSpec ::= Integer ;
 BoolSpecConstD. BoolSpec ::= Double ;
 BoolSpecConstB. BoolSpec ::= BoolConst ;
-BoolSpecSignal. BoolSpec ::= Ident ;
+BoolSpecSignal. BoolSpec ::= Ident ArgOpt;
 BoolSpecOp1Pre. BoolSpec ::= Op1Pre BoolSpec ;
 BoolSpecOp2In.  BoolSpec ::= BoolSpec Op2In BoolSpec ;
 BoolSpecOp2Pre. BoolSpec ::= Op2Pre "(" BoolSpec "," BoolSpec ")" ;
 BoolSpecOp2OT.  BoolSpec ::= "OT" "(" NumExpr "," NumExpr "," BoolSpec ")" ;
 BoolSpecOp2HT.  BoolSpec ::= "HT" "(" NumExpr "," NumExpr "," BoolSpec ")" ;
 BoolSpecOp2ST.  BoolSpec ::= "ST" "(" NumExpr "," NumExpr "," BoolSpec "," BoolSpec ")" ;
+
+NoArg . ArgOpt ::= ;
+Args  . ArgOpt ::= "(" [Ident] ")";
+
+(:[]) . [Ident] ::= Ident;
+(:)   . [Ident] ::= Ident "," [Ident] ;
 
 -- Boolean Operators
 

@@ -38,18 +38,22 @@
 module Language.Trans.FRETComponentSpec2Copilot where
 
 -- External imports
-import Data.List  ( intersect, union )
-import Data.Maybe ( fromMaybe )
+import Data.Either ( fromRight )
+import Data.List  ( intersect, nub, sort, union, (\\) )
+import Data.Maybe ( fromMaybe, fromJust )
 
 -- External imports: auxiliary
 import Data.String.Extra ( sanitizeLCIdentifier, sanitizeUCIdentifier )
+
+import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
+import qualified Language.SMV.AbsSMV           as SMV
 
 -- Internal imports: language ASTs, transformers
 import qualified Language.CoCoSpec.ParCoCoSpec   as CoCoSpec ( myLexer,
                                                                pBoolSpec )
 import           Language.FRETComponentSpec.AST  as FRET
-import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec ( boolSpec2Copilot )
-import           Language.Trans.SMV2Copilot      as SMV ( boolSpec2Copilot )
+import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec ( boolSpec2Copilot, boolSpecNames )
+import           Language.Trans.SMV2Copilot      as SMV ( boolSpec2Copilot, boolSpecNames )
 
 -- | Options used to customize the conversion of FRET Component Specifications
 -- to Copilot code.
@@ -82,6 +86,7 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
     unlines . concat <$> sequence
       [ pure imports
       , pure externs
+      , pure untypedExterns
       , internals
       , reqs
       , pure clock
@@ -114,6 +119,44 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
       ]
 
     -- Extern streams
+    untypedExterns = concatMap compoundVarToDecl compoundIdents
+
+      where
+
+        compoundIdents = (idents \\ externalVarNames) \\ internalVarNames
+
+        idents = nub $ sort $ if fretCS2CopilotUseCoCoSpec prefs
+                                then concatMap CoCoSpec.boolSpecNames coco
+                                else concatMap SMV.boolSpecNames pts
+
+        coco :: [CoCoSpec.BoolSpec]
+        coco = fmap (fromRight' . fromJust . FRET.fretRequirementCoCoSpec) reqs
+
+        pts :: [SMV.BoolSpec]
+        pts  = fmap f reqs
+          where
+            f :: FRETRequirement -> SMV.BoolSpec
+            f = fromRight' . fromJust . (FRET.fretRequirementPTExpanded)
+
+        reqs :: [FRETRequirement]
+        reqs = fretRequirements fretComponentSpec
+
+        externalVarNames = map FRET.fretExternalVariableName
+                                 (FRET.fretExternalVariables fretComponentSpec)
+
+        internalVarNames = map FRET.fretInternalVariableName
+                                 (FRET.fretInternalVariables fretComponentSpec)
+
+        compoundVarToDecl i = [ i
+                                ++ " = "
+                                ++ "extern"
+                                ++ " "
+                                ++ show i
+                                ++ " "
+                                ++ "Nothing"
+                              , ""
+                              ]
+
     externs = concatMap externVarToDecl
                         (FRET.fretExternalVariables fretComponentSpec)
       where
@@ -334,3 +377,7 @@ fret2CopilotAnalyze fretComponentSpec
 
     requirementNames = map fretRequirementName
                      $ fretRequirements fretComponentSpec
+
+fromRight' :: Either a b -> b
+fromRight' (Right b) = b
+

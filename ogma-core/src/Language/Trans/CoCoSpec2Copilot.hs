@@ -35,11 +35,14 @@
 -- representable in the abstract syntax tree.
 module Language.Trans.CoCoSpec2Copilot (boolSpec2Copilot, boolSpecNames) where
 
+-- External imports
+import Data.List (intersperse)
+
 -- Internal imports
-import Language.CoCoSpec.AbsCoCoSpec ( BoolConst (..), BoolNumOp (..),
-                                       BoolSpec (..), Ident (..), NumExpr (..),
-                                       NumOp2In (..), Op1Pre (..), Op2In (..),
-                                       Op2Pre (..) )
+import Language.CoCoSpec.AbsCoCoSpec ( ArgOpt (..), BoolConst (..),
+                                       BoolNumOp (..), BoolSpec (..),
+                                       Ident (..), NumExpr (..), NumOp2In (..),
+                                       Op1Pre (..), Op2In (..), Op2Pre (..) )
 
 -- | Return the Copilot representation of a CoCoSpec 'BoolSpec'.
 --
@@ -52,7 +55,7 @@ boolSpec2Copilot b = case b of
   BoolSpecConstI bc              -> show bc
   BoolSpecConstD bc              -> show bc
   BoolSpecConstB bc              -> const2Copilot bc
-  BoolSpecSignal i               -> ident2Copilot i
+  BoolSpecSignal i args          -> identWithArgs2Copilot i args
   BoolSpecOp1Pre op spec         -> opOnePre2Copilot op ++ " (" ++ boolSpec2Copilot spec ++ ")"
 
   BoolSpecOp2In spec1 Op2InPre (BoolSpecOp1Pre Op1Pre spec2)
@@ -160,13 +163,21 @@ ident2Copilot :: Ident -> String
 ident2Copilot (Ident "FTP") = "ftp"
 ident2Copilot (Ident s)     = s
 
+-- | Return the Copilot representation of a FRET identifier with arguments.
+identWithArgs2Copilot :: Ident -> ArgOpt -> String
+identWithArgs2Copilot i NoArg      = ident2Copilot i
+identWithArgs2Copilot i (Args ids) = ident2Copilot i ++ argsS
+  where
+    argsS :: String
+    argsS = "_" ++ concat (intersperse "_" (map ident2Copilot ids)) ++ "_"
+
 -- | Return all identifiers used in a BoolSpec that are not reserved keywords.
 boolSpecNames :: BoolSpec -> [String]
 boolSpecNames (BoolSpecPar bs)                  = boolSpecNames bs
 boolSpecNames (BoolSpecConstI _bc)              = []
 boolSpecNames (BoolSpecConstD _bc)              = []
 boolSpecNames (BoolSpecConstB _bc)              = []
-boolSpecNames (BoolSpecSignal (Ident i))        = [i]
+boolSpecNames (BoolSpecSignal i args)           = [identWithArgs2Copilot i args]
 boolSpecNames (BoolSpecOp1Pre _op spec)         = boolSpecNames spec
 boolSpecNames (BoolSpecOp2In  spec1 _op2 spec2) = boolSpecNames spec1 ++ boolSpecNames spec2
 boolSpecNames (BoolSpecOp2Pre _op2 spec1 spec2) = boolSpecNames spec1 ++ boolSpecNames spec2
@@ -188,11 +199,11 @@ numExprNames (NumExprId (Ident i))          = [i]
 -- | Return the Copilot representation of a CoCoSpec literal.
 lit2Copilot :: BoolSpec -> String
 lit2Copilot b = case b of
-    BoolSpecConstI bc -> show bc
-    BoolSpecConstD bc -> show bc
-    BoolSpecConstB bc -> litConst2Copilot bc
-    BoolSpecSignal i  -> ident2Copilot i
-    _                 -> ":error converting literal:"
+    BoolSpecConstI bc     -> show bc
+    BoolSpecConstD bc     -> show bc
+    BoolSpecConstB bc     -> litConst2Copilot bc
+    BoolSpecSignal i args -> identWithArgs2Copilot i args
+    _                     -> ":error converting literal:"
   where
     -- | Return the Copilot representation of a CoCoSpec boolean
     -- constant.

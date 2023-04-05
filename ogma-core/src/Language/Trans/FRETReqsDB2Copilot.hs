@@ -99,7 +99,9 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
                ]
 
              | otherwise
-             = [ imports, propDef, externs, clock, ftp, tpre, spec, main' ]
+             = [ imports, propDef, externs, clock, ftp, undef, tpre, spec
+               , main'
+               ]
 
     imports :: [String]
     imports =
@@ -111,6 +113,7 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
         ++ " alwaysBeen, trigger)"
       , "import           Copilot.Library.PTLTL     (since, previous,"
         ++ " alwaysBeen)"
+      , "import qualified Copilot.Library.MTL       as MTL"
       , "import qualified Copilot.Library.PTLTL     as PTLTL"
       , "import           Language.Copilot          (reify)"
       , "import Prelude                   hiding ((&&), (||), (++), (<=), (>=),"
@@ -144,7 +147,9 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
     undef    = [ "ot :: Int -> Int -> Stream Bool -> Stream Bool"
                , "ot = undefined"
                , "pre :: Stream Bool -> Stream Bool"
-               , "pre = undefined"
+               , "pre = ([False] ++)"
+               , "tpre :: Stream Bool -> Stream Bool"
+               , "tpre = ([True] ++)"
                ]
 
     tpre     = [ ""
