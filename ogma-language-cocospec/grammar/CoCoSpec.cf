@@ -49,12 +49,14 @@ BoolSpecOp2ST.  BoolSpec ::= "ST" "(" NumExpr "," NumExpr "," BoolSpec "," BoolS
 
 -- Boolean Operators
 
-Op1Once.   Op1Pre ::= "O"   ;
-Op1Pre.    Op1Pre ::= "pre" ;
-Op1Hist.   Op1Pre ::= "H"   ;
-Op1Y.      Op1Pre ::= "Y"   ;
-Op1Not.    Op1Pre ::= "not" ;
-Op1Bang.   Op1Pre ::= "!"   ;
+Op1Once.   Op1Pre ::= "O"      ;
+Op1Pre.    Op1Pre ::= "pre"    ;
+Op1YtoPre. Op1Pre ::= "YtoPre" ;
+Op1ZtoPre. Op1Pre ::= "ZtoPre" ;
+Op1Hist.   Op1Pre ::= "H"      ;
+Op1Y.      Op1Pre ::= "Y"      ;
+Op1Not.    Op1Pre ::= "not"    ;
+Op1Bang.   Op1Pre ::= "!"      ;
 
 Op2And.     Op2In ::= "and"     ;
 Op2Amp.     Op2In ::= "&"       ;
