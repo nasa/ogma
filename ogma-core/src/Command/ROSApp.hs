@@ -97,7 +97,7 @@ rosApp targetDir fretCSFile varNameFile varDBFile handlersFile testingAdditional
     let varNames = fromMaybe (fretCSExtractExternalVariables cs) vs
         monitors = fromMaybe (fretCSExtractHandlers cs) rs
 
-    e <- liftIO $ rosApp' targetDir varNames varDB monitors
+    e <- liftIO $ rosApp' targetDir varNames varDB monitors testingAdditionalApps testingLimitedVars
     liftEither e
 
 -- | Generate a new ROS application connected to Copilot, by copying the
@@ -113,8 +113,10 @@ rosApp' :: FilePath                           -- ^ Target directory where the
         -> [String]                           -- ^ List of handlers associated
                                               -- to the monitors (or
                                               -- requirements monitored).
+       -> [String]                            -- ^ Additional applications to turn on during testing
+       -> [String]                            -- ^ Limited list of variables to use for testing
         -> IO (Either ErrorTriplet ())
-rosApp' targetDir varNames varDB monitors =
+rosApp' targetDir varNames varDB monitors testingAdditionalApps testingLimitedVars =
   E.handle (return . Left . cannotCopyTemplate) $ do
     -- Obtain template dir
     dataDir <- getDataDir
