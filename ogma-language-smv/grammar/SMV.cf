@@ -89,8 +89,9 @@ BoolConstFalse. BoolConst ::= "FALSE";
 BoolConstFTP.   BoolConst ::= "FTP";
 BoolConstLAST.  BoolConst ::= "LAST";
 
-Op1Alone . OpOne ::= Op1Name;
-Op1MTL.    OpOne ::= Op1Name "[" OrdOp Number "]";
+Op1Alone .   OpOne ::= Op1Name;
+Op1MTL.      OpOne ::= Op1Name "[" OrdOp Number "]";
+Op1MTLRange. OpOne ::= Op1Name "[" Number "," Number "]";
 
 NumberInt . Number ::= Integer;
 _ . Number ::= "<b>" Number "</b>";
