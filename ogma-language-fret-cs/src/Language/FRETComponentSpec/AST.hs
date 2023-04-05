@@ -178,7 +178,14 @@ applySubstitution sub file =
     mapBoolSpecIdent :: (String -> String) -> SMV.BoolSpec -> SMV.BoolSpec
     mapBoolSpecIdent f boolSpec =
       case boolSpec of
-        SMV.BoolSpecSignal (SMV.Ident i) -> SMV.BoolSpecSignal (SMV.Ident (f i))
+        SMV.BoolSpecSignal (SMV.Ident i) args ->
+          SMV.BoolSpecSignal
+            (SMV.Ident (f i))
+            (case args of
+               SMV.NoArg    -> SMV.NoArg
+               SMV.Args ids -> SMV.Args $
+                                 map (\(SMV.Ident i) -> SMV.Ident (f i)) ids
+            )
 
         SMV.BoolSpecConst bc -> SMV.BoolSpecConst bc
 
