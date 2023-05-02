@@ -276,9 +276,8 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
     -- Main specification
     spec :: [String]
     spec = [ ""
-           , "-- | Complete specification. Calls the C function void "
-             ++ " handler(); when"
-           , "-- the property is violated."
+           , "-- | Complete specification. Calls a C handler function when"
+           , "-- a requirement is violated."
            , "spec :: Spec"
            , "spec = do"
            ]
