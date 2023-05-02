@@ -61,6 +61,7 @@ x-curation: uncurated
 library
 
   exposed-modules:
+    Language.Copilot.AST
     Language.Copilot.CStruct
 
   build-depends:

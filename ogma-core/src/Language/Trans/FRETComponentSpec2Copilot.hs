@@ -29,6 +29,7 @@
 -- AGREEMENT.
 --
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 
 -- | Transform a FRET Component Specification into a Copilot specification.
 --
@@ -38,9 +39,10 @@
 module Language.Trans.FRETComponentSpec2Copilot where
 
 -- External imports
-import Data.Either ( fromRight )
-import Data.List  ( intersect, nub, sort, union, (\\) )
-import Data.Maybe ( fromMaybe, fromJust )
+import Data.Either           ( fromRight )
+import Data.Functor.Identity ( Identity )
+import Data.List             ( intersect, nub, sort, union, (\\) )
+import Data.Maybe            ( fromJust, fromMaybe )
 
 -- External imports: auxiliary
 import Data.String.Extra ( sanitizeLCIdentifier, sanitizeUCIdentifier )
@@ -52,8 +54,10 @@ import qualified Language.SMV.AbsSMV           as SMV
 import qualified Language.CoCoSpec.ParCoCoSpec   as CoCoSpec ( myLexer,
                                                                pBoolSpec )
 import           Language.FRETComponentSpec.AST  as FRET
-import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec ( boolSpec2Copilot, boolSpecNames )
+import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec ( boolSpec2Copilot, boolSpec2Copilot', boolSpecNames )
 import           Language.Trans.SMV2Copilot      as SMV ( boolSpec2Copilot, boolSpecNames )
+
+import qualified Language.Copilot.AST as Copilot
 
 -- | Options used to customize the conversion of FRET Component Specifications
 -- to Copilot code.
@@ -380,3 +384,185 @@ fret2CopilotAnalyze fretComponentSpec
 fromRight' :: Either a b -> b
 fromRight' (Right b) = b
 
+fretComponentSpec2Copilot'' :: FRETComponentSpec2CopilotOptions
+                            -> FRETComponentSpec
+                            -> Either String (Copilot.Module Identity)
+fretComponentSpec2Copilot'' prefs fretComponentSpec =
+  Copilot.Module <$> pure m <*> pure i <*> pure d
+  where
+    m :: forall f . Applicative f => f (Copilot.Ident f)
+    m = pure $ Copilot.Ident $ pure "Monitor"
+
+    i :: forall f . Applicative f => f ([f (Copilot.Import f)])
+    i = pure
+      [ pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Copilot.Compile.C99")))
+          (pure Nothing)
+          (pure Nothing)
+
+      , pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Copilot.Language")))
+          (pure Nothing)
+          (pure (Just (pure (Copilot.HidingImp (pure [pure (Copilot.ImportElem (pure (Copilot.Ident (pure "prop"))) (pure Nothing))])))))
+
+      , pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Copilot.Language.Prelude")))
+          (pure Nothing)
+          (pure Nothing)
+
+      , pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Copilot.Library.LTL")))
+          (pure Nothing)
+          (pure (Just (pure (Copilot.ExplImp (pure [pure (Copilot.ImportElem (pure (Copilot.Ident (pure "next"))) (pure Nothing))])))))
+
+      , pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Copilot.Library.MTL")))
+          (pure Nothing)
+          (pure (Just (pure (Copilot.HidingImp (pure [ pure (Copilot.ImportElem (pure (Copilot.Ident (pure "since")))      (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "alwaysBeen"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "trigger")))    (pure Nothing))
+                                                     ])))))
+
+      , pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Copilot.Library.PTLTL")))
+          (pure Nothing)
+          (pure (Just (pure (Copilot.ExplImp (pure [ pure (Copilot.ImportElem (pure (Copilot.Ident (pure "since")))      (pure Nothing))
+                                                   , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "previous")))   (pure Nothing))
+                                                   , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "alwaysBeen"))) (pure Nothing))
+                                                   ])))))
+
+      , pure $ Copilot.Import
+          (pure True)
+          (pure (Copilot.Ident (pure "qualified Copilot.Library.PTLTL")))
+          (pure (Just (pure (Copilot.Ident (pure "PTLTL")))))
+          (pure Nothing)
+
+      , pure $ Copilot.Import
+          (pure True)
+          (pure (Copilot.Ident (pure "qualified Copilot.Library.MTL")))
+          (pure (Just (pure (Copilot.Ident (pure "MTL")))))
+          (pure Nothing)
+
+      , pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Language.Copilot")))
+          (pure Nothing)
+          (pure (Just (pure (Copilot.ExplImp (pure [pure (Copilot.ImportElem (pure (Copilot.Ident (pure "reify"))) (pure Nothing))])))))
+
+      , pure $ Copilot.Import
+          (pure False)
+          (pure (Copilot.Ident (pure "Prelude")))
+          (pure Nothing)
+          (pure (Just (pure (Copilot.HidingImp (pure [ pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(&&)"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(||)"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(++)"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(<=)"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(>=)"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(<)")))  (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(>)")))  (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(==)"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(/=)"))) (pure Nothing))
+                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "not")))  (pure Nothing))
+                                                     ])))))
+      ]
+
+    d = pure $ concat
+          [ externs
+          , untypedExterns
+          , internals
+          , undefined      -- (f [f (Def f)])
+          ]
+
+    externs = map externVarToDecl
+                        (FRET.fretExternalVariables fretComponentSpec)
+      where
+
+        externVarToDecl i = pure
+                          $ Copilot.Def
+                              (pure (Just (pure defSignature)))
+                              (pure defBody)
+          where
+
+            defSignature = Copilot.DefSignature
+                             (pure (Copilot.Ident (pure (FRET.fretExternalVariableName i))))
+                             (pure (Copilot.PlainType (pure (Copilot.Ident (pure (fretTypeToCopilotType prefs (FRET.fretExternalVariableType i)))))))
+
+            defBody = Copilot.DefBody
+                        (pure (Copilot.Ident (pure (FRET.fretExternalVariableName i))))
+                        (pure [])
+                        (pure (Copilot.ExternStream (pure (FRET.fretExternalVariableName i)) (pure Nothing)))
+                        (pure [])
+
+    untypedExterns = map compoundVarToDecl compoundIdents
+
+      where
+
+        compoundIdents = (idents \\ externalVarNames) \\ internalVarNames
+
+        idents = nub $ sort $ if fretCS2CopilotUseCoCoSpec prefs
+                                then concatMap CoCoSpec.boolSpecNames coco
+                                else concatMap SMV.boolSpecNames pts
+
+        coco :: [CoCoSpec.BoolSpec]
+        coco = fmap (fromRight' . fromJust . FRET.fretRequirementCoCoSpec) reqs
+
+        pts :: [SMV.BoolSpec]
+        pts  = fmap f reqs
+          where
+            f :: FRETRequirement -> SMV.BoolSpec
+            f = fromRight' . fromJust . (FRET.fretRequirementPTExpanded)
+
+        reqs :: [FRETRequirement]
+        reqs = fretRequirements fretComponentSpec
+
+        externalVarNames = map FRET.fretExternalVariableName
+                                 (FRET.fretExternalVariables fretComponentSpec)
+
+        internalVarNames = map FRET.fretInternalVariableName
+                                 (FRET.fretInternalVariables fretComponentSpec)
+
+        compoundVarToDecl i = pure
+                            $ Copilot.Def
+                                (pure Nothing)
+                                (pure defBody)
+          where
+
+            defBody = Copilot.DefBody
+                        (pure (Copilot.Ident (pure i)))
+                        (pure [])
+                        (pure (Copilot.ExternStream (pure i) (pure Nothing)))
+                        (pure [])
+
+    -- Internal stream definitions
+    internals :: forall f . Applicative f => [f (Copilot.Def f)]
+    internals = map internalVarToDecl
+                    (FRET.fretInternalVariables fretComponentSpec)
+      where
+        internalVarToDecl i = pure
+                            $ Copilot.Def
+                                (pure (Just (pure defSignature)))
+                                (pure defBody)
+          where
+
+            defSignature = Copilot.DefSignature
+                             (pure (Copilot.Ident (pure (FRET.fretInternalVariableName i))))
+                             (pure (Copilot.PlainType (pure (Copilot.Ident (pure (fretTypeToCopilotType prefs (FRET.fretInternalVariableType i)))))))
+
+            defBody = Copilot.DefBody
+                        (pure (Copilot.Ident (pure (FRET.fretInternalVariableName i))))
+                        (pure [])
+                        implementation
+                        (pure [])
+
+            implementation = fromRight'
+                           $ (pure . CoCoSpec.boolSpec2Copilot')
+                              <$> CoCoSpec.pBoolSpec
+                                    ( CoCoSpec.myLexer
+                                    $ FRET.fretInternalVariableLustre i
+                                    )

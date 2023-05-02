@@ -28,21 +28,25 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
+{-# LANGUAGE RankNTypes #-}
 -- | Transform a CoCoSpec TL specification into a Copilot specification.
 --
 -- Normally, this module would be implemented as a conversion between ASTs,
 -- but we want to add comments to the generated code, which are not
 -- representable in the abstract syntax tree.
-module Language.Trans.CoCoSpec2Copilot (boolSpec2Copilot, boolSpecNames) where
+module Language.Trans.CoCoSpec2Copilot (boolSpec2Copilot, boolSpec2Copilot', boolSpecNames) where
 
 -- External imports
 import Data.List (intersperse)
+import GHC.Float (double2Float)
 
 -- Internal imports
 import Language.CoCoSpec.AbsCoCoSpec ( ArgOpt (..), BoolConst (..),
                                        BoolNumOp (..), BoolSpec (..),
                                        Ident (..), NumExpr (..), NumOp2In (..),
                                        Op1Pre (..), Op2In (..), Op2Pre (..) )
+
+import qualified Language.Copilot.AST as Copilot
 
 -- | Return the Copilot representation of a CoCoSpec 'BoolSpec'.
 --
@@ -211,3 +215,113 @@ lit2Copilot b = case b of
     litConst2Copilot BoolConstTrue  = "True"
     litConst2Copilot BoolConstFalse = "False"
     litConst2Copilot _              = ":error converting literal boolean:"
+
+-- | Return the Copilot representation of a CoCoSpec literal.
+lit2Copilot' :: forall f . Applicative f => BoolSpec -> Copilot.Value f
+lit2Copilot' b = case b of
+    BoolSpecConstI bc             -> Copilot.ValueInt (pure bc)
+    BoolSpecConstD bc             -> Copilot.ValueFloat (pure (double2Float bc))
+    BoolSpecConstB BoolConstTrue  -> Copilot.ValueBool (pure True)
+    BoolSpecConstB BoolConstFalse -> Copilot.ValueBool (pure False)
+    _                             -> error ":error converting literal:"
+
+boolSpec2Copilot' :: forall f . Applicative f => BoolSpec -> Copilot.Stream f
+boolSpec2Copilot' b = case b of
+  BoolSpecPar bs                 -> Copilot.StreamPar   (pure (boolSpec2Copilot' bs))
+  BoolSpecConstI bc              -> Copilot.ConstStream (pure (Copilot.ValueInt (pure bc)))
+  BoolSpecConstD bc              -> Copilot.ConstStream (pure (Copilot.ValueFloat (pure (double2Float bc))))
+  BoolSpecConstB BoolConstFTP    -> Copilot.StreamIdent (pure (Copilot.Ident (pure "ftp"))) (pure [])
+  BoolSpecConstB BoolConstTrue   -> Copilot.ConstStream (pure (Copilot.ValueBool (pure True)))
+  BoolSpecConstB BoolConstFalse  -> Copilot.ConstStream (pure (Copilot.ValueBool (pure False)))
+  BoolSpecSignal i args          -> Copilot.StreamIdent (pure (Copilot.Ident (pure (identWithArgs2Copilot i args)))) (pure [])
+  BoolSpecOp1Pre op spec         -> Copilot.StreamOP1   (pure (Copilot.OPOne (opOnePre2Copilot op))) (pure (boolSpec2Copilot' spec))
+  BoolSpecOp2In spec1 Op2InPre (BoolSpecOp1Pre Op1Pre spec2)
+    -> Copilot.StreamAppend
+         (pure [ pure (lit2Copilot' spec1) ])
+         (pure (boolSpec2Copilot' spec2))
+
+  BoolSpecOp2In spec1 Op2InPre spec2
+    -> Copilot.StreamOP3
+         (pure (Copilot.OPThree "mux"))
+         (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "ftp"))) (pure [])))
+         (pure (Copilot.ConstStream (pure (lit2Copilot' spec1))))
+         (pure (boolSpec2Copilot' spec2))
+
+  BoolSpecOp2In spec1 op2 spec2
+     -> Copilot.StreamOP2
+          (pure (Copilot.OPTwo (opTwoIn2Copilot' op2)))
+          (pure (boolSpec2Copilot' spec1))
+          (pure (boolSpec2Copilot' spec2))
+
+  BoolSpecOp2Pre op2 spec1 spec2
+     -> Copilot.StreamOP2
+          (pure (Copilot.OPTwo (opTwoPre2Copilot op2)))
+          (pure (boolSpec2Copilot' spec1))
+          (pure (boolSpec2Copilot' spec2))
+
+  BoolSpecOp2HT num1 num2 spec  ->
+    Copilot.StreamIdent
+      (pure (Copilot.Ident (pure "MTL.alwaysBeen")))
+      (pure [ pure (numExpr2CopilotArg num2)
+            , pure (numExpr2CopilotArg num1)
+            , pure (Copilot.ArgStream (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "clock"))) (pure []))))
+            , pure (Copilot.ArgValue  (pure (Copilot.ValueInt (pure 1))))
+            , pure (Copilot.ArgStream (pure (boolSpec2Copilot' spec)))
+            ])
+
+  BoolSpecOp2OT num1 num2 spec  ->
+    Copilot.StreamIdent
+      (pure (Copilot.Ident (pure "MTL.eventuallyPrev")))
+      (pure [ pure (numExpr2CopilotArg num2)
+            , pure (numExpr2CopilotArg num1)
+            , pure (Copilot.ArgStream (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "clock"))) (pure []))))
+            , pure (Copilot.ArgValue  (pure (Copilot.ValueInt (pure 1))))
+            , pure (Copilot.ArgStream (pure (boolSpec2Copilot' spec)))
+            ])
+
+  BoolSpecOp2ST num1 num2 spec1 spec2 ->
+    Copilot.StreamIdent
+      (pure (Copilot.Ident (pure "MTL.since")))
+      (pure [ pure (numExpr2CopilotArg num2)
+            , pure (numExpr2CopilotArg num1)
+            , pure (Copilot.ArgStream (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "clock"))) (pure []))))
+            , pure (Copilot.ArgValue  (pure (Copilot.ValueInt (pure 1))))
+            , pure (Copilot.ArgStream (pure (boolSpec2Copilot' spec1)))
+            , pure (Copilot.ArgStream (pure (boolSpec2Copilot' spec2)))
+            ])
+
+-- | Return the Copilot representation of a CoCoSpec logical
+-- operator.
+opTwoIn2Copilot' :: Op2In -> String
+opTwoIn2Copilot' Op2Amp   = "(&&)"
+opTwoIn2Copilot' Op2And   = "(&&)"
+opTwoIn2Copilot' Op2Or    = "(||)"
+opTwoIn2Copilot' Op2Impl  = "(==>)"
+opTwoIn2Copilot' Op2InPre = "pre"
+opTwoIn2Copilot' (Op2NumOp n) = numOpTwoIn2Copilot' n
+opTwoIn2Copilot' (Op2NumCmp n) = opTwoNum2Copilot' n
+
+-- | Return the Copilot representation of a numeric CoCoSpec arithmetic
+-- operator.
+numOpTwoIn2Copilot' :: NumOp2In -> String
+numOpTwoIn2Copilot' NumOp2Plus  = "(+)"
+numOpTwoIn2Copilot' NumOp2Minus = "(-)"
+numOpTwoIn2Copilot' NumOp2Mult  = "(*)"
+
+-- | Return the Copilot representation of a numeric CoCoSpec comparison
+-- operator.
+opTwoNum2Copilot' :: BoolNumOp -> String
+opTwoNum2Copilot' BoolNumOp2Eq = "(==)"
+opTwoNum2Copilot' BoolNumOp2Ne = "(/=)"
+opTwoNum2Copilot' BoolNumOp2Le = "(<=)"
+opTwoNum2Copilot' BoolNumOp2Lt = "(<)"
+opTwoNum2Copilot' BoolNumOp2Gt = "(>=)"
+opTwoNum2Copilot' BoolNumOp2Ge = "(>)"
+
+-- | Return the Copilot representation of a CoCoSpec numeric expression.
+--
+-- This function returns the expression only. The string does not contain any
+-- top-level names, any imports, or auxiliary definitions that may be required.
+numExpr2CopilotArg :: forall f . Applicative f => NumExpr -> Copilot.Argument f
+numExpr2CopilotArg expr = case expr of
+  NumExprNum i -> Copilot.ArgValue (pure (Copilot.ValueInt (pure i)))
