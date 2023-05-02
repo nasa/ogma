@@ -550,9 +550,16 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
                                 (pure defBody)
           where
 
-            defSignature = Copilot.DefSignature
-                             (pure (Copilot.Ident (pure (FRET.fretInternalVariableName i))))
-                             (pure (Copilot.PlainType (pure (Copilot.Ident (pure (fretTypeToCopilotType prefs (FRET.fretInternalVariableType i)))))))
+            defSignature =
+              Copilot.DefSignature
+                ( pure (Copilot.Ident (pure (FRET.fretInternalVariableName i)))
+                )
+                ( pure
+                   ( Copilot.PlainType
+                      ( pure (Copilot.Ident (pure (fretTypeToCopilotType prefs (FRET.fretInternalVariableType i))))
+                      )
+                   )
+                )
 
             defBody = Copilot.DefBody
                         (pure (Copilot.Ident (pure (FRET.fretInternalVariableName i))))
