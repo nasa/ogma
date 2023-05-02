@@ -476,15 +476,151 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
           [ externs
           , untypedExterns
           , internals
-          , undefined      -- (f [f (Def f)])
+          , reqs
+          , pure clock
+          , pure ftp
+          , pure pre
+          , pure tpre
+          , pure spec
+          , pure main'
           ]
+
+    main' = pure $ Copilot.MainDef (pure (fretCS2CopilotFilename prefs))
+
+    spec = pure $ Copilot.SpecDef (pure triggers)
+      where
+        triggers = fmap reqTrigger (FRET.fretRequirements fretComponentSpec)
+
+        reqTrigger r = pure
+                     $ Copilot.Trigger
+                         (pure (show handlerName))
+                         (pure (Copilot.StreamOP1 (pure (Copilot.OPOne "not")) (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure propName))) (pure [])))))
+                         (pure [])
+          where
+            handlerName = "handler" ++ FRET.fretRequirementName r
+            propName    = FRET.fretRequirementName r
+
+    tpre = pure $ Copilot.StreamDef
+                     (pure (Just (pure defSignature)))
+                     (pure defBody)
+      where
+        -- Definition type signature.
+        defSignature = Copilot.DefSignature
+                         (pure (Copilot.Ident (pure "tpre")))
+                         (pure (Copilot.FunType
+                                  (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Bool")))))
+                                  (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Bool")))))
+                               ))
+
+        defBody = Copilot.DefBody
+                    (pure (Copilot.Ident (pure "tpre")))
+                    (pure [pure (Copilot.Ident (pure "x"))])
+                    (pure (Copilot.StreamAppend
+                             (pure [pure (Copilot.ValueBool (pure True))])
+                             (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "x")))
+                                                        (pure [])
+                                   )
+                             )))
+                    (pure [])
+
+    pre = pure $ Copilot.StreamDef
+                     (pure (Just (pure defSignature)))
+                     (pure defBody)
+      where
+        -- Definition type signature.
+        defSignature = Copilot.DefSignature
+                         (pure (Copilot.Ident (pure "pre")))
+                         (pure (Copilot.FunType
+                                  (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Bool")))))
+                                  (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Bool")))))
+                               ))
+
+        defBody = Copilot.DefBody
+                    (pure (Copilot.Ident (pure "pre")))
+                    (pure [pure (Copilot.Ident (pure "x"))])
+                    (pure (Copilot.StreamAppend
+                             (pure [pure (Copilot.ValueBool (pure False))])
+                             (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "x")))
+                                                        (pure [])
+                                   )
+                             )))
+                    (pure [])
+
+    ftp = pure $ Copilot.StreamDef
+                     (pure (Just (pure defSignature)))
+                     (pure defBody)
+      where
+        -- Definition type signature.
+        defSignature = Copilot.DefSignature
+                         (pure (Copilot.Ident (pure "ftp")))
+                         (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Int64")))))
+
+        defBody = Copilot.DefBody
+                    (pure (Copilot.Ident (pure "ftp")))
+                    (pure [])
+                    (pure (Copilot.StreamAppend
+                             (pure [pure (Copilot.ValueBool (pure True))])
+                             (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "false")))
+                                                        (pure [])
+                                   )
+                             )))
+                    (pure [])
+
+    clock = pure $ Copilot.StreamDef
+                     (pure (Just (pure defSignature)))
+                     (pure defBody)
+      where
+        -- Definition type signature.
+        defSignature = Copilot.DefSignature
+                         (pure (Copilot.Ident (pure "clock")))
+                         (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Int64")))))
+
+        defBody = Copilot.DefBody
+                    (pure (Copilot.Ident (pure "clock")))
+                    (pure [])
+                    (pure (Copilot.StreamAppend
+                             (pure [pure (Copilot.ValueInt (pure 0))])
+                             (pure (Copilot.StreamOP2 (pure (Copilot.OPTwo "(+)"))
+                                              (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure "clock")))
+                                                                 (pure [])
+                                                    )
+                                              )
+                                              (pure (Copilot.ConstStream (pure (Copilot.ValueInt (pure 1)))))))))
+                    (pure [])
+
+    -- Encoding of requirements as boolean streams
+    reqs = map reqToDecl
+             (FRET.fretRequirements fretComponentSpec)
+      where
+        reqToDecl i = pure
+                      $ Copilot.StreamDef
+                          (pure (Just (pure defSignature)))
+                          (pure defBody)
+          where
+            -- -- Definition comment, which includes the requirement for
+            -- -- traceability purposes.
+            -- reqComment = "-- | "  ++ FRET.fretRequirementName i    ++ "\n" ++
+            --              "--   @"                                  ++ "\n" ++
+            --              "--   "  ++ FRET.fretRequirementFretish i ++ "\n" ++
+            --              "--   @"
+
+            -- Definition type signature.
+            defSignature = Copilot.DefSignature
+                             (pure (Copilot.Ident (pure (FRET.fretRequirementName i))))
+                             (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Bool")))))
+
+            defBody = Copilot.DefBody
+                        (pure (Copilot.Ident (pure (FRET.fretRequirementName i))))
+                        (pure [])
+                        (pure (CoCoSpec.boolSpec2Copilot' (fromRight' (fromJust (FRET.fretRequirementCoCoSpec i)))))
+                        (pure [])
 
     externs = map externVarToDecl
                         (FRET.fretExternalVariables fretComponentSpec)
       where
 
         externVarToDecl i = pure
-                          $ Copilot.Def
+                          $ Copilot.StreamDef
                               (pure (Just (pure defSignature)))
                               (pure defBody)
           where
@@ -528,7 +664,7 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
                                  (FRET.fretInternalVariables fretComponentSpec)
 
         compoundVarToDecl i = pure
-                            $ Copilot.Def
+                            $ Copilot.StreamDef
                                 (pure Nothing)
                                 (pure defBody)
           where
@@ -545,7 +681,7 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
                     (FRET.fretInternalVariables fretComponentSpec)
       where
         internalVarToDecl i = pure
-                            $ Copilot.Def
+                            $ Copilot.StreamDef
                                 (pure (Just (pure defSignature)))
                                 (pure defBody)
           where

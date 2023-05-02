@@ -2,7 +2,11 @@ module Language.Copilot.AST where
 
 data Module f = Module (f (Ident f)) (f [f (Import f)]) (f [f (Def f)])
 
-data Def f = Def (f (Maybe (f (DefSignature f)))) (f (DefBody f))
+data Def f = StreamDef (f (Maybe (f (DefSignature f)))) (f (DefBody f))
+           | SpecDef (f [f (Trigger f)])
+           | MainDef (f String)
+
+data Trigger f = Trigger (f String) (f (Stream f)) (f [f (Stream f)])
 
 data DefSignature f =
   DefSignature (f (Ident f)) (f (Type f))
