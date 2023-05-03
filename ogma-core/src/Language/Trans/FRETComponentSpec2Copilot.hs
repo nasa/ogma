@@ -57,7 +57,8 @@ import           Language.FRETComponentSpec.AST  as FRET
 import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec ( boolSpec2Copilot, boolSpec2Copilot', boolSpecNames )
 import           Language.Trans.SMV2Copilot      as SMV ( boolSpec2Copilot, boolSpecNames )
 
-import qualified Language.Copilot.AST as Copilot
+import qualified Language.Copilot.AST    as Copilot
+import qualified Language.Copilot.Pretty as Copilot
 
 -- | Options used to customize the conversion of FRET Component Specifications
 -- to Copilot code.
@@ -87,6 +88,9 @@ fretComponentSpec2Copilot' :: FRETComponentSpec2CopilotOptions
                            -> FRETComponentSpec
                            -> Either String String
 fretComponentSpec2Copilot' prefs fretComponentSpec =
+    Copilot.pretty <$> fretComponentSpec2Copilot'' prefs fretComponentSpec
+
+u prefs fretComponentSpec =
     unlines . concat <$> sequence
       [ pure imports
       , pure externs
@@ -439,13 +443,13 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
 
       , pure $ Copilot.Import
           (pure True)
-          (pure (Copilot.Ident (pure "qualified Copilot.Library.PTLTL")))
+          (pure (Copilot.Ident (pure "Copilot.Library.PTLTL")))
           (pure (Just (pure (Copilot.Ident (pure "PTLTL")))))
           (pure Nothing)
 
       , pure $ Copilot.Import
           (pure True)
-          (pure (Copilot.Ident (pure "qualified Copilot.Library.MTL")))
+          (pure (Copilot.Ident (pure "Copilot.Library.MTL")))
           (pure (Just (pure (Copilot.Ident (pure "MTL")))))
           (pure Nothing)
 
@@ -456,20 +460,21 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
           (pure (Just (pure (Copilot.ExplImp (pure [pure (Copilot.ImportElem (pure (Copilot.Ident (pure "reify"))) (pure Nothing))])))))
 
       , pure $ Copilot.Import
-          (pure False)
+          (pure True)
           (pure (Copilot.Ident (pure "Prelude")))
           (pure Nothing)
-          (pure (Just (pure (Copilot.HidingImp (pure [ pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(&&)"))) (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(||)"))) (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(++)"))) (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(<=)"))) (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(>=)"))) (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(<)")))  (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(>)")))  (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(==)"))) (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(/=)"))) (pure Nothing))
-                                                     , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "not")))  (pure Nothing))
-                                                     ])))))
+          (pure Nothing)
+          -- (pure (Just (pure (Copilot.HidingImp (pure [ pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(&&)"))) (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(||)"))) (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(++)"))) (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(<=)"))) (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(>=)"))) (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(<)")))  (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(>)")))  (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(==)"))) (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "(/=)"))) (pure Nothing))
+          --                                            , pure (Copilot.ImportElem (pure (Copilot.Ident (pure "not")))  (pure Nothing))
+          --                                            ])))))
       ]
 
     d = pure $ concat
@@ -493,7 +498,7 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
 
         reqTrigger r = pure
                      $ Copilot.Trigger
-                         (pure (show handlerName))
+                         (pure handlerName)
                          (pure (Copilot.StreamOP1 (pure (Copilot.OPOne "not")) (pure (Copilot.StreamIdent (pure (Copilot.Ident (pure propName))) (pure [])))))
                          (pure [])
           where
@@ -553,7 +558,7 @@ fretComponentSpec2Copilot'' prefs fretComponentSpec =
         -- Definition type signature.
         defSignature = Copilot.DefSignature
                          (pure (Copilot.Ident (pure "ftp")))
-                         (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Int64")))))
+                         (pure (Copilot.PlainType (pure (Copilot.Ident (pure "Bool")))))
 
         defBody = Copilot.DefBody
                     (pure (Copilot.Ident (pure "ftp")))
