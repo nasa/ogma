@@ -63,6 +63,7 @@ library
   exposed-modules:
     Language.Copilot.AST
     Language.Copilot.CStruct
+    Language.Copilot.Pretty
 
   build-depends:
     base >= 4.11.0.0 && < 5
