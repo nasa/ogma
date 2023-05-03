@@ -11,7 +11,7 @@ class Pretty f where
 instance Pretty (Module Identity) where
   pretty (Module (Identity i) (Identity is) (Identity ds)) =
     unlines
-      $ [ "module " ++ pretty i ++ "where"]
+      $ [ "module " ++ pretty i ++ " where"]
       ++ [""]
       ++ map (pretty . runIdentity) is
       ++ [""]
@@ -78,7 +78,7 @@ instance Pretty (Def Identity) where
 
 instance Pretty (Trigger Identity) where
   pretty (Trigger (Identity n) (Identity s) (Identity as)) =
-      "trigger " ++ show n ++ " " ++ pretty s ++ " " ++ asS
+      "trigger " ++ show n ++ " (" ++ pretty s ++ ") " ++ asS
     where
       asS = "[" ++ concat (intersperse "," (map ((\x -> "arg (" ++ x ++ ")") . pretty . runIdentity) as)) ++ "]"
 
@@ -88,7 +88,7 @@ instance Pretty (DefSignature Identity) where
 
 instance Pretty (Type Identity) where
   pretty (PlainType (Identity i)) =
-    pretty i
+    "Stream " ++ pretty i
   pretty (ArrayType (Identity len) (Identity ty)) =
     "Array " ++ show len ++ " " ++ pretty ty
   pretty (FunType (Identity ty1) (Identity ty2)) =
@@ -101,7 +101,8 @@ instance Pretty (DefBody Identity) where
         ]
         ++ wheresS
     where
-      asS      = concat $ intersperse " " $ map (pretty . runIdentity) as
+      asS      = if null asS' then "" else asS' ++ " "
+      asS'     = concat $ intersperse " " $ map (pretty . runIdentity) as
       wheresS  = if null wheresS' then [] else [ "  where"] ++ map ("    " ++) wheresS'
       wheresS' = map (pretty . runIdentity) wheres
 
@@ -114,32 +115,33 @@ instance Pretty (Stream Identity) where
       pretty i ++ asS
     where
       asS = concat $ map ((" " ++) . pretty . runIdentity) as
+
   pretty (ConstStream (Identity v)) =
-    "const " ++ pretty v
+    "(constant " ++ pretty v ++ ")"
 
   pretty (ExternStream (Identity s) (Identity samplesOpt)) =
-    "extern " ++ show s ++ " " ++ samplesOptS
+    "(extern " ++ show s ++ " " ++ samplesOptS ++ ")"
     where
       samplesOptS = case samplesOpt of
                       Nothing           -> "Nothing"
                       Just (Identity x) -> "(Just " ++ pretty x ++ ")"
 
   pretty (StreamAppend (Identity vs) (Identity s)) =
-      vsS ++ " ++ " ++ pretty s
+      "(" ++ vsS ++ " ++ " ++ pretty s ++ ")"
     where
       vsS = "[" ++ concat (intersperse ", " (map (pretty . runIdentity) vs)) ++ "]"
 
   pretty (StreamDrop (Identity i) (Identity s)) =
-      "drop " ++ show i ++ " " ++ pretty s
+      "(" ++ "drop " ++ show i ++ " " ++ pretty s ++ ")"
 
   pretty (StreamOP1 (Identity op) (Identity s)) =
-    pretty op ++ " " ++ pretty s
+    "(" ++ pretty op ++ " " ++ pretty s ++ ")"
 
   pretty (StreamOP2 (Identity op) (Identity s1) (Identity s2)) =
-    pretty op ++ " " ++ pretty s1 ++ " " ++ pretty s2
+    "(" ++ pretty op ++ " " ++ pretty s1 ++ " " ++ pretty s2 ++ ")"
 
   pretty (StreamOP3 (Identity op) (Identity s1) (Identity s2) (Identity s3)) =
-    pretty op ++ " " ++ pretty s1 ++ " " ++ pretty s2 ++ " " ++ pretty s3
+    "(" ++ pretty op ++ " " ++ pretty s1 ++ " " ++ pretty s2 ++ " " ++ pretty s3 ++ ")"
 
   pretty _ = error "Not implemented"
   -- | StreamStruct (f (Stream f))    (f (Ident f))
