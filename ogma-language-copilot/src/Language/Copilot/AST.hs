@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 module Language.Copilot.AST where
 
 data Module f = Module (f (Ident f)) (f [f (Import f)]) (f [f (Def f)])
@@ -72,3 +73,10 @@ newtype OPOne = OPOne String
 newtype OPTwo = OPTwo String
 
 newtype OPThree = OPThree String
+
+traverseModule :: (forall a . f a -> g a) -> Module f -> Module g
+traverseModule t (Module a b c) = Module undefined undefined undefined
+  -- data Module f = Module (f (Ident f)) (f [f (Import f)]) (f [f (Def f)])
+
+traverseIdent :: (forall a . f a -> g a) -> Ident f -> Ident g
+traverseIdent t (Ident a) = Ident undefined

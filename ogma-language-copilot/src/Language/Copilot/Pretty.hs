@@ -1,12 +1,35 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeOperators     #-}
 module Language.Copilot.Pretty where
 
-import Data.List (intersperse)
+import Control.Compose
 import Data.Functor.Identity
-import Language.Copilot.AST as AST
+import Data.List             ( intersperse )
+import Language.Copilot.AST  as AST
 
 class Pretty f where
   pretty :: f -> String
+
+type WithComment = ((,) [String]) :. Identity
+
+noComment :: WithComment a -> Identity a
+noComment (O (_, a)) = a
+
+instance Pretty a => Pretty (Identity a) where
+  pretty (Identity x) = pretty x
+
+instance Pretty (Module WithComment) where
+  pretty (Module (O (si, i)) (O (sis, is)) (O (sds, ds))) =
+    unlines $
+      si'
+      ++ [ "module " ++ pretty i ++ " where"]
+      ++ [""]
+      ++ map (pretty . noComment) (runIdentity is)
+      ++ [""]
+      ++ map (pretty . noComment) (runIdentity ds)
+    where
+      si' :: [String]
+      si' = si
 
 instance Pretty (Module Identity) where
   pretty (Module (Identity i) (Identity is) (Identity ds)) =
@@ -20,6 +43,9 @@ instance Pretty (Module Identity) where
 instance Pretty (Ident Identity) where
   pretty (Ident (Identity s)) = s
 
+instance Pretty (Ident WithComment) where
+  pretty (Ident (O (_, Identity s))) = s
+
 instance Pretty (Import Identity) where
   pretty (Import (Identity qual) (Identity mod) (Identity asQ) (Identity impsSecOpt)) =
       "import " ++ qualS ++ pretty mod ++ asQS ++ " " ++ impsSecOptS
@@ -30,6 +56,15 @@ instance Pretty (Import Identity) where
       asQS  = maybe "" (\(Identity i) -> " as " ++ pretty i) asQ
 
       impsSecOptS = maybe "" ((" " ++) . pretty . runIdentity) impsSecOpt
+
+instance Pretty (Import WithComment) where
+  pretty (Import (O (_, s)) (O (_, m)) (O (_, asQ)) (O (_, iso)))
+    = pretty $
+        Import
+          s
+          (fmap (traverseIdent noComment) m)
+          undefined
+          undefined
 
 instance Pretty (ImpsSpec Identity) where
   pretty (HidingImp (Identity es)) = " hiding (" ++ concat (intersperse ", " (map (pretty . runIdentity) es)) ++ ")"
@@ -52,6 +87,8 @@ instance Pretty (Var Identity) where
 
 instance Pretty SYMBOL where
   pretty (SYMBOL s) = s
+
+instance Pretty (Def WithComment) where
 
 instance Pretty (Def Identity) where
   pretty (StreamDef (Identity signatureOpt) (Identity body)) =
