@@ -82,6 +82,7 @@ library
     Command.CStructs2MsgHandlers
     Command.FPrimeApp
     Command.FRETComponentSpec2Copilot
+    Command.FRETComponentSpec2R2U2
     Command.FRETReqsDB2Copilot
     Command.Result
     Command.ROSApp
@@ -89,12 +90,15 @@ library
     Data.Location
 
     Language.Trans.CoCoSpec2Copilot
+    Language.Trans.CoCoSpec2R2U2
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
     Language.Trans.CStructs2MsgHandlers
     Language.Trans.FRETComponentSpec2Copilot
+    Language.Trans.FRETComponentSpec2R2U2
     Language.Trans.FRETReqsDB2Copilot
     Language.Trans.SMV2Copilot
+    Language.Trans.SMV2R2U2
 
   other-modules:
     Paths_ogma_core

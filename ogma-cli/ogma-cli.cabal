@@ -93,6 +93,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  fprime                   Generate a complete F' monitoring component
                      >  fret-component-spec      Generate a Copilot file from a FRET Component
                      >                           Specification
+                     >  fret-r2u2                Generate an R2U2 file from a FRET Component
+                     >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
                      >                           Database
                      >  ros                      Generate a ROS 2 monitoring application
@@ -133,6 +135,7 @@ executable ogma
     CLI.CommandCStructs2MsgHandlers
     CLI.CommandFPrimeApp
     CLI.CommandFretComponentSpec2Copilot
+    CLI.CommandFretComponentSpec2R2U2
     CLI.CommandFretReqsDB2Copilot
     CLI.CommandROSApp
     CLI.CommandTop

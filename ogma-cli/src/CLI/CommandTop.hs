@@ -91,6 +91,7 @@ import qualified CLI.CommandCStructs2Copilot
 import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandFretComponentSpec2Copilot
+import qualified CLI.CommandFretComponentSpec2R2U2
 import qualified CLI.CommandFretReqsDB2Copilot
 import qualified CLI.CommandROSApp
 
@@ -107,6 +108,7 @@ data CommandOpts =
   | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
   | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
   | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
+  | CommandOptsFretComponentSpec2R2U2    CLI.CommandFretComponentSpec2R2U2.CommandOpts
   | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
 
@@ -125,6 +127,7 @@ commandOptsParser = subparser
   <> subcommandCFSApp
   <> subcommandFPrimeApp
   <> subcommandFretComponentSpec
+  <> subcommandFretComponentSpecR2U2
   <> subcommandFretReqs
   <> subcommandROSApp
   )
@@ -181,6 +184,17 @@ subcommandFretReqs =
        <$> CLI.CommandFretReqsDB2Copilot.commandOptsParser)
     CLI.CommandFretReqsDB2Copilot.commandDesc
 
+-- | Modifier for the FRET component spec to r2u2 subcommand, linking the
+-- subcommand options and description to the command @fret-component-spec@ at
+-- top level.
+subcommandFretComponentSpecR2U2 :: Mod CommandFields CommandOpts
+subcommandFretComponentSpecR2U2 =
+  subcommand
+    "fret-r2u2"
+    (CommandOptsFretComponentSpec2R2U2
+       <$> CLI.CommandFretComponentSpec2R2U2.commandOptsParser)
+    CLI.CommandFretComponentSpec2R2U2.commandDesc
+
 -- | Modifier for the ROS app expansion subcommand, linking the subcommand
 -- options and description to the command @ros@ at top level.
 subcommandROSApp :: Mod CommandFields CommandOpts
@@ -231,6 +245,8 @@ command (CommandOptsFPrimeApp c) =
   id <$> CLI.CommandFPrimeApp.command c
 command (CommandOptsFretComponentSpec2Copilot c) =
   id <$> CLI.CommandFretComponentSpec2Copilot.command c
+command (CommandOptsFretComponentSpec2R2U2 c) =
+  id <$> CLI.CommandFretComponentSpec2R2U2.command c
 command (CommandOptsFretReqsDB2Copilot c) =
   id <$> CLI.CommandFretReqsDB2Copilot.command c
 command (CommandOptsROSApp c) =
