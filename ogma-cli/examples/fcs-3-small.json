@@ -7,7 +7,7 @@
     "Other_variables": [
       {
         "name": "input_signal",
-        "type": "Double"
+        "type": "real"
       }
     ],
     "Requirements": [

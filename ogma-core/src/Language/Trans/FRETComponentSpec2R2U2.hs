@@ -79,95 +79,64 @@ fretComponentSpec2R2U2' :: FRETComponentSpec2R2U2Options
                            -> Either String String
 fretComponentSpec2R2U2' prefs fretComponentSpec =
     unlines . concat <$> sequence
-      [ pure imports
-      , pure externs
-      , internals
+      [ pure inputs
+      , pure [""]
       , reqs
-      , pure clock
-      , pure ftp
-      , pure pre
-      , pure spec
-      , pure main'
       ]
 
   where
 
-    -- Import header block
-    imports :: [String]
-    imports =
-      [ "import           R2U2.Compile.C99"
-      , "import           R2U2.Language          hiding (prop)"
-      , "import           R2U2.Language.Prelude"
-      , "import           R2U2.Library.LTL       (next)"
-      , "import           R2U2.Library.MTL       hiding (since,"
-        ++ " alwaysBeen, trigger)"
-      , "import           R2U2.Library.PTLTL     (since, previous,"
-        ++ " alwaysBeen)"
-      , "import qualified R2U2.Library.PTLTL     as PTLTL"
-      , "import qualified R2U2.Library.MTL       as MTL"
-      , "import           Language.R2U2          (reify)"
-      , "import           Prelude                   hiding ((&&), (||), (++),"
-        ++ " (<=), (>=), (<), (>), (==), (/=), not)"
-      , ""
-      ]
-
-    -- Extern streams
-    externs = concatMap externVarToDecl
-                        (FRET.fretExternalVariables fretComponentSpec)
+    -- Input streams
+    inputs = "INPUT" :
+             ( map ("  " ++) $
+               ( concatMap externVarToDecl
+                          (FRET.fretExternalVariables fretComponentSpec)
+               )
+             )
       where
         externVarToDecl i = [ FRET.fretExternalVariableName i
-                                ++ " :: Stream "
-                                ++ "("
+                                ++ " : "
                                 ++ fretTypeToR2U2Type
                                      prefs
                                      (FRET.fretExternalVariableType i)
-                                ++ ")"
-
-                            , FRET.fretExternalVariableName i
-                                ++ " = "
-                                ++ "extern"
-                                ++ " "
-                                ++ show (FRET.fretExternalVariableName i)
-                                ++ " "
-                                ++ "Nothing"
-                            , ""
+                                ++ ";"
                             ]
 
-    -- Internal stream definitions
-    internals = concat
-             <$> mapM internalVarToDecl
-                      (FRET.fretInternalVariables fretComponentSpec)
-      where
-        internalVarToDecl i = fmap (\implem ->
-                                [ FRET.fretInternalVariableName i
-                                    ++ " :: Stream "
-                                    ++ "("
-                                    ++ fretTypeToR2U2Type
-                                         prefs
-                                         (FRET.fretInternalVariableType i)
-                                    ++ ")"
+    -- -- Internal stream definitions
+    -- internals = concat
+    --          <$> mapM internalVarToDecl
+    --                   (FRET.fretInternalVariables fretComponentSpec)
+    --   where
+    --     internalVarToDecl i = fmap (\implem ->
+    --                             [ FRET.fretInternalVariableName i
+    --                                 ++ " :: Stream "
+    --                                 ++ "("
+    --                                 ++ fretTypeToR2U2Type
+    --                                      prefs
+    --                                      (FRET.fretInternalVariableType i)
+    --                                 ++ ")"
 
-                                , FRET.fretInternalVariableName i
-                                    ++ " = "
-                                    ++ implem
+    --                             , FRET.fretInternalVariableName i
+    --                                 ++ " = "
+    --                                 ++ implem
 
-                                , ""
-                                ]) implementation
-          where
-            implementation = if null (FRET.fretInternalVariableR2U2 i)
-                               then CoCoSpec.boolSpec2R2U2
-                                      <$> CoCoSpec.pBoolSpec
-                                            ( CoCoSpec.myLexer
-                                            $ FRET.fretInternalVariableLustre i
-                                            )
-                               else pure (FRET.fretInternalVariableR2U2 i)
+    --                             , ""
+    --                             ]) implementation
+    --       where
+    --         implementation = CoCoSpec.boolSpec2R2U2
+    --                            <$> CoCoSpec.pBoolSpec
+    --                                  ( CoCoSpec.myLexer
+    --                                  $ FRET.fretInternalVariableLustre i
+    --                                  )
 
     -- Encoding of requirements as boolean streams
     reqs :: Either String [String]
-    reqs = concat <$> mapM reqToDecl (FRET.fretRequirements fretComponentSpec)
+    reqs = fmap ("PTSPEC" :)
+         $ fmap (map ("  " ++))
+         $ concat <$> mapM reqToDecl (FRET.fretRequirements fretComponentSpec)
       where
         reqToDecl i = sequence
-                        [ pure reqComment, pure reqSignature, reqBody, pure "" ]
+                        [ reqBody, pure "" ]
           where
             -- Definition comment, which includes the requirement for
             -- traceability purposes.
@@ -185,8 +154,9 @@ fretComponentSpec2R2U2' prefs fretComponentSpec =
                         then reqBodyCoCo
                         else reqBodyPT
 
-            reqBodyPT = fmap (\e -> FRET.fretRequirementName i ++ " = "
-                                      ++ SMV.boolSpec2R2U2 e
+            reqBodyPT = fmap (\e -> -- FRET.fretRequirementName i ++ " = "
+                                    --   ++
+                                    SMV.boolSpec2R2U2 e ++ ";"
                              )
                              (fromMaybe (Left $ "No requirement for " ++ show i)
                                         (FRET.fretRequirementPTExpanded i))
@@ -198,67 +168,13 @@ fretComponentSpec2R2U2' prefs fretComponentSpec =
                             (fromMaybe (Left $ "No requirement for " ++ show i)
                                        (FRET.fretRequirementCoCoSpec i))
 
-    -- Auxiliary streams: clock
-    clock :: [String]
-    clock = [ ""
-            , "-- | Clock that increases in one-unit steps."
-            , "clock :: Stream Int64"
-            , "clock = [0] ++ (clock + 1)"
-            , ""
-            ]
-
-    -- Auxiliary streams: first time point
-    ftp :: [String]
-    ftp = [ ""
-          , "-- | First Time Point"
-          , "ftp :: Stream Bool"
-          , "ftp = [True] ++ false"
-          , ""
-          ]
-
-    -- Auxiliary streams: pre
-    pre = [ ""
-          , "pre :: Stream Bool -> Stream Bool"
-          , "pre = ([False] ++)"
-          ]
-
-    -- Main specification
-    spec :: [String]
-    spec = [ ""
-           , "-- | Complete specification. Calls the C function void "
-             ++ " handler(); when"
-           , "-- the property is violated."
-           , "spec :: Spec"
-           , "spec = do"
-           ]
-           ++ triggers
-           ++ [ "" ]
-      where
-        triggers :: [String]
-        triggers = fmap reqTrigger (FRET.fretRequirements fretComponentSpec)
-
-        reqTrigger :: FRETRequirement -> String
-        reqTrigger r = "  trigger " ++ show handlerName ++ " (not "
-                       ++ propName ++ ") " ++ "[]"
-          where
-            handlerName = "handler" ++ FRET.fretRequirementName r
-            propName    = FRET.fretRequirementName r
-
-    -- Main program that compiles specification to C in two files (code and
-    -- header).
-    main' :: [String]
-    main' = [ ""
-            , "main :: IO ()"
-            , "main = reify spec >>= compile \"fret\""
-            ]
-
 -- | Return the corresponding type in R2U2 matching a given FRET type.
 fretTypeToR2U2Type :: FRETComponentSpec2R2U2Options -> String -> String
-fretTypeToR2U2Type _options "bool"    = "Bool"
+fretTypeToR2U2Type _options "bool"    = "bool"
 fretTypeToR2U2Type options  "int"     = fretCS2R2U2IntType options
 fretTypeToR2U2Type options  "integer" = fretCS2R2U2IntType options
 fretTypeToR2U2Type options  "real"    = fretCS2R2U2RealType options
-fretTypeToR2U2Type _options "string"  = "String"
+fretTypeToR2U2Type _options "string"  = "string"
 fretTypeToR2U2Type _options x         = x
 
 -- | Analyze a FRET-R2U2 file and determine if there will be any name

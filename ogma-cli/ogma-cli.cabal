@@ -94,6 +94,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  handlers                 Generate message handlers from C structs
                      >  cfs                      Generate a complete CFS/Copilot application
                      >  fprime                   Generate a complete F' monitoring component
+                     >  fret-r2u2                Generate an R2U2 file from a FRET Component
+                     >                           Specification
                      >  ros                      Generate a ROS 2 monitoring application
                      >  standalone               Generate a Copilot file from an input specification
                      >  diagram                  Generate a monitor from a state machine diagram
@@ -142,6 +144,7 @@ executable ogma
     CLI.CommandCStructs2MsgHandlers
     CLI.CommandDiagram
     CLI.CommandFPrimeApp
+    CLI.CommandFretComponentSpec2R2U2
     CLI.CommandROSApp
     CLI.CommandStandalone
     CLI.CommandTop
