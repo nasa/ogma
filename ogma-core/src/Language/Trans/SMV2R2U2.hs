@@ -144,20 +144,21 @@ ordOp2R2U2 OrdOpGE = ">="
 
 -- | Return the R2U2 representation of a unary logical FRET operator.
 opOne2R2U2 :: OpOne -> String
-opOne2R2U2 (Op1Alone x)    = opOneAlone2R2U2 x
-opOne2R2U2 (Op1MTL x op v) = opOneMTL2R2U2 x op v
+opOne2R2U2 (Op1Alone x)          = opOneAlone2R2U2 x
+opOne2R2U2 (Op1MTL x op v)       = opOneMTL2R2U2 x op v
+opOne2R2U2 (Op1MTLRange x v1 v2) = opOneMTL2R2U2'' x v1 v2
 
 -- | Return the R2U2 representation of a unary logical non-MTL FRET
 -- operator.
 opOneAlone2R2U2 :: Op1Name -> String
-opOneAlone2R2U2 Op1Pre  = "P" -- double check
-opOneAlone2R2U2 Op1X    = "N"
-opOneAlone2R2U2 Op1G    = "G"
-opOneAlone2R2U2 Op1F    = "F"
-opOneAlone2R2U2 Op1Y    = "P" -- double check
-opOneAlone2R2U2 Op1Z    = "! P !" -- double check
-opOneAlone2R2U2 Op1Hist = "H"
-opOneAlone2R2U2 Op1O    = "O"
+opOneAlone2R2U2 Op1Pre  = "H[1,1]"    -- double check
+opOneAlone2R2U2 Op1X    = "G[1,1]"
+opOneAlone2R2U2 Op1G    = "G[0," ++ show missionTime ++ "[]"
+opOneAlone2R2U2 Op1F    = "F[0," ++ show missionTime ++ "[]"
+opOneAlone2R2U2 Op1Y    = "H[1,1]"    -- double check
+opOneAlone2R2U2 Op1Z    = "H[1,1]"    -- double check
+opOneAlone2R2U2 Op1Hist = "H[0," ++ show missionTime ++ "[]"
+opOneAlone2R2U2 Op1O    = "O[0," ++ show missionTime ++ "[]"
 
 -- | Return the R2U2 representation of a unary logical MTL FRET operator.
 opOneMTL2R2U2 :: Op1Name -> OrdOp -> Number -> String
@@ -165,6 +166,13 @@ opOneMTL2R2U2 operator _comparison number =
   opOneMTL2R2U2' operator ++ "[" ++ show (0 :: Int)
                              ++ "," ++ number2R2U2 number
                              ++ "]"
+
+-- | Return the R2U2 representation of a unary logical MTL FRET operator.
+opOneMTL2R2U2'' :: Op1Name -> Number -> Number -> String
+opOneMTL2R2U2'' operator n1 n2 =
+  opOneMTL2R2U2' operator ++ "[" ++ number2R2U2 n1
+                          ++ "," ++ number2R2U2 n2
+                          ++ "]"
 
 -- | Return the R2U2 representation of a unary logical possibly MTL FRET
 -- operator.
@@ -185,10 +193,10 @@ number2R2U2 (NumberInt n) = show n
 -- | Return the R2U2 representation of a binary logical non-MTL FRET
 -- operator.
 opTwo2R2U2 :: OpTwo -> String
-opTwo2R2U2 Op2S = "S"
-opTwo2R2U2 Op2T = "T"
-opTwo2R2U2 Op2V = "R"
-opTwo2R2U2 Op2U = "U"
+opTwo2R2U2 Op2S = "S[0,]" ++ show missionTime ++ "]"
+opTwo2R2U2 Op2T = "T[0,]" ++ show missionTime ++ "]"
+opTwo2R2U2 Op2V = "R[0,]" ++ show missionTime ++ "]"
+opTwo2R2U2 Op2U = "U[0,]" ++ show missionTime ++ "]"
 
 -- | Return the R2U2 representation of a FRET identifier.
 ident2R2U2 :: Ident -> String
@@ -218,3 +226,5 @@ numExprNames numExpr = case numExpr of
   NumConstD _c            -> []
   NumAdd expr1 _op expr2  -> numExprNames expr1 ++ numExprNames expr2
   NumMult expr1 _op expr2 -> numExprNames expr1 ++ numExprNames expr2
+
+missionTime = 100
