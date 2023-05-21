@@ -110,6 +110,7 @@ testFretComponentSpec2Copilot file success = do
                  { fretCS2CopilotUseCoCoSpec = False
                  , fretCS2CopilotIntType     = "Int64"
                  , fretCS2CopilotRealType    = "Float"
+                 , fretCS2CopilotFilename    = "fret"
                  }
     result <- fretComponentSpec2Copilot file opts
 
