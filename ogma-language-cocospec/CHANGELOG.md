@@ -1,7 +1,8 @@
 # Revision history for ogma-language-cocospec
 
-## [1.X.Y] - 2023-05-21
+## [1.0.9] - 2023-05-21
 
+* Version bump 1.0.9 (#93).
 * Add unary operators ZtoPre, YtoPre (#86).
 
 ## [1.0.8] - 2023-03-21
