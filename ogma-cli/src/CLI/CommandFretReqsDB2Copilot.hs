@@ -43,7 +43,8 @@ module CLI.CommandFretReqsDB2Copilot
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, strOption, switch )
+import Options.Applicative ( Parser, help, long, metavar, showDefault,
+                             strOption, switch, value )
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -58,6 +59,7 @@ import Command.FRETReqsDB2Copilot ( ErrorCode, FRETReqsDB2CopilotOptions (..),
 data CommandOpts = CommandOpts
   { fretReqsDBFileName :: FilePath
   , fretReqsDBCoCoSpec :: Bool
+  , fretReqsDBTarget   :: String
   }
 
 -- | Transform a FRET requirements database containing a temporal logic
@@ -75,6 +77,7 @@ command c =
     internalCommandOpts :: FRETReqsDB2CopilotOptions
     internalCommandOpts = FRETReqsDB2CopilotOptions
       { fretReqsDB2CopilotUseCoCoSpec = fretReqsDBCoCoSpec c
+      , fretReqsDB2CopilotFilename    = fretReqsDBTarget   c
       }
 
 -- * CLI
@@ -97,6 +100,13 @@ commandOptsParser = CommandOpts
         (  long "cocospec"
         <> help strFretCoCoDesc
         )
+  <*> strOption
+        (  long "target-file-name"
+        <> metavar "FILENAME"
+        <> help strFretTargetDesc
+        <> showDefault
+        <> value "fret"
+        )
 
 -- | Argument FRET command description
 strFretArgDesc :: String
@@ -105,3 +115,7 @@ strFretArgDesc = "FRET file with requirements."
 -- | CoCoSpec flag description
 strFretCoCoDesc :: String
 strFretCoCoDesc = "Use CoCoSpec variant of TL properties"
+
+-- | Target file name flag description.
+strFretTargetDesc :: String
+strFretTargetDesc = "Filename prefix for monitoring files in target language"
