@@ -512,8 +512,7 @@ FPrime's Reference Application:
 
 ```sh
 $ ogma fprime --fret-file-name Export.json --variable-db fprime-variable-db --app-target-dir fprime_demo
-$ ogma fret-component-spec --fret-file-name Export.json > Spec.hs
-$ sed -i -e 's/compile "fret"/compile "copilot"/g' Spec.hs
+$ ogma fret-component-spec --fret-file-name Export.json --target-file-name copilot > Spec.hs
 $ cd fprime_demo/
 $ runhaskell ../Spec.hs
 $ docker build -t fprime .
