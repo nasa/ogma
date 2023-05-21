@@ -62,6 +62,7 @@ import qualified Language.FRETReqsDB.AST as FRET ( FRETReqsDB, semantics,
 -- to Copilot code.
 data FRETReqsDB2CopilotOptions = FRETReqsDB2CopilotOptions
   { fretReqsDB2CopilotUseCoCoSpec :: Bool
+  , fretReqsDB2CopilotFilename    :: String
   }
 
 -- | Return a string with the contents of the Copilot module that implements a
@@ -93,10 +94,12 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
                               else SMV.boolSpecNames smvSpec
 
     sections | fretReqsDB2CopilotUseCoCoSpec prefs
-             = [ imports, propDef, externs, clock, ftp, undef, spec, main' ]
+             = [ imports, propDef, externs, clock, ftp, undef, tpre, spec
+               , main'
+               ]
 
              | otherwise
-             = [ imports, propDef, externs, clock, ftp, spec, main' ]
+             = [ imports, propDef, externs, clock, ftp, tpre, spec, main' ]
 
     imports :: [String]
     imports =
@@ -144,6 +147,11 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
                , "pre = undefined"
                ]
 
+    tpre     = [ ""
+               , "tpre :: Stream Bool -> Stream Bool"
+               , "tpre = ([True] ++)"
+               ]
+
     spec     = [ ""
                , "-- | Complete specification. Calls the C function void handler(); when"
                , "-- the property is violated."
@@ -155,5 +163,6 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
 
     main'    = [ ""
                , "main :: IO ()"
-               , "main = reify spec >>= compile \"fret\""
+               , "main = reify spec >>= compile \""
+                    ++ fretReqsDB2CopilotFilename prefs ++ "\""
                ]

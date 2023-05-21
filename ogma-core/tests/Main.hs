@@ -110,6 +110,7 @@ testFretComponentSpec2Copilot file success = do
                  { fretCS2CopilotUseCoCoSpec = False
                  , fretCS2CopilotIntType     = "Int64"
                  , fretCS2CopilotRealType    = "Float"
+                 , fretCS2CopilotFilename    = "fret"
                  }
     result <- fretComponentSpec2Copilot file opts
 
@@ -139,6 +140,7 @@ testFretReqsDBCoCoSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON
 testFretReqsDBCoCoSpec2Copilot file success = do
     let opts = FRETReqsDB2CopilotOptions
                  { fretReqsDB2CopilotUseCoCoSpec = True
+                 , fretReqsDB2CopilotFilename    = "fret"
                  }
     result <- fretReqsDB2Copilot file opts
 

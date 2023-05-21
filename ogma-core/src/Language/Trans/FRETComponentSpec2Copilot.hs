@@ -57,6 +57,7 @@ data FRETComponentSpec2CopilotOptions = FRETComponentSpec2CopilotOptions
   { fretCS2CopilotUseCoCoSpec :: Bool
   , fretCS2CopilotIntType     :: String
   , fretCS2CopilotRealType    :: String
+  , fretCS2CopilotFilename    :: String
   }
 
 -- | Transform a FRET TL specification into a Copilot specification.
@@ -86,6 +87,7 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
       , pure clock
       , pure ftp
       , pure pre
+      , pure tpre
       , pure spec
       , pure main'
       ]
@@ -222,6 +224,12 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
           , "pre = ([False] ++)"
           ]
 
+    -- Auxiliary streams: tpre
+    tpre = [ ""
+           , "tpre :: Stream Bool -> Stream Bool"
+           , "tpre = ([True] ++)"
+           ]
+
     -- Main specification
     spec :: [String]
     spec = [ ""
@@ -249,7 +257,8 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
     main' :: [String]
     main' = [ ""
             , "main :: IO ()"
-            , "main = reify spec >>= compile \"fret\""
+            , "main = reify spec >>= compile \""
+                 ++ fretCS2CopilotFilename prefs ++ "\""
             ]
 
 -- | Return the corresponding type in Copilot matching a given FRET type.

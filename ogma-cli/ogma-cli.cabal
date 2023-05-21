@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.0.8
+version:             1.0.9
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -67,9 +67,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                        to a Copilot monitor.
                      .
                      - Generating
-                       <https://ros.org Robot Operating System (ROS2)>
+                       <https://ros.org Robot Operating System (ROS 2)>
                        applications that use Copilot for monitoring data
                        received from different topics.
+                     .
+                     - Generating
+                       <https://github.com/nasa/fprime F'>
+                       components that use Copilot for monitoring.
                      .
                      The main invocation with @--help@ lists sub-commands available.
                      .
@@ -91,7 +95,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
                      >                           Database
-                     >  ros                      Generate a ROS2 monitoring application
+                     >  ros                      Generate a ROS 2 monitoring application
                      .
                      For further information, see:
                      .
@@ -103,11 +107,13 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      - <https://cfs.gsfc.nasa.gov/ The NASA Core Flight System web page>.
                      .
-                     - <https://ros.org/ The Robot Operating System (ROS2) web page>.
+                     - <https://ros.org/ The Robot Operating System (ROS 2) web page>.
                      .
-                     - <https://ntrs.nasa.gov/citations/20200003164 "Copilot 3">, Perez, Dedden and Goodloe. 2020.
+                     - <https://github.com/nasa/fprime The F' repository>.
                      .
-                     - <https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf "From Requirements to Autonomous Flight">, Dutle et al. 2020.
+                     - "<https://ntrs.nasa.gov/citations/20200003164 Copilot 3>", Perez, Dedden and Goodloe. 2020.
+                     .
+                     - "<https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf From Requirements to Autonomous Flight>", Dutle et al. 2020.
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -135,7 +141,7 @@ executable ogma
   build-depends:
       base                 >= 4.11.0.0 && < 5
     , optparse-applicative
-    , ogma-core            >= 1.0.8 && < 1.1
+    , ogma-core            >= 1.0.9 && < 1.1
 
   hs-source-dirs:
     src

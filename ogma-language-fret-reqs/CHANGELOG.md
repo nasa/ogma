@@ -1,5 +1,9 @@
 # Revision history for ogma-language-fret-reqs
 
+## [1.0.9] - 2023-05-21
+
+* Version bump 1.0.9 (#93).
+
 ## [1.0.8] - 2023-03-21
 
 * Version bump 1.0.8 (#81).
