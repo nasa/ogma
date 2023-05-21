@@ -71,6 +71,10 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                        applications that use Copilot for monitoring data
                        received from different topics.
                      .
+                     - Generating
+                       <https://github.com/nasa/fprime F'>
+                       components that use Copilot for monitoring.
+                     .
                      The main invocation with @--help@ lists sub-commands available.
                      .
                      >$ ogma --help
