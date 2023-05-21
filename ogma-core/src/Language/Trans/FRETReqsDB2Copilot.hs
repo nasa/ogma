@@ -94,10 +94,12 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
                               else SMV.boolSpecNames smvSpec
 
     sections | fretReqsDB2CopilotUseCoCoSpec prefs
-             = [ imports, propDef, externs, clock, ftp, undef, spec, main' ]
+             = [ imports, propDef, externs, clock, ftp, undef, tpre, spec
+               , main'
+               ]
 
              | otherwise
-             = [ imports, propDef, externs, clock, ftp, spec, main' ]
+             = [ imports, propDef, externs, clock, ftp, tpre, spec, main' ]
 
     imports :: [String]
     imports =
@@ -143,6 +145,11 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
                , "ot = undefined"
                , "pre :: Stream Bool -> Stream Bool"
                , "pre = undefined"
+               ]
+
+    tpre     = [ ""
+               , "tpre :: Stream Bool -> Stream Bool"
+               , "tpre = ([True] ++)"
                ]
 
     spec     = [ ""

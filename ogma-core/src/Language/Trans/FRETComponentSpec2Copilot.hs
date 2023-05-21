@@ -87,6 +87,7 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
       , pure clock
       , pure ftp
       , pure pre
+      , pure tpre
       , pure spec
       , pure main'
       ]
@@ -222,6 +223,12 @@ fretComponentSpec2Copilot' prefs fretComponentSpec =
           , "pre :: Stream Bool -> Stream Bool"
           , "pre = ([False] ++)"
           ]
+
+    -- Auxiliary streams: tpre
+    tpre = [ ""
+           , "tpre :: Stream Bool -> Stream Bool"
+           , "tpre = ([True] ++)"
+           ]
 
     -- Main specification
     spec :: [String]

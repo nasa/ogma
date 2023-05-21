@@ -130,6 +130,8 @@ const2Copilot BoolConstFTP   = "ftp"
 -- operator.
 opOnePre2Copilot :: Op1Pre -> String
 opOnePre2Copilot Op1Pre    = "pre"
+opOnePre2Copilot Op1YtoPre = "pre"
+opOnePre2Copilot Op1ZtoPre = "tpre"
 opOnePre2Copilot Op1Once   = "PTLTL.eventuallyPrev"
 opOnePre2Copilot Op1Hist   = "PTLTL.alwaysBeen"
 opOnePre2Copilot Op1Y      = "PTLTL.previous"
