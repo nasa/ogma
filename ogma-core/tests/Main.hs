@@ -140,6 +140,7 @@ testFretReqsDBCoCoSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON
 testFretReqsDBCoCoSpec2Copilot file success = do
     let opts = FRETReqsDB2CopilotOptions
                  { fretReqsDB2CopilotUseCoCoSpec = True
+                 , fretReqsDB2CopilotFilename    = "fret"
                  }
     result <- fretReqsDB2Copilot file opts
 
