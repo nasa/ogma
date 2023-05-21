@@ -62,6 +62,7 @@ data CommandOpts = CommandOpts
   , fretComponentSpecCoCoSpec :: Bool
   , fretComponentSpecIntType  :: String
   , fretComponentSpecRealType :: String
+  , fretComponentSpecTarget   :: String
   }
 
 -- | Transform a FRET component specification into a Copilot specification.
@@ -80,6 +81,7 @@ command c =
       { fretCS2CopilotUseCoCoSpec = fretComponentSpecCoCoSpec c
       , fretCS2CopilotIntType     = fretComponentSpecIntType  c
       , fretCS2CopilotRealType    = fretComponentSpecRealType c
+      , fretCS2CopilotFilename    = fretComponentSpecTarget   c
       }
 
 -- * CLI
@@ -118,6 +120,13 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "Float"
         )
+  <*> strOption
+        (  long "target-file-name"
+        <> metavar "FILENAME"
+        <> help strFretTargetDesc
+        <> showDefault
+        <> value "fret"
+        )
 
 -- | Argument FRET command description
 strFretArgDesc :: String
@@ -134,3 +143,7 @@ strFretIntTypeDesc = "Map integer variables to the given type"
 -- | Real type mapping flag description.
 strFretRealTypeDesc :: String
 strFretRealTypeDesc = "Map real variables to the given type"
+
+-- | Target file name flag description.
+strFretTargetDesc :: String
+strFretTargetDesc = "Filename prefix for monitoring files in target language"

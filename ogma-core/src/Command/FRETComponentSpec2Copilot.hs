@@ -94,6 +94,7 @@ data FRETComponentSpec2CopilotOptions = FRETComponentSpec2CopilotOptions
   { fretCS2CopilotUseCoCoSpec :: Bool
   , fretCS2CopilotIntType     :: String
   , fretCS2CopilotRealType    :: String
+  , fretCS2CopilotFilename    :: String
   }
 
 -- | Parse a JSON file containing a FRET component specification.
@@ -130,6 +131,7 @@ fretComponentSpec2CopilotOptions options =
       (fretCS2CopilotUseCoCoSpec options)
       (fretCS2CopilotIntType options)
       (fretCS2CopilotRealType options)
+      (fretCS2CopilotFilename options)
 
 -- * Result
 

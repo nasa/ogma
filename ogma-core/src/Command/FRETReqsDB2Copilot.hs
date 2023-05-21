@@ -93,6 +93,7 @@ fretReqsDB2Copilot fp useCoCoSpec = do
 -- to Copilot code.
 data FRETReqsDB2CopilotOptions = FRETReqsDB2CopilotOptions
   { fretReqsDB2CopilotUseCoCoSpec :: Bool
+  , fretReqsDB2CopilotFilename    :: String
   }
 
 -- | Parse a JSON file containing a FRET requirement database.
@@ -127,6 +128,7 @@ fretReqsDB2CopilotOptions :: FRETReqsDB2CopilotOptions
 fretReqsDB2CopilotOptions options =
   T.FRETReqsDB2CopilotOptions
       (fretReqsDB2CopilotUseCoCoSpec options)
+      (fretReqsDB2CopilotFilename options)
 
 -- * Result
 

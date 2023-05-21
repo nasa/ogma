@@ -292,6 +292,21 @@ Note that Copilot supports only a limited subset of numeric types, which
 must be instances of the type class
 [`Typed`](https://hackage.haskell.org/package/copilot-core/docs/Copilot-Core-Type.html#t:Typed).
 
+**Name customization**
+
+All FRET-related commands allow for customization of the target C filenames via
+an argument `--target-file-name`. For example, the following execution causes
+the C files produced by Copilot to be called `monitor.c`, `monitor.h` and
+`monitor_types.h`, as opposed to the default names `fret.c`, `fret.h` and
+`fret_types.h`, respectively:
+
+```sh
+$ ogma fret-component-spec --cocospec --fret-file-name examples/fret-reqs-small.json --target-file-name monitor > FretCopilot.hs
+$ runhaskell FretCopilot.hs
+$ ls monitor*
+monitor.c  monitor.h  monitor_types.h
+```
+
 ## cFS Application Generation
 
 [NASA Core Flight System](https://cfs.gsfc.nasa.gov/) (cFS) is a flight
@@ -497,8 +512,7 @@ FPrime's Reference Application:
 
 ```sh
 $ ogma fprime --fret-file-name Export.json --variable-db fprime-variable-db --app-target-dir fprime_demo
-$ ogma fret-component-spec --fret-file-name Export.json > Spec.hs
-$ sed -i -e 's/compile "fret"/compile "copilot"/g' Spec.hs
+$ ogma fret-component-spec --fret-file-name Export.json --target-file-name copilot > Spec.hs
 $ cd fprime_demo/
 $ runhaskell ../Spec.hs
 $ docker build -t fprime .

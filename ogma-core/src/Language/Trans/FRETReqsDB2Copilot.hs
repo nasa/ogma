@@ -62,6 +62,7 @@ import qualified Language.FRETReqsDB.AST as FRET ( FRETReqsDB, semantics,
 -- to Copilot code.
 data FRETReqsDB2CopilotOptions = FRETReqsDB2CopilotOptions
   { fretReqsDB2CopilotUseCoCoSpec :: Bool
+  , fretReqsDB2CopilotFilename    :: String
   }
 
 -- | Return a string with the contents of the Copilot module that implements a
@@ -155,5 +156,6 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
 
     main'    = [ ""
                , "main :: IO ()"
-               , "main = reify spec >>= compile \"fret\""
+               , "main = reify spec >>= compile \""
+                    ++ fretReqsDB2CopilotFilename prefs ++ "\""
                ]
