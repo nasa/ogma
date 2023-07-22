@@ -128,11 +128,40 @@ data FRETRequirement = FRETRequirement
   deriving (Show)
 
 instance FromJSON FRETRequirement where
-  parseJSON (Object v) = FRETRequirement
-    <$> v .: "name"
-    <*> (fmap (CoCoSpec.pBoolSpec . CoCoSpec.myLexer) <$> v .: "CoCoSpecCode")
-    <*> (fmap (SMV.pBoolSpec . SMV.myLexer) <$> v .: "ptLTL")
-    <*> (v .: "fretish")
+  parseJSON (Object v) = do
+      n <- v .: "name"
+
+      coco  <- fmap (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
+                 <$> v .: "CoCoSpecCode"
+      coco' <-
+        case coco of
+          Nothing        -> fail $ noField "CoCoSpecCode" n
+          Just (Left s)  -> fail $ noParse "CoCoSpecCode" n s
+          Just (Right _) -> return coco
+
+      ptltl  <- fmap (SMV.pBoolSpec . SMV.myLexer) <$> v .: "ptLTL"
+      ptltl' <-
+        case ptltl of
+          Nothing        -> fail $ noField "ptLTL" n
+          Just (Left s)  -> fail $ noParse "ptLTL" n s
+          Just (Right _) -> return ptltl
+
+      fretish <- v .: "fretish"
+
+      return $ FRETRequirement n coco' ptltl' fretish
+
+    where
+
+      noField field req = concat
+        [ "error: requirement ", show req , " does not have a ", field
+        , " field"
+        ]
+
+      noParse field req err = concat
+        [ "error: parsing of ", field, " field of requirement ", show req
+        , " failed with ", err
+        ]
+
 
   parseJSON invalid =
     prependFailure "parsing FRET Requirement failed, "

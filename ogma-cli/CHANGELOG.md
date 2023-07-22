@@ -1,5 +1,10 @@
 # Revision history for ogma-cli
 
+## [1.0.10] - 2023-07-21
+
+* Version bump 1.0.10 (#98).
+* Correct test case (#96).
+
 ## [1.0.9] - 2023-05-21
 
 * Version bump 1.0.9 (#93).
