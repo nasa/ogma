@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.X] - 2023-07-21
+
+* Correct test case (#96).
+
 ## [1.0.9] - 2023-05-21
 
 * Version bump 1.0.9 (#93).
