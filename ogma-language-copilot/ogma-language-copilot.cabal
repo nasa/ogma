@@ -63,6 +63,7 @@ library
 
   exposed-modules:
     Language.Copilot.CStruct
+    Language.Copilot.PrintCopilotNew
 
     -- Automatically generated
     Language.Copilot.AbsCopilot
