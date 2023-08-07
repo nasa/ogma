@@ -55,7 +55,7 @@ ProgramEntryFunction . ProgramEntry ::= Function;
 TypeDef . TypeDef ::= "type" ID "=" TopLevelType ";" ;
 
 -- constant: 'const' ID (':' type)? '=' expr ';';
-Contant . Constant ::= "const" ID OptType "=" Expr ";" ;
+Constant . Constant ::= "const" ID OptType "=" Expr ";" ;
 
 OptType0 . OptType ::= ;
 OptType1 . OptType ::= ":" Type ;
