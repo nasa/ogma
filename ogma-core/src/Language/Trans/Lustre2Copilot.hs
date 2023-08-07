@@ -57,9 +57,19 @@ lustre2CopilotProgramEntries = mapM lustre2CopilotProgramEntry
 
 lustre2CopilotProgramEntry :: Lustre.ProgramEntry -> Either String Copilot.Def
 lustre2CopilotProgramEntry (Lustre.ProgramEntryNode node)      = lustre2CopilotNode node
-lustre2CopilotProgramEntry (Lustre.ProgramEntryTypeDef  _node) = Left "cannot translate Lustre type definitions."
-lustre2CopilotProgramEntry (Lustre.ProgramEntryConstant _node) = Left "cannot translate Lustre constants."
+lustre2CopilotProgramEntry (Lustre.ProgramEntryTypeDef  node)  = lustre2CopilotTypeDef node
+lustre2CopilotProgramEntry (Lustre.ProgramEntryConstant node)  = lustre2CopilotConstant node
 lustre2CopilotProgramEntry (Lustre.ProgramEntryFunction _node) = Left "cannot translate Lustre functions."
+
+lustre2CopilotTypeDef :: Lustre.TypeDef -> Either String Copilot.Def
+lustre2CopilotTypeDef (Lustre.TypeDef ident tlt) = undefined
+
+lustre2CopilotConstant :: Lustre.Constant -> Either String Copilot.Def
+lustre2CopilotConstant (Lustre.Constant ident ty expr) =
+  Copilot.MkDef <$> pure (lustre2CopilotId ident)
+                <*> pure []
+                <*> lustre2CopilotExpr expr
+                <*> pure Copilot.LocalDefNothing
 
 lustre2CopilotNode :: Lustre.Node -> Either String Copilot.Def
 lustre2CopilotNode
