@@ -110,11 +110,11 @@ EIDSeq1Req  . EIDSeq1 ::= EIDSeq1 "," EID ;
 --     ;
 
 TopLeveTypeSimple . TopLevelType ::= Type ;
-TopLeveTypeStruct . TopLevelType ::= "struct" "{" ID ":" Type StructFields0 "}" ;
+TopLeveTypeStruct . TopLevelType ::= "struct" "{" ID ":" Type ";" StructFields0 "}" ;
 TopLeveTypeEnum   . TopLevelType ::= "enum"   "{" ID EnumFields0 "}" ;
 
 StructFields0 . StructFields0 ::= ;
-StructFieldsN . StructFields0 ::= StructFields0 ";" ID ":" Type ;
+StructFieldsN . StructFields0 ::= StructFields0 ID ":" Type ";" ;
 
 EnumFields0 . EnumFields0 ::= ;
 EnumFieldsN . EnumFields0 ::= EnumFields0 "," ID ;
