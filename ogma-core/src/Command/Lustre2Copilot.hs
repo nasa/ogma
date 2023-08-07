@@ -63,18 +63,20 @@ lustre2Copilot :: FilePath
                -> IO (Result ErrorCode)
 lustre2Copilot fp = do
 
-  -- All of the following operations use Either to return error messages. The
-  -- use of the monadic bind to pass arguments from one function to the next
-  -- will cause the program to stop at the earliest error.
-  --
-  -- The guard (checking whether the result is Left or Right) must happen
-  -- before the first side effects (output file creation), or the file may be
-  -- (over) written even when processing fails.
-  lustre <- parseLustreProgram fp
+    -- All of the following operations use Either to return error messages. The
+    -- use of the monadic bind to pass arguments from one function to the next
+    -- will cause the program to stop at the earliest error.
+    --
+    -- The guard (checking whether the result is Left or Right) must happen
+    -- before the first side effects (output file creation), or the file may be
+    -- (over) written even when processing fails.
+    lustre <- parseLustreProgram fp
 
-  case L.lustre2Copilot =<< lustre of
-    Right spec  -> putStrLn spec >> return Success
-    Left msg    -> return $ Error ecLustreError msg (LocationFile fp)
+    case L.lustre2Copilot =<< lustre of
+      Right spec  -> putStrLn spec >> return Success
+      Left msg    -> return $ Error ecLustreError msg (LocationFile fp)
+
+  where
 
     -- | Parse a Lustre file.
     --

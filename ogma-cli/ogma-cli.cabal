@@ -134,6 +134,7 @@ executable ogma
     CLI.CommandFPrimeApp
     CLI.CommandFretComponentSpec2Copilot
     CLI.CommandFretReqsDB2Copilot
+    CLI.CommandLustre2Copilot
     CLI.CommandROSApp
     CLI.CommandTop
     CLI.Result

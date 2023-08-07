@@ -92,6 +92,7 @@ import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandFretComponentSpec2Copilot
 import qualified CLI.CommandFretReqsDB2Copilot
+import qualified CLI.CommandLustre2Copilot
 import qualified CLI.CommandROSApp
 
 -- * Command
@@ -108,6 +109,7 @@ data CommandOpts =
   | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
   | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
   | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
+  | CommandOptsLustre2Copilot            CLI.CommandLustre2Copilot.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
 
 -- * CLI
@@ -126,6 +128,7 @@ commandOptsParser = subparser
   <> subcommandFPrimeApp
   <> subcommandFretComponentSpec
   <> subcommandFretReqs
+  <> subcommandLustre2Copilot
   <> subcommandROSApp
   )
 
@@ -199,6 +202,16 @@ subcommandFPrimeApp =
     (CommandOptsFPrimeApp <$> CLI.CommandFPrimeApp.commandOptsParser)
     CLI.CommandFPrimeApp.commandDesc
 
+-- | Modifier for the Lustre to copilot subcommand, linking the subcommand
+-- options and description to the command @lustre@ at top level.
+subcommandLustre2Copilot :: Mod CommandFields CommandOpts
+subcommandLustre2Copilot =
+  subcommand
+    "lustre"
+    (CommandOptsLustre2Copilot
+       <$> CLI.CommandLustre2Copilot.commandOptsParser)
+    CLI.CommandLustre2Copilot.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -227,6 +240,8 @@ command (CommandOptsCStructs2Copilot c) =
   id <$> CLI.CommandCStructs2Copilot.command c
 command (CommandOptsCStructs2MsgHandlers c) =
   id <$> CLI.CommandCStructs2MsgHandlers.command c
+command (CommandOptsLustre2Copilot c) =
+  id <$> CLI.CommandLustre2Copilot.command c
 command (CommandOptsFPrimeApp c) =
   id <$> CLI.CommandFPrimeApp.command c
 command (CommandOptsFretComponentSpec2Copilot c) =
