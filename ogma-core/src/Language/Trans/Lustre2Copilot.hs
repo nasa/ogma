@@ -109,12 +109,19 @@ lustre2CopilotLetSeq' (Lustre.LetSeq1 ls lsI) =
                    <*> (lustre2CopilotLetSeqItem' lsI)
 
 lustre2CopilotLetSeqItem' :: Lustre.LetSeqItem -> Either String Copilot.Def
-lustre2CopilotLetSeqItem' (Lustre.LetSeqItemEquation equation) = lustre2CopilotEquation' equation
-lustre2CopilotLetSeqItem' (Lustre.LetSeqItemProperty _)   = Left "local property definitions not supported."
-lustre2CopilotLetSeqItem' (Lustre.LetSeqItemAssertion _)  = Left "local assertion definitions not supported."
-lustre2CopilotLetSeqItem' (Lustre.LetSeqItemMain _)       = Left "local main definitions not supported."
-lustre2CopilotLetSeqItem' (Lustre.LetSeqItemRealInputs _) = Left "local real input definitions not supported."
-lustre2CopilotLetSeqItem' (Lustre.LetSeqItemIVC _)        = Left "local IVC definitions not supported."
+lustre2CopilotLetSeqItem' (Lustre.LetSeqItemEquation equation)   = lustre2CopilotEquation' equation
+lustre2CopilotLetSeqItem' (Lustre.LetSeqItemProperty _)          = Left "local property definitions not supported."
+lustre2CopilotLetSeqItem' (Lustre.LetSeqItemAssertion assertion) = lustre2CopilotAssertion assertion
+lustre2CopilotLetSeqItem' (Lustre.LetSeqItemMain _)              = Left "local main definitions not supported."
+lustre2CopilotLetSeqItem' (Lustre.LetSeqItemRealInputs _)        = Left "local real input definitions not supported."
+lustre2CopilotLetSeqItem' (Lustre.LetSeqItemIVC _)               = Left "local IVC definitions not supported."
+
+lustre2CopilotAssertion :: Lustre.Assertion -> Either String Copilot.Def
+lustre2CopilotAssertion (Lustre.Assertion expr) =
+  Copilot.MkDef <$> pure (Copilot.Ident "assertion")
+                <*> pure []
+                <*> (lustre2CopilotExpr expr)
+                <*> pure Copilot.LocalDefNothing
 
 lustre2CopilotEquation' :: Lustre.Equation -> Either String Copilot.Def
 lustre2CopilotEquation' (Lustre.Equation eqLHS expr)
