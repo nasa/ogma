@@ -215,7 +215,7 @@ lustre2CopilotBinOp :: Lustre.OP -> Either String Copilot.OPTwo
 lustre2CopilotBinOp Lustre.Op2And   = Right $ Copilot.OPTwo "&&"
 lustre2CopilotBinOp Lustre.Op2Or    = Right $ Copilot.OPTwo "||"
 lustre2CopilotBinOp Lustre.Op2XOr   = Right $ Copilot.OPTwo "`xor`"
-lustre2CopilotBinOp Lustre.Op2Delay = Left "delay not yet implemented."
+lustre2CopilotBinOp Lustre.Op2Delay = Right $ Copilot.OPTwo "delay" -- Left "delay not yet implemented."
 lustre2CopilotBinOp Lustre.Op2Impl  = Right $ Copilot.OPTwo "==>"
 lustre2CopilotBinOp Lustre.Op2Eq    = Right $ Copilot.OPTwo "=="
 lustre2CopilotBinOp Lustre.Op2NEq   = Right $ Copilot.OPTwo "/="
