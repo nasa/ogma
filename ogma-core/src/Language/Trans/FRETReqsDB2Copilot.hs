@@ -112,6 +112,7 @@ fret2CopilotModule' prefs smvSpec cocoSpec = unlines $ concat sections
       , "import           Copilot.Library.PTLTL     (since, previous,"
         ++ " alwaysBeen)"
       , "import qualified Copilot.Library.PTLTL     as PTLTL"
+      , "import qualified Copilot.Library.MTL       as MTL"
       , "import           Language.Copilot          (reify)"
       , "import Prelude                   hiding ((&&), (||), (++), (<=), (>=),"
         ++ " (<), (>), (==), (/=), not)"
