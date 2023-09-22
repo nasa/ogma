@@ -142,6 +142,7 @@ ordOp2Copilot OrdOpGE = ">="
 opOne2Copilot :: OpOne -> String
 opOne2Copilot (Op1Alone x)    = opOneAlone2Copilot x
 opOne2Copilot (Op1MTL x op v) = opOneMTL2Copilot x op v
+opOne2Copilot (Op1MTLRange op mn mx) = opOneMTLRange2Copilot op mn mx
 
 -- | Return the Copilot representation of a unary logical non-MTL FRET
 -- operator.
@@ -160,6 +161,15 @@ opOneMTL2Copilot :: Op1Name -> OrdOp -> Number -> String
 opOneMTL2Copilot operator _comparison number =
   opOneMTL2Copilot' operator ++ " " ++ show (0 :: Int)
                              ++ " " ++ number2Copilot number
+                             ++ " " ++ "clock" ++ " "
+                             ++ show (1 :: Int)
+
+-- | Return the Copilot representation of a unary logical MTL FRET operator
+-- that uses an explicit range.
+opOneMTLRange2Copilot :: Op1Name -> Number -> Number -> String
+opOneMTLRange2Copilot operator mn mx =
+  opOneMTL2Copilot' operator ++ " " ++ number2Copilot mn
+                             ++ " " ++ number2Copilot mx
                              ++ " " ++ "clock" ++ " "
                              ++ show (1 :: Int)
 
