@@ -1,5 +1,10 @@
 # Revision history for ogma-language-smv
 
+## [1.0.11] - 2023-09-21
+
+* Version bump 1.0.11 (#103).
+* Support MTL operators with number ranges (#101).
+
 ## [1.0.10] - 2023-07-21
 
 * Version bump 1.0.10 (#98).
