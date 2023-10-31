@@ -153,12 +153,12 @@ opOne2R2U2 (Op1MTLRange x v1 v2) = opOneMTL2R2U2'' x v1 v2
 opOneAlone2R2U2 :: Op1Name -> String
 opOneAlone2R2U2 Op1Pre  = "H[1,1]"    -- double check
 opOneAlone2R2U2 Op1X    = "G[1,1]"
-opOneAlone2R2U2 Op1G    = "G[0," ++ show missionTime ++ "[]"
-opOneAlone2R2U2 Op1F    = "F[0," ++ show missionTime ++ "[]"
+opOneAlone2R2U2 Op1G    = "G[0," ++ show missionTime ++ "]"
+opOneAlone2R2U2 Op1F    = "F[0," ++ show missionTime ++ "]"
 opOneAlone2R2U2 Op1Y    = "H[1,1]"    -- double check
 opOneAlone2R2U2 Op1Z    = "H[1,1]"    -- double check
-opOneAlone2R2U2 Op1Hist = "H[0," ++ show missionTime ++ "[]"
-opOneAlone2R2U2 Op1O    = "O[0," ++ show missionTime ++ "[]"
+opOneAlone2R2U2 Op1Hist = "H[0," ++ show missionTime ++ "]"
+opOneAlone2R2U2 Op1O    = "O[0," ++ show missionTime ++ "]"
 
 -- | Return the R2U2 representation of a unary logical MTL FRET operator.
 opOneMTL2R2U2 :: Op1Name -> OrdOp -> Number -> String
