@@ -1,8 +1,8 @@
 /*******************************************************************************
 ** File:
-**   copilot_cfs_msg.h 
+**   copilot_cfs_msg.h
 **
-** Purpose: 
+** Purpose:
 **  Define COPILOT App  Messages and info
 **
 ** Notes:
@@ -26,7 +26,7 @@ typedef struct
 /*
 ** Type definition (COPILOT App housekeeping)
 */
-typedef struct 
+typedef struct
 {
     uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
     uint8              copilot_command_error_count;
