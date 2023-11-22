@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2023-11-21
+
+* Remove trailing spaces from cFS app template (#108).
+
 ## [1.0.11] - 2023-09-21
 
 * Version bump 1.0.11 (#103).
