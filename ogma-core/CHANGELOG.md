@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2023-11-21
 
 * Remove trailing spaces from cFS app template (#108).
+* Replace all mentions of the Sample App (#105).
 
 ## [1.0.11] - 2023-09-21
 
