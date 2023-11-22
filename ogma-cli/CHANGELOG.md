@@ -1,7 +1,8 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2023-11-21
+## [1.1.0] - 2023-11-21
 
+* Version bump 1.1.0 (#112).
 * Document cabal update step in README (#100).
 
 ## [1.0.11] - 2023-09-21
