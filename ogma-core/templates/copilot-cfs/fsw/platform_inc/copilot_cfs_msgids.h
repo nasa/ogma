@@ -2,7 +2,7 @@
 ** File:
 **   $Id: copilot_cfs_msgids.h  $
 **
-** Purpose: 
+** Purpose:
 **  Define Sample App  Message IDs
 **
 ** Notes:
