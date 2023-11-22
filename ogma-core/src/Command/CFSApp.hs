@@ -209,7 +209,7 @@ fileContents variables msgIds msgNames msgDatas = cfsFileContents
       , "** File: copilot_cfs.c"
       , "**"
       , "** Purpose:"
-      , "**   This file contains the source code for the Sample App."
+      , "**   This file contains the source code for the Copilot App."
       , "**"
       , "*********************************************************************/"
       , ""

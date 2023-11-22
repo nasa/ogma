@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6.4)
-project(CFE_SAMPLE_APP C)
+project(CFE_COPILOT_APP C)
 
 include_directories(../../Modules/Core/Interfaces)
 include_directories(../Icarouslib/fsw/platform_inc)

@@ -2,7 +2,7 @@
 ** File: copilot_cfs.c
 **
 ** Purpose:
-**   This file contains the source code for the Sample App.
+**   This file contains the source code for the Copilot App.
 **
 *******************************************************************************/
 
@@ -60,7 +60,7 @@ void COPILOT_AppMain( void )
 
         /* Pend on receipt of command packet -- timeout set to 500 millisecs */
         status = CFE_SB_RcvMsg(&COPILOTMsgPtr, COPILOT_CommandPipe, 500);
-        
+
         CFE_ES_PerfLogEntry(COPILOT_CFS_PERF_ID);
 
         if (status == CFE_SUCCESS)
@@ -88,7 +88,7 @@ void COPILOT_AppInit(void)
 
     /*
     ** Register the events
-    */ 
+    */
     CFE_EVS_Register(COPILOT_EventFilters,
                      sizeof(COPILOT_EventFilters)/sizeof(CFE_EVS_BinFilter_t),
                      CFE_EVS_BINARY_FILTER);
@@ -103,10 +103,10 @@ void COPILOT_AppInit(void)
     CFE_EVS_SendEvent (COPILOT_STARTUP_INF_EID, CFE_EVS_INFORMATION,
                "COPILOT App Initialized. Version %d.%d.%d.%d",
                 COPILOT_CFS_MAJOR_VERSION,
-                COPILOT_CFS_MINOR_VERSION, 
-                COPILOT_CFS_REVISION, 
+                COPILOT_CFS_MINOR_VERSION,
+                COPILOT_CFS_REVISION,
                 COPILOT_CFS_MISSION_REV);
-				
+
 } /* End of COPILOT_AppInit() */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
@@ -147,7 +147,7 @@ void COPILOT_ProcessIcarousPosition(void)
     position_t* msg;
     msg = (position_t*) COPILOTMsgPtr;
     my_position = *msg;
-    
+
     // Run all copilot monitors.
     step();
 }

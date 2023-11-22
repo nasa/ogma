@@ -2,8 +2,8 @@
 ** File:
 **   $Id: copilot_cfs_perfids.h  $
 **
-** Purpose: 
-**  Define Sample App Performance IDs
+** Purpose:
+**  Define Copilot App Performance IDs
 **
 ** Notes:
 **
@@ -12,7 +12,7 @@
 #define _copilot_cfs_perfids_h_
 
 
-#define COPILOT_CFS_PERF_ID              91 
+#define COPILOT_CFS_PERF_ID              91
 
 #endif /* _copilot_cfs_perfids_h_ */
 

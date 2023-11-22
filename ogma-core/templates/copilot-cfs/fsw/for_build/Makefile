@@ -1,10 +1,10 @@
 ###############################################################################
-# File: CFS Application Makefile 
+# File: CFS Application Makefile
 #
 # $Id: Makefile 1.8 2009/07/09 12:25:54EDT rmcgraw Exp  $
 #
 # $Log: Makefile  $
-# Revision 1.8 2009/07/09 12:25:54EDT rmcgraw 
+# Revision 1.8 2009/07/09 12:25:54EDT rmcgraw
 # DCR8291:1 Changed CFE_MISSION_INC to CFS_MISSION_INC and added log
 #
 ###############################################################################
@@ -13,9 +13,9 @@
 #
 APPTARGET = copilot_cfs
 
-# 
+#
 # Entry Point for task
-# 
+#
 ENTRY_PT = COPILOT_CFSMain
 
 #
@@ -33,7 +33,7 @@ SOURCES = $(OBJS:.o=.c)
 ##
 ## Specify extra C Flags needed to build this subsystem
 ##
-LOCAL_COPTS = 
+LOCAL_COPTS =
 
 
 ##
@@ -49,22 +49,22 @@ EXEDIR=../exe
 ## entry like the following:
 ##  -R../tst_lib/tst_lib.elf
 ##
-SHARED_LIB_LINK = 
+SHARED_LIB_LINK =
 
 ########################################################################
-# Should not have to change below this line, except for customized 
+# Should not have to change below this line, except for customized
 # Mission and cFE directory structures
 ########################################################################
 
 #
-# Set build type to CFE_APP. This allows us to 
+# Set build type to CFE_APP. This allows us to
 # define different compiler flags for the cFE Core and Apps.
-# 
+#
 BUILD_TYPE = CFE_APP
 
-## 
+##
 ## Include all necessary cFE make rules
-## Any of these can be copied to a local file and 
+## Any of these can be copied to a local file and
 ## changed if needed.
 ##
 ##
@@ -98,13 +98,13 @@ INCLUDE_PATH = \
 -I../inc
 
 ##
-## Define the VPATH make variable. 
+## Define the VPATH make variable.
 ## This can be modified to include source from another directory.
 ## If there is no corresponding app in the cfs-apps directory, then this can be discarded, or
-## if the mission chooses to put the src in another directory such as "src", then that can be 
+## if the mission chooses to put the src in another directory such as "src", then that can be
 ## added here as well.
 ##
-VPATH = $(CFS_APP_SRC)/$(APPTARGET)/fsw/src 
+VPATH = $(CFS_APP_SRC)/$(APPTARGET)/fsw/src
 
 ##
 ## Include the common make rules for building a cFE Application
