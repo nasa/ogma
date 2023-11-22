@@ -3,7 +3,7 @@
 **   $Id: copilot_cfs_msgids.h  $
 **
 ** Purpose:
-**  Define Sample App  Message IDs
+**  Define Copilot App  Message IDs
 **
 ** Notes:
 **

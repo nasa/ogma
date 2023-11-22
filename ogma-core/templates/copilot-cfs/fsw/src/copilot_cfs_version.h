@@ -3,7 +3,7 @@
 **   $Id: copilot_app_version.h  $
 **
 ** Purpose:
-**  The Sample Application header file containing version number
+**  The Copilot Application header file containing version number
 **
 ** Notes:
 **
