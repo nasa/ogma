@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2024-01-18
+
+* Re-structure README around on backends (#75).
+
 ## [1.1.0] - 2023-11-21
 
 * Version bump 1.1.0 (#112).
