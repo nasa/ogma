@@ -53,13 +53,14 @@ import Data.ByteString.Extra  as B ( safeReadFile )
 import Data.String.Extra      ( sanitizeLCIdentifier, sanitizeUCIdentifier )
 import System.Directory.Extra ( copyDirectoryRecursive )
 
+-- External imports: ogma
+import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
+                                 requirementName, requirements)
+import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
+
 -- Internal imports: auxiliary
 import Command.Result                 ( Result (..) )
 import Data.Location                  ( Location (..) )
-import Language.FRETComponentSpec.AST ( FRETComponentSpec,
-                                        fretExternalVariableName,
-                                        fretExternalVariables,
-                                        fretRequirementName, fretRequirements )
 
 -- Internal imports
 import Paths_ogma_core ( getDataDir )
@@ -153,14 +154,13 @@ fprimeApp' targetDir varNames varDB monitors =
 -- | Process FRET component spec, if available, and return its abstract
 -- representation.
 parseOptionalFRETCS :: Maybe FilePath
-                    -> ExceptT ErrorTriplet IO (Maybe FRETComponentSpec)
+                    -> ExceptT ErrorTriplet IO (Maybe (Spec String))
 parseOptionalFRETCS Nothing   = return Nothing
 parseOptionalFRETCS (Just fp) = do
   -- Throws an exception if the file cannot be read.
   content <- liftIO $ B.safeReadFile fp
-
-  let fretCS :: Either String FRETComponentSpec
-      fretCS = eitherDecode =<< content
+  let fretCS :: Either String (Spec String)
+      fretCS = parseJSONSpec return fretFormat =<< eitherDecode =<< content
 
   case fretCS of
     Left e   -> throwError $ cannotOpenFRETFile fp e
@@ -219,7 +219,7 @@ parseOptionalVarDBFile (Just fp) = do
 --
 -- If a FRET file is not provided, then the user must provide BOTH a variable
 -- list, and a list of handlers.
-checkArguments :: Maybe FRETComponentSpec
+checkArguments :: Maybe (Spec a)
                -> Maybe [String]
                -> Maybe [String]
                -> Either ErrorTriplet ()
@@ -232,19 +232,19 @@ checkArguments _       _         _         = Right ()
 
 -- | Extract the variables from a FRET component specification, and sanitize
 -- them to be used in FPrime.
-fretCSExtractExternalVariables :: Maybe FRETComponentSpec -> [String]
+fretCSExtractExternalVariables :: Maybe (Spec a) -> [String]
 fretCSExtractExternalVariables Nothing   = []
 fretCSExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
-                                         $ map fretExternalVariableName
-                                         $ fretExternalVariables cs
+                                         $ map externalVariableName
+                                         $ externalVariables cs
 
 -- | Extract the requirements from a FRET component specification, and sanitize
 -- them to match the names of the handlers used by Copilot.
-fretCSExtractHandlers :: Maybe FRETComponentSpec -> [String]
+fretCSExtractHandlers :: Maybe (Spec a) -> [String]
 fretCSExtractHandlers Nothing   = []
 fretCSExtractHandlers (Just cs) = map handlerNameF
-                                $ map fretRequirementName
-                                $ fretRequirements cs
+                                $ map requirementName
+                                $ requirements cs
   where
     handlerNameF = ("handlerprop" ++) . sanitizeUCIdentifier
 
@@ -737,3 +737,19 @@ ecCannotOpenHandlersFile = 1
 -- permissions or some I/O error.
 ecCannotCopyTemplate :: ErrorCode
 ecCannotCopyTemplate = 1
+
+-- | JSONPath selectors for a FRET file
+fretFormat :: JSONFormat
+fretFormat = JSONFormat
+  { specInternalVars    = "..Internal_variables[*]"
+  , specInternalVarId   = ".name"
+  , specInternalVarExpr = ".assignmentCopilot"
+  , specInternalVarType = ".type"
+  , specExternalVars    = "..Other_variables[*]"
+  , specExternalVarId   = ".name"
+  , specExternalVarType = ".type"
+  , specRequirements    = "..Requirements[*]"
+  , specRequirementId   = ".name"
+  , specRequirementDesc = ".fretish"
+  , specRequirementExpr = ".ptLTL"
+  }

@@ -1,4 +1,4 @@
--- Copyright 2020 United States Government as represented by the Administrator
+-- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -31,7 +31,7 @@
 cabal-version:       2.0
 build-type:          Simple
 
-name:                ogma-core
+name:                ogma-spec
 version:             1.1.0
 homepage:            http://nasa.gov
 license:             OtherLicense
@@ -40,32 +40,17 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
+                     tests/fret_good.json
+                     tests/fret_bad.json
 
-synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
+synopsis:            Ogma: Runtime Monitor translator: JSON Frontend
 
 description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
                      other systems. Ogma extends
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     This package implements the internal commands of ogma.
-
-data-files:          templates/copilot-cfs/CMakeLists.txt
-                     templates/copilot-cfs/fsw/for_build/Makefile
-                     templates/copilot-cfs/fsw/mission_inc/copilot_cfs_perfids.h
-                     templates/copilot-cfs/fsw/platform_inc/copilot_cfs_msgids.h
-                     templates/copilot-cfs/fsw/src/Properties.hs
-                     templates/copilot-cfs/fsw/src/copilot_cfs_msg.h
-                     templates/copilot-cfs/fsw/src/copilot_cfs.c
-                     templates/copilot-cfs/fsw/src/copilot_cfs_version.h
-                     templates/copilot-cfs/fsw/src/copilot_cfs.h
-                     templates/copilot-cfs/fsw/src/copilot_cfs_events.h
-                     templates/ros/CMakeLists.txt
-                     templates/ros/src/.keep
-                     templates/ros/package.xml
-                     templates/fprime/CMakeLists.txt
-                     templates/fprime/Dockerfile
-                     templates/fprime/instance-copilot
+                     This library contains an abstract representation of an Ogma specification.
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -77,76 +62,13 @@ x-curation: uncurated
 library
 
   exposed-modules:
-    Command.CFSApp
-    Command.CStructs2Copilot
-    Command.CStructs2MsgHandlers
-    Command.FPrimeApp
-    Command.FRETComponentSpec2Copilot
-    Command.FRETReqsDB2Copilot
-    Command.Result
-    Command.ROSApp
-
-    Data.Location
-
-    Language.Trans.CoCoSpec2Copilot
-    Language.Trans.CStruct2CopilotStruct
-    Language.Trans.CStructs2Copilot
-    Language.Trans.CStructs2MsgHandlers
-    Language.Trans.FRETReqsDB2Copilot
-    Language.Trans.Spec2Copilot
-    Language.Trans.SMV2Copilot
-
-  other-modules:
-    Paths_ogma_core
-
-  autogen-modules:
-    Paths_ogma_core
+    Data.OgmaSpec
 
   build-depends:
-      base                    >= 4.11.0.0 && < 5
-    , aeson                   >= 2.0.0.0  && < 2.2
-    , bytestring
-    , filepath
-    , IfElse
-    , mtl
-
-    , ogma-extra              >= 1.1.0 && < 1.2
-    , ogma-language-c         >= 1.1.0 && < 1.2
-    , ogma-language-cocospec  >= 1.1.0 && < 1.2
-    , ogma-language-copilot   >= 1.1.0 && < 1.2
-    , ogma-language-fret-reqs >= 1.1.0 && < 1.2
-    , ogma-language-jsonspec  >= 1.1.0 && < 1.2
-    , ogma-language-smv       >= 1.1.0 && < 1.2
-    , ogma-spec               >= 1.1.0 && < 1.2
+      base >= 4.11.0.0 && < 5
 
   hs-source-dirs:
     src
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
-
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base
-    , HUnit
-    , QuickCheck
-    , test-framework
-    , test-framework-hunit
-    , test-framework-quickcheck2
-
-    , ogma-core
-
-  hs-source-dirs:
-    tests
 
   default-language:
     Haskell2010
