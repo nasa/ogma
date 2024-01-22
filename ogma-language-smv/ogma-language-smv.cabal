@@ -77,6 +77,7 @@ library
     Language.SMV.LexSMV
     Language.SMV.ParSMV
     Language.SMV.PrintSMV
+    Language.SMV.Substitution
 
   autogen-modules:
     Language.SMV.AbsSMV
