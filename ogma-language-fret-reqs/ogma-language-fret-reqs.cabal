@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-language-fret-reqs
-version:             1.1.0
+version:             1.2.0
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -69,8 +69,8 @@ library
     , aeson                  >= 2.0.0.0  && < 2.2
     , text
 
-    , ogma-language-cocospec >= 1.1.0 && < 1.2
-    , ogma-language-smv      >= 1.1.0 && < 1.2
+    , ogma-language-cocospec >= 1.2.0 && < 1.3
+    , ogma-language-smv      >= 1.2.0 && < 1.3
 
   hs-source-dirs:
     src

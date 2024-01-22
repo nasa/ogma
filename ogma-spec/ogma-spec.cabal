@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-spec
-version:             1.1.0
+version:             1.2.0
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -40,8 +40,6 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
-                     tests/fret_good.json
-                     tests/fret_bad.json
 
 synopsis:            Ogma: Runtime Monitor translator: JSON Frontend
 
