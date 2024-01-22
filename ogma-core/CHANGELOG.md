@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2024-01-21
+
+* Generalize JSON parser (#115).
+
 ## [1.1.0] - 2023-11-21
 
 * Version bump 1.1.0 (#112).
