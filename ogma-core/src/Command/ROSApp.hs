@@ -716,15 +716,15 @@ ecCannotCopyTemplate = 1
 -- | JSONPath selectors for a FRET file
 fretFormat :: JSONFormat
 fretFormat = JSONFormat
-  { specInternalVars    = "..Internal_variables[*]"
+  { specInternalVars    = Just "..Internal_variables[*]"
   , specInternalVarId   = ".name"
   , specInternalVarExpr = ".assignmentCopilot"
-  , specInternalVarType = ".type"
-  , specExternalVars    = "..Other_variables[*]"
+  , specInternalVarType = Just ".type"
+  , specExternalVars    = Just "..Other_variables[*]"
   , specExternalVarId   = ".name"
-  , specExternalVarType = ".type"
+  , specExternalVarType = Just ".type"
   , specRequirements    = "..Requirements[*]"
   , specRequirementId   = ".name"
-  , specRequirementDesc = ".fretish"
+  , specRequirementDesc = Just ".fretish"
   , specRequirementExpr = ".ptLTL"
   }

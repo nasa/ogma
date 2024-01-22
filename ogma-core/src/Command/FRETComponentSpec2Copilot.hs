@@ -159,16 +159,16 @@ fretComponentSpec2CopilotResult options fp result = case result of
 -- | JSONPath selectors for a FRET file
 fretFormat :: Bool -> JSONFormat
 fretFormat useCoCoSpec = JSONFormat
-  { specInternalVars    = "..Internal_variables[*]"
+  { specInternalVars    = Just "..Internal_variables[*]"
   , specInternalVarId   = ".name"
   , specInternalVarExpr = ".assignmentCopilot"
-  , specInternalVarType = ".type"
-  , specExternalVars    = "..Other_variables[*]"
+  , specInternalVarType = Just ".type"
+  , specExternalVars    = Just "..Other_variables[*]"
   , specExternalVarId   = ".name"
-  , specExternalVarType = ".type"
+  , specExternalVarType = Just ".type"
   , specRequirements    = "..Requirements[*]"
   , specRequirementId   = ".name"
-  , specRequirementDesc = ".fretish"
+  , specRequirementDesc = Just ".fretish"
   , specRequirementExpr = if useCoCoSpec then ".CoCoSpecCode" else ".ptLTL"
   }
 
