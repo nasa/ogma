@@ -92,8 +92,8 @@ library
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
     Language.Trans.CStructs2MsgHandlers
-    Language.Trans.FRETComponentSpec2Copilot
     Language.Trans.FRETReqsDB2Copilot
+    Language.Trans.Spec2Copilot
     Language.Trans.SMV2Copilot
 
   other-modules:
@@ -105,6 +105,7 @@ library
   build-depends:
       base                    >= 4.11.0.0 && < 5
     , aeson                   >= 2.0.0.0  && < 2.2
+    , bytestring
     , filepath
     , IfElse
     , mtl
@@ -113,9 +114,10 @@ library
     , ogma-language-c         >= 1.1.0 && < 1.2
     , ogma-language-cocospec  >= 1.1.0 && < 1.2
     , ogma-language-copilot   >= 1.1.0 && < 1.2
-    , ogma-language-fret-cs   >= 1.1.0 && < 1.2
     , ogma-language-fret-reqs >= 1.1.0 && < 1.2
+    , ogma-language-jsonspec  >= 1.1.0 && < 1.2
     , ogma-language-smv       >= 1.1.0 && < 1.2
+    , ogma-spec               >= 1.1.0 && < 1.2
 
   hs-source-dirs:
     src

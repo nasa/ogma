@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -41,7 +42,8 @@ module Command.FRETComponentSpec2Copilot
 
 -- External imports
 import Control.Monad.IfElse ( awhen )
-import Data.Aeson           ( eitherDecode )
+import Data.Aeson           ( eitherDecode, decode )
+import Data.ByteString.Lazy (fromStrict)
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B ( safeReadFile )
@@ -50,12 +52,22 @@ import Data.ByteString.Extra as B ( safeReadFile )
 import Command.Result ( Result (..) )
 import Data.Location  ( Location (..) )
 
--- Internal imports
-import           Language.FRETComponentSpec.AST           ( FRETComponentSpec )
-import qualified Language.Trans.FRETComponentSpec2Copilot as T
-  ( fretComponentSpec2Copilot
-  , FRETComponentSpec2CopilotOptions(FRETComponentSpec2CopilotOptions)
-  )
+-- Internal imports: language ASTs, transformers
+import Data.OgmaSpec (Spec)
+
+import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
+import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
+                                                             pBoolSpec )
+
+import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
+
+import qualified Language.SMV.AbsSMV       as SMV
+import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
+import           Language.SMV.Substitution (substituteBoolExpr)
+
+import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot)
+import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot)
+import           Language.Trans.Spec2Copilot     (spec2Copilot, specAnalyze)
 
 -- | Print the contents of a Copilot module that implements the Past-time TL
 -- formula in a FRET file.
@@ -72,21 +84,43 @@ fretComponentSpec2Copilot :: FilePath -- ^ Path to a file containing a FRET
                           -> IO (Result ErrorCode)
 fretComponentSpec2Copilot fp options = do
 
-  -- All of the following operations use Either to return error messages. The
-  -- use of the monadic bind to pass arguments from one function to the next
-  -- will cause the program to stop at the earliest error.
-  fret <- parseFretComponentSpec fp
+  let functions = fretExprPair (fretCS2CopilotUseCoCoSpec options)
 
-  -- Extract internal command options from external command options
-  let internalOptions = fretComponentSpec2CopilotOptions options
-
-  let copilot = T.fretComponentSpec2Copilot internalOptions =<< fret
+  copilot <- fretComponentSpec2Copilot' fp options functions
 
   let (mOutput, result) =
         fretComponentSpec2CopilotResult options fp copilot
 
   awhen mOutput putStrLn
   return result
+
+-- | Print the contents of a Copilot module that implements the Past-time TL
+-- formula in a FRET file, using a subexpression handler.
+--
+-- PRE: The file given is readable, contains a valid FRET file with a PT
+-- formula in the @ptExpanded@ key, the formula does not use any identifiers
+-- that exist in Copilot, or any of @prop@, @clock@, @ftp@. All identifiers
+-- used are valid C99 identifiers.
+fretComponentSpec2Copilot' :: FilePath
+                           -> FRETComponentSpec2CopilotOptions
+                           -> FRETExprPair
+                           -> IO (Either String String)
+fretComponentSpec2Copilot' fp options (FRETExprPair parse replace print) = do
+  let name        = fretCS2CopilotFilename options
+      useCoCoSpec = fretCS2CopilotUseCoCoSpec options
+      typeMaps    = fretTypeToCopilotTypeMapping options
+
+  -- All of the following operations use Either to return error messages. The
+  -- use of the monadic bind to pass arguments from one function to the next
+  -- will cause the program to stop at the earliest error.
+  content <- B.safeReadFile fp
+  res <- case content of
+           Left s  -> return $ Left s
+           Right b -> return $ parseJSONSpec parse (fretFormat useCoCoSpec) =<< eitherDecode b
+
+  let copilot = spec2Copilot name typeMaps replace print =<< specAnalyze =<< res
+
+  return copilot
 
 -- | Options used to customize the conversion of FRET Component Specifications
 -- to Copilot code.
@@ -96,17 +130,6 @@ data FRETComponentSpec2CopilotOptions = FRETComponentSpec2CopilotOptions
   , fretCS2CopilotRealType    :: String
   , fretCS2CopilotFilename    :: String
   }
-
--- | Parse a JSON file containing a FRET component specification.
---
--- Returns a 'Left' with an error message if the file does not have the correct
--- format.
---
--- Throws an exception if the file cannot be read.
-parseFretComponentSpec :: FilePath -> IO (Either String FRETComponentSpec)
-parseFretComponentSpec fp = do
-  content <- B.safeReadFile fp
-  return $ eitherDecode =<< content
 
 -- * Error codes
 
@@ -120,19 +143,6 @@ type ErrorCode = Int
 ecFretCSError :: ErrorCode
 ecFretCSError = 1
 
--- * Input arguments
-
--- | Convert command input argument options to internal transformation function
--- input arguments.
-fretComponentSpec2CopilotOptions :: FRETComponentSpec2CopilotOptions
-                                 -> T.FRETComponentSpec2CopilotOptions
-fretComponentSpec2CopilotOptions options =
-  T.FRETComponentSpec2CopilotOptions
-      (fretCS2CopilotUseCoCoSpec options)
-      (fretCS2CopilotIntType options)
-      (fretCS2CopilotRealType options)
-      (fretCS2CopilotFilename options)
-
 -- * Result
 
 -- | Process the result of the transformation function.
@@ -143,3 +153,52 @@ fretComponentSpec2CopilotResult :: FRETComponentSpec2CopilotOptions
 fretComponentSpec2CopilotResult options fp result = case result of
   Left msg -> (Nothing, Error ecFretCSError msg (LocationFile fp))
   Right t  -> (Just t, Success)
+
+-- * Parser
+
+-- | JSONPath selectors for a FRET file
+fretFormat :: Bool -> JSONFormat
+fretFormat useCoCoSpec = JSONFormat
+  { specInternalVars    = "..Internal_variables[*]"
+  , specInternalVarId   = ".name"
+  , specInternalVarExpr = ".assignmentCopilot"
+  , specInternalVarType = ".type"
+  , specExternalVars    = "..Other_variables[*]"
+  , specExternalVarId   = ".name"
+  , specExternalVarType = ".type"
+  , specRequirements    = "..Requirements[*]"
+  , specRequirementId   = ".name"
+  , specRequirementDesc = ".fretish"
+  , specRequirementExpr = if useCoCoSpec then ".CoCoSpecCode" else ".ptLTL"
+  }
+
+-- * Mapping of types from FRET to Copilot
+fretTypeToCopilotTypeMapping :: FRETComponentSpec2CopilotOptions
+                             -> [(String, String)]
+fretTypeToCopilotTypeMapping options =
+  [ ("bool",    "Bool")
+  , ("int",     fretCS2CopilotIntType options)
+  , ("integer", fretCS2CopilotIntType options)
+  , ("real",    fretCS2CopilotRealType options)
+  , ("string",  "String")
+  ]
+
+-- * Handler for boolean expressions
+
+-- | Handler for boolean expressions that knows how to parse them, replace
+-- variables in them, and convert them to Copilot.
+data FRETExprPair = forall a . FRETExprPair
+  { exprParse   :: String -> Either String a
+  , exprReplace :: [(String, String)] -> a -> a
+  , exprPrint   :: a -> String
+  }
+
+-- | Return a handler depending on whether it should be for CoCoSpec boolean
+-- expressions or for SMV boolean expressions.
+fretExprPair :: Bool -> FRETExprPair
+fretExprPair True  = FRETExprPair (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
+                                  (\_ -> id)
+                                  (CoCoSpec.boolSpec2Copilot)
+fretExprPair False = FRETExprPair (SMV.pBoolSpec . SMV.myLexer)
+                                  (substituteBoolExpr)
+                                  (SMV.boolSpec2Copilot)
