@@ -214,7 +214,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                        ++ propName ++ ") " ++ "[]"
           where
             handlerName = "handler" ++ requirementName r
-            propName    = requirementName r
+            propName    = safeMap nameSubstitutions (requirementName r)
 
     -- Main program that compiles specification to C in two files (code and
     -- header).
