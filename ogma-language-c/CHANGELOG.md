@@ -1,5 +1,9 @@
 # Revision history for ogma-language-c
 
+## [1.2.0] - 2024-01-21
+
+* Version bump 1.2.0 (#117).
+
 ## [1.1.0] - 2023-11-21
 
 * Version bump 1.1.0 (#112).

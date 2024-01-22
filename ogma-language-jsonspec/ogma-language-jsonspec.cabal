@@ -1,4 +1,4 @@
--- Copyright 2020 United States Government as represented by the Administrator
+-- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -31,8 +31,8 @@
 cabal-version:       2.0
 build-type:          Simple
 
-name:                ogma-language-fret-cs
-version:             1.1.0
+name:                ogma-language-jsonspec
+version:             1.2.0
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -40,17 +40,15 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
-                     tests/fret_good.json
-                     tests/fret_bad.json
 
-synopsis:            Ogma: Runtime Monitor translator: FRET Component Specification Frontend
+synopsis:            Ogma: Runtime Monitor translator: JSON Frontend
 
 description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
                      other systems. Ogma extends
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     This library contains a frontend to read FRET Component Specifications.
+                     This library contains a frontend to read specifications from JSON files.
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -62,44 +60,20 @@ x-curation: uncurated
 library
 
   exposed-modules:
-    Language.FRETComponentSpec.AST
+    Language.JSONSpec.Parser
 
   build-depends:
       base                   >= 4.11.0.0 && < 5
     , aeson                  >= 2.0.0.0  && < 2.2
+    , jsonpath               >= 0.3      && < 0.4
+    , text
+    , megaparsec
+    , bytestring
 
-    , ogma-language-cocospec >= 1.1.0 && < 1.2
-    , ogma-language-smv      >= 1.1.0 && < 1.2
+    , ogma-spec              >= 1.2.0 && < 1.3
 
   hs-source-dirs:
     src
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
-
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base                       >= 4.11.0.0 && < 5
-
-    , aeson                      >= 2.0.0.0  && < 2.2
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
-
-    , ogma-extra                 >= 1.1.0 && < 1.2
-    , ogma-language-fret-cs
-
-  hs-source-dirs:
-    tests
 
   default-language:
     Haskell2010

@@ -1,4 +1,4 @@
--- Copyright 2020 United States Government as represented by the Administrator
+-- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS." 
+-- IT "AS IS."
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -27,50 +27,41 @@
 -- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
-
-cabal-version:       2.0
-build-type:          Simple
-
-name:                ogma-language-copilot
-version:             1.2.0
-homepage:            http://nasa.gov
-license:             OtherLicense
-license-file:        LICENSE.pdf
-author:              Ivan Perez, Alwyn Goodloe
-maintainer:          ivan.perezdominguez@nasa.gov
-category:            Aerospace
-extra-source-files:  CHANGELOG.md
-
-synopsis:            Ogma: Runtime Monitor translator: Copilot Language Endpoints
-
-description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
-                     other systems. Ogma extends
-                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
-                     verification framework that generates hard real-time C99 code.
-                     .
-                     This library contains a frontend to read Copilot monitors, a definition of Copilot
-                     structs, and a backend to generate and pretty print Copilot code.
-
--- Ogma packages should be uncurated so that only the official maintainers make
--- changes.
 --
--- Because this is a NASA project, we want to make sure that users obtain
--- exactly what we publish, unmodified by anyone external to our project.
-x-curation: uncurated
+-- | Abstract representation of an Ogma specification.
+module Data.OgmaSpec where
 
-library
+-- | Abstract representation of an Ogma specification.
+data Spec a = Spec
+    { internalVariables :: [ InternalVariableDef ]
+    , externalVariables :: [ ExternalVariableDef ]
+    , requirements      :: [ Requirement a ]
+    }
+  deriving (Show)
 
-  exposed-modules:
-    Language.Copilot.CStruct
+-- | Internal variable definition, with a given name, its type and definining
+-- expression.
+data InternalVariableDef = InternalVariableDef
+    { internalVariableName    :: String
+    , internalVariableType    :: String
+    , internalVariableExpr    :: String
+    }
+  deriving (Show)
 
-  build-depends:
-    base >= 4.11.0.0 && < 5
+-- | External variable definition, with a given name and type.
+--
+-- The value of external variables is assigned outside Copilot, so they have no
+-- defining expression in this type.
+data ExternalVariableDef = ExternalVariableDef
+    { externalVariableName :: String
+    , externalVariableType :: String
+    }
+  deriving (Show)
 
-  hs-source-dirs:
-    src
-
-  default-language:
-    Haskell2010
-
-  ghc-options:
-    -Wall
+-- | Requirement with a given name and a boolean expression.
+data Requirement a = Requirement
+    { requirementName        :: String
+    , requirementExpr        :: a
+    , requirementDescription :: String
+    }
+  deriving (Show)

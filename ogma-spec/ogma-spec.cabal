@@ -1,4 +1,4 @@
--- Copyright 2020 United States Government as represented by the Administrator
+-- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -29,9 +29,9 @@
 -- AGREEMENT.
 
 cabal-version:       2.0
-build-type:          Custom
+build-type:          Simple
 
-name:                ogma-language-smv
+name:                ogma-spec
 version:             1.2.0
 homepage:            http://nasa.gov
 license:             OtherLicense
@@ -40,20 +40,15 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
-                     grammar/SMV.cf
-                     src/.keep
-                     tests/smv_good
-                     tests/smv_bad
 
-synopsis:            Ogma: Runtime Monitor translator: SMV Language Frontend
+synopsis:            Ogma: Runtime Monitor translator: JSON Frontend
 
 description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
                      other systems. Ogma extends
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     This library contains a frontend to read SMV Boolean expressions, used by
-                     the tool FRET to capture requirement specifications.
+                     This library contains an abstract representation of an Ogma specification.
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -62,56 +57,16 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
 -- exactly what we publish, unmodified by anyone external to our project.
 x-curation: uncurated
 
-custom-setup
-  setup-depends:
-      base    >= 4.11.0.0 && < 5
-    , Cabal   >= 2.0 && < 3.9
-    , process
-    , BNFC    >= 2.9.1
-
 library
 
   exposed-modules:
-    -- Automatically generated
-    Language.SMV.AbsSMV
-    Language.SMV.LexSMV
-    Language.SMV.ParSMV
-    Language.SMV.PrintSMV
-    Language.SMV.Substitution
-
-  autogen-modules:
-    Language.SMV.AbsSMV
-    Language.SMV.LexSMV
-    Language.SMV.ParSMV
-    Language.SMV.PrintSMV
+    Data.OgmaSpec
 
   build-depends:
-      base  >= 4.11.0.0 && < 5
-    , array >= 0.5.2.0
+      base >= 4.11.0.0 && < 5
 
   hs-source-dirs:
     src
-
-  default-language:
-    Haskell2010
-
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base                       >= 4.11.0.0 && < 5
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
-
-    , ogma-language-smv
-
-  hs-source-dirs:
-    tests
 
   default-language:
     Haskell2010
