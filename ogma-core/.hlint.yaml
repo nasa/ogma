@@ -6,7 +6,5 @@
 
 # We use data instead of newtype for uniformity.
 - ignore: { name: Use newtype instead of data
-          , within: [ Command.FRETReqsDB2Copilot
-                    , Language.Trans.FRETReqsDB2Copilot
-                    ]
+          , within: [ Command.FRETReqsDB2Copilot ]
           }
