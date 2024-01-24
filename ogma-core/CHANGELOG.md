@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2024-01-23
+
+* Fix missing stream name substitution (#120).
+
 ## [1.2.0] - 2024-01-21
 
 * Version bump 1.2.0 (#117).
