@@ -161,7 +161,7 @@ xmlSpec2CopilotResult options fp result = case result of
 
 -- | XMLPath selectors for a FRET file
 fretFormat :: Bool -> XMLFormat
-fretFormat = XMLFormat
+fretFormat useCoCoSpec = XMLFormat
   { specInternalVars    = Just "//Internal_variable"
   , specInternalVarId   = "/Internal_variable/name/text()"
   , specInternalVarExpr = "/Internal_variable/value/text()"
