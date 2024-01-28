@@ -136,6 +136,7 @@ executable ogma
     CLI.CommandFretReqsDB2Copilot
     CLI.CommandROSApp
     CLI.CommandTop
+    CLI.CommandXMLSpec2Copilot
     CLI.Result
 
   build-depends:

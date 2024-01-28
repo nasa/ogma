@@ -93,6 +93,7 @@ import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandFretComponentSpec2Copilot
 import qualified CLI.CommandFretReqsDB2Copilot
 import qualified CLI.CommandROSApp
+import qualified CLI.CommandXMLSpec2Copilot
 
 -- * Command
 
@@ -109,6 +110,7 @@ data CommandOpts =
   | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
   | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
+  | CommandOptsXMLSpec2Copilot           CLI.CommandXMLSpec2Copilot.CommandOpts
 
 -- * CLI
 
@@ -127,6 +129,7 @@ commandOptsParser = subparser
   <> subcommandFretComponentSpec
   <> subcommandFretReqs
   <> subcommandROSApp
+  <> subcommandXMLSpec
   )
 
 -- | Modifier for the CStruct to Copilot Struct generation subcommand, linking
@@ -199,6 +202,16 @@ subcommandFPrimeApp =
     (CommandOptsFPrimeApp <$> CLI.CommandFPrimeApp.commandOptsParser)
     CLI.CommandFPrimeApp.commandDesc
 
+-- | Modifier for the XML spec to copilot subcommand, linking the subcommand
+-- options and description to the command @xml-spec@ at top level.
+subcommandXMLSpec :: Mod CommandFields CommandOpts
+subcommandXMLSpec =
+  subcommand
+    "xml-spec"
+    (CommandOptsXMLSpec2Copilot
+       <$> CLI.CommandXMLSpec2Copilot.commandOptsParser)
+    CLI.CommandXMLSpec2Copilot.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -235,6 +248,8 @@ command (CommandOptsFretReqsDB2Copilot c) =
   id <$> CLI.CommandFretReqsDB2Copilot.command c
 command (CommandOptsROSApp c) =
   id <$> CLI.CommandROSApp.command c
+command (CommandOptsXMLSpec2Copilot c) =
+  id <$> CLI.CommandXMLSpec2Copilot.command c
 
 -- We indicate to HLint that the use of (id <$>) above should not trigger a
 -- warning. Conceptually, there is a transformation taking place, but no change
