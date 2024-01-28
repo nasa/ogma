@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2020 United States Government as represented by the Administrator
@@ -44,7 +45,7 @@ import Control.Exception    as E
 import Data.Aeson           (decode, eitherDecode, object, (.=))
 import Data.ByteString.Lazy (fromStrict)
 import Data.Foldable        (for_)
-import Data.List            (isInfixOf, nub, (\\))
+import Data.List            (isInfixOf, isPrefixOf, nub, (\\))
 import Data.Maybe           (fromMaybe)
 import System.Directory     (doesFileExist)
 import System.Process       (readProcess)
@@ -64,6 +65,7 @@ import Paths_ogma_core (getDataDir)
 import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
                       Requirement (..), Spec (..))
 import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
+import Language.XMLSpec.Parser  (parseXMLSpec)
 
 -- Internal imports: language ASTs, transformers
 import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
@@ -135,7 +137,7 @@ standalone' :: FilePath
             -> StandaloneOptions
             -> ExprPair
             -> IO (Either String (String, String, String, String, String))
-standalone' fp options (ExprPair parse replace print ids) = do
+standalone' fp options (ExprPair parse replace print ids def) = do
   let name     = standaloneFilename options
       typeMaps = typeToCopilotTypeMapping options
 
@@ -160,19 +162,25 @@ standalone' fp options (ExprPair parse replace print ids) = do
   if formatMissing
     then return $ Left $ standaloneIncorrectFormatSpec formatFile
     else do
-      format <- read <$> readFile formatFile
+      format <- readFile formatFile
 
       let wrapper = wrapVia (standalonePropVia options) parse
-
       -- All of the following operations use Either to return error messages.
       -- The use of the monadic bind to pass arguments from one function to the
       -- next will cause the program to stop at the earliest error.
-      content <- B.safeReadFile fp
-      res <- case content of
-               Left s  -> return $ Left s
-               Right b -> do case eitherDecode b of
-                               Left e  -> return $ Left e
-                               Right v -> parseJSONSpec wrapper format v
+      res <-
+        if | isPrefixOf "XMLFormat" format
+           -> do let xmlFormat = read format
+                 content <- readFile fp
+                 parseXMLSpec wrapper def xmlFormat content
+           | otherwise
+           -> do let jsonFormat = read format
+                 content <- B.safeReadFile fp
+                 case content of
+                   Left s  -> return $ Left s
+                   Right b -> do case eitherDecode b of
+                                   Left e  -> return $ Left e
+                                   Right v -> parseJSONSpec wrapper jsonFormat v
 
       -- Complement the specification with any missing/implicit definitions
       let res' = fmap (addMissingIdentifiers ids) res
@@ -276,11 +284,15 @@ typeToCopilotTypeMapping options =
 
 -- | Handler for boolean expressions that knows how to parse them, replace
 -- variables in them, and convert them to Copilot.
+--
+-- It also contains a default value to be used whenever an expression cannot be
+-- found in the input file.
 data ExprPair = forall a . ExprPair
   { exprParse   :: String -> Either String a
   , exprReplace :: [(String, String)] -> a -> a
   , exprPrint   :: a -> String
   , exprIdents  :: a -> [String]
+  , exprUnknown :: a
   }
 
 -- | Return a handler depending on whether it should be for CoCoSpec boolean
@@ -291,10 +303,12 @@ exprPair "cocospec" = ExprPair (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
                                (\_ -> id)
                                (CoCoSpec.boolSpec2Copilot)
                                (CoCoSpec.boolSpecNames)
+                               (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
 exprPair _          = ExprPair (SMV.pBoolSpec . SMV.myLexer)
                                (substituteBoolExpr)
                                (SMV.boolSpec2Copilot)
                                (SMV.boolSpecNames)
+                               (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- | Add to a spec external variables for all identifiers mentioned in
 -- expressions that are not defined anywhere.
