@@ -30,8 +30,9 @@
 module Language.XMLSpec.Parser where
 
 -- External imports
-import Control.Monad.Except     (ExceptT (..), liftEither)
+import Control.Monad.Except     (ExceptT (..), liftEither, throwError)
 import Control.Monad.IO.Class   (liftIO)
+import Data.List                (isPrefixOf)
 import Text.XML.HXT.Core        (configSysVars, no, readString, runX,
                                  withValidate, (>>>))
 import Text.XML.HXT.DOM.ShowXml (xshow)
@@ -50,18 +51,27 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
 -- is, the internal var ID XPath will be a applied to the strings returned when
 -- applying the internal vars XPath (if it exists). Paths whose names are
 -- plural denote expected lists of elements.
+--
+-- The components of a tuple (String, Maybe (String, String)) mean the
+-- following: if a string is present but the second component is Nothing, then
+-- the string is the XPath expression to be used. If a Just value is present,
+-- the first element of its inner tuple represents a key, and the second
+-- element represents an XPath expression that will produce a value when
+-- evaluated globally in the file. After evaluating that expression, the key
+-- must be found in the first string of the three and replaced with the result
+-- of evaluating the expression.
 data XMLFormat = XMLFormat
   { specInternalVars    :: Maybe String
-  , specInternalVarId   :: String
-  , specInternalVarExpr :: String
-  , specInternalVarType :: Maybe String
+  , specInternalVarId   :: (String, Maybe (String, String))
+  , specInternalVarExpr :: (String, Maybe (String, String))
+  , specInternalVarType :: Maybe (String, Maybe (String, String))
   , specExternalVars    :: Maybe String
-  , specExternalVarId   :: String
-  , specExternalVarType :: Maybe String
+  , specExternalVarId   :: (String, Maybe (String, String))
+  , specExternalVarType :: Maybe (String, Maybe (String, String))
   , specRequirements    :: String
-  , specRequirementId   :: String
-  , specRequirementDesc :: Maybe String
-  , specRequirementExpr :: String
+  , specRequirementId   :: (String, Maybe (String, String))
+  , specRequirementDesc :: Maybe (String, Maybe (String, String))
+  , specRequirementExpr :: (String, Maybe (String, String))
   }
 
 -- | Parse an XML file and extract a Spec from it.
@@ -77,7 +87,7 @@ parseXMLSpec :: (String -> ExceptT String IO a) -- ^ Parser for expressions.
              -> String                          -- ^ String containing XML
              -> ExceptT String IO (Spec a)
 parseXMLSpec parseExpr xmlFormat value = do
-  xmlFormatInternal <- liftEither $ parseXMLFormat xmlFormat
+  xmlFormatInternal <- parseXMLFormat xmlFormat value
 
   -- Internal variables
 
@@ -196,39 +206,59 @@ data XMLFormatInternal = XMLFormatInternal
 -- | Internal representation of an XPath expression.
 type XPathExpr = String
 
+resolveIndirectly :: String -> (String, Maybe (String, String)) -> ExceptT String IO XPathExpr
+resolveIndirectly _   (query, Nothing)         = liftEither $ checkXPathExpr query
+resolveIndirectly xml (query, Just (key, val)) = do
+  -- Check that the given query string parses correctly.
+  _ <- liftEither $ checkXPathExpr val
+
+  v  <- liftIO $ executeXPath val xml
+  case v of
+    (f:_) -> do let query' = replace query key f
+                liftEither $ checkXPathExpr query'
+    _     -> throwError $ "Substitution path " ++ show val ++ " not found in file."
+
+replace :: String -> String -> String -> String
+replace []           _k  _v    = []
+replace string@(h:t) key value
+  | key `isPrefixOf` string
+  = value ++ replace (drop (length key) string) key value
+  | otherwise
+  = h : replace t key value
+
+checkXPathExpr :: String -> Either String XPathExpr
+checkXPathExpr s = s <$ parseXPathExpr s
+
 -- | Check an XMLFormat and return an internal representation.
 --
 -- Fails with an error message if any of the given expressions are not a valid
 -- XPath expression.
-parseXMLFormat :: XMLFormat -> Either String XMLFormatInternal
-parseXMLFormat xmlFormat = do
-    xfi2  <- swapMaybeEither $ checkXPathExpr <$> specInternalVars xmlFormat
-    xfi3  <- checkXPathExpr $ specInternalVarId xmlFormat
-    xfi4  <- checkXPathExpr $ specInternalVarExpr xmlFormat
-    xfi5  <- swapMaybeEither $ checkXPathExpr <$> specInternalVarType xmlFormat
-    xfi6  <- swapMaybeEither $ checkXPathExpr <$> specExternalVars xmlFormat
-    xfi7  <- checkXPathExpr $ specExternalVarId xmlFormat
-    xfi8  <- swapMaybeEither $ checkXPathExpr <$> specExternalVarType xmlFormat
-    xfi9  <- checkXPathExpr $ specRequirements xmlFormat
-    xfi10 <- checkXPathExpr $ specRequirementId xmlFormat
-    xfi11 <- swapMaybeEither $ checkXPathExpr <$> specRequirementDesc xmlFormat
-    xfi12 <- checkXPathExpr $ specRequirementExpr xmlFormat
-    return $ XMLFormatInternal
-               { xfiInternalVars    = xfi2
-               , xfiInternalVarId   = xfi3
-               , xfiInternalVarExpr = xfi4
-               , xfiInternalVarType = xfi5
-               , xfiExternalVars    = xfi6
-               , xfiExternalVarId   = xfi7
-               , xfiExternalVarType = xfi8
-               , xfiRequirements    = xfi9
-               , xfiRequirementId   = xfi10
-               , xfiRequirementDesc = xfi11
-               , xfiRequirementExpr = xfi12
-               }
-  where
-    checkXPathExpr :: String -> Either String XPathExpr
-    checkXPathExpr s = s <$ parseXPathExpr s
+parseXMLFormat :: XMLFormat -> String -> ExceptT String IO XMLFormatInternal
+parseXMLFormat xmlFormat file = do
+  xfi2  <- liftEither $ swapMaybeEither $ checkXPathExpr <$> specInternalVars xmlFormat
+  xfi3  <- resolveIndirectly file $ specInternalVarId xmlFormat
+  xfi4  <- resolveIndirectly file $ specInternalVarExpr xmlFormat
+  xfi5  <- swapMaybeExceptT $ resolveIndirectly file <$> specInternalVarType xmlFormat
+  xfi6  <- liftEither $ swapMaybeEither $ checkXPathExpr <$> specExternalVars xmlFormat
+  xfi7  <- resolveIndirectly file $ specExternalVarId xmlFormat
+  xfi8  <- swapMaybeExceptT $ resolveIndirectly file <$> specExternalVarType xmlFormat
+  xfi9  <- liftEither $ checkXPathExpr $ specRequirements xmlFormat
+  xfi10 <- resolveIndirectly file $ specRequirementId xmlFormat
+  xfi11 <- swapMaybeExceptT $ resolveIndirectly file <$> specRequirementDesc xmlFormat
+  xfi12 <- resolveIndirectly file $ specRequirementExpr xmlFormat
+  return $ XMLFormatInternal
+             { xfiInternalVars    = xfi2
+             , xfiInternalVarId   = xfi3
+             , xfiInternalVarExpr = xfi4
+             , xfiInternalVarType = xfi5
+             , xfiExternalVars    = xfi6
+             , xfiExternalVarId   = xfi7
+             , xfiExternalVarType = xfi8
+             , xfiRequirements    = xfi9
+             , xfiRequirementId   = xfi10
+             , xfiRequirementDesc = xfi11
+             , xfiRequirementExpr = xfi12
+             }
 
 -- | Execute an XPath query in an XML string, returning the list of strings
 -- that match the path.
@@ -249,6 +279,11 @@ swapMaybeEither :: Maybe (Either a b) -> Either a (Maybe b)
 swapMaybeEither Nothing          = Right Nothing
 swapMaybeEither (Just (Left s))  = Left s
 swapMaybeEither (Just (Right x)) = Right $ Just x
+
+-- | Swap the Maybe and Either layers of a value.
+swapMaybeExceptT :: Monad m => Maybe (ExceptT a m b) -> ExceptT a m (Maybe b)
+swapMaybeExceptT Nothing   = return Nothing
+swapMaybeExceptT (Just e)  = Just <$> e
 
 -- | Convert a list to an Either, failing if the list provided does not have
 -- exactly one value.
