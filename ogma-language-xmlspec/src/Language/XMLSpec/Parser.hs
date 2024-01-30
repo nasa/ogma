@@ -291,3 +291,25 @@ listToEither :: String -> [String] -> Either String String
 listToEither _   [x] = Right x
 listToEither msg []  = Left $ "Failed to find a value for " ++ msg
 listToEither msg _   = Left $ "Unexpectedly found multiple values for " ++ msg
+
+reqIfFormat :: XMLFormat
+reqIfFormat = XMLFormat
+    { specInternalVars    = Nothing
+    , specInternalVarId   = ("//*", Nothing)
+    , specInternalVarExpr = ("//*", Nothing)
+    , specInternalVarType = Nothing
+    , specExternalVars    = Nothing
+    , specExternalVarId   = ("//*", Nothing)
+    , specExternalVarType = Nothing
+    , specRequirements    = requirements
+    , specRequirementId   = (requirementId, Nothing)
+    , specRequirementDesc = Nothing
+    , specRequirementExpr = (requirementExprVal, Just ("KEY", requirementExprKey))
+    }
+  where
+    requirementExprVal = "//ATTRIBUTE-VALUE-XHTML/DEFINITION/ATTRIBUTE-DEFINITION-XHTML-REF[contains(text(),'KEY')]/../../THE-VALUE/xhtml:div/text()"
+
+    requirementExprKey = "//ATTRIBUTE-DEFINITION-XHTML[contains(@LONG-NAME, \"ReqIF.Text\")]/@IDENTIFIER/text()"
+
+    requirements = "//SPEC-OBJECTS"
+    requirementId = "//SPEC-OBJECT/@IDENTIFIER/text()"
