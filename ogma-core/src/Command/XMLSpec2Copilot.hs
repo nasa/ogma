@@ -104,7 +104,7 @@ xmlSpec2Copilot' :: FilePath
                  -> XMLSpec2CopilotOptions
                  -> ExprHandler
                  -> IO (Either String String)
-xmlSpec2Copilot' fp options (ExprHandler parse replace print) = do
+xmlSpec2Copilot' fp options (ExprHandler parse replace print def) = do
   let name        = xmlSpec2CopilotFilename options
       useCoCoSpec = xmlSpec2CopilotUseCoCoSpec options
       typeMaps    = xmlTypeToCopilotTypeMapping options
@@ -120,7 +120,7 @@ xmlSpec2Copilot' fp options (ExprHandler parse replace print) = do
            Right b -> case eitherDecode b of
                         Left s  -> return $ Left s
                         Right x -> runExceptT $
-                                     parseXMLSpec parse' (fretFormat useCoCoSpec) x
+                                     parseXMLSpec parse' def mdFormat x
 
   let copilot = spec2Copilot name typeMaps replace print =<< specAnalyze =<< res
 
@@ -128,10 +128,8 @@ xmlSpec2Copilot' fp options (ExprHandler parse replace print) = do
 
 -- | Options used to customize the conversion of XML Specs to Copilot code.
 data XMLSpec2CopilotOptions = XMLSpec2CopilotOptions
-  { xmlSpec2CopilotUseCoCoSpec :: Bool
-  , xmlSpec2CopilotIntType     :: String
-  , xmlSpec2CopilotRealType    :: String
-  , xmlSpec2CopilotFilename    :: String
+  { xmlSpec2CopilotFilename    :: String
+  , xmlSpec2CopilotUseCoCoSpec :: Bool
   }
 
 -- * Error codes
@@ -159,34 +157,32 @@ xmlSpec2CopilotResult options fp result = case result of
 
 -- * Parser
 
--- | XMLPath selectors for a FRET file
-fretFormat :: Bool -> XMLFormat
-fretFormat useCoCoSpec = XMLFormat
-  { specInternalVars    = Just "//Internal_variable"
-  , specInternalVarId   = "/Internal_variable/name/text()"
-  , specInternalVarExpr = "/Internal_variable/value/text()"
-  , specInternalVarType = Nothing
-  , specExternalVars    = Just "//Other_variable"
-  , specExternalVarId   = "/Other_variable/name/text()"
-  , specExternalVarType = Just "/Other_variable/type/text()"
-  , specRequirements    = "//Requirement"
-  , specRequirementId   = "/Requirement/name/text()"
-  , specRequirementDesc = Nothing
-  , specRequirementExpr = if useCoCoSpec
-                            then "/Requirement/CoCoSpecCode/text()"
-                            else "/Requirement/ptLTL/text()"
-  }
+mdFormat :: XMLFormat
+mdFormat = XMLFormat
+    { specInternalVars    = Nothing
+    , specInternalVarId   = ("//*", Nothing)
+    , specInternalVarExpr = ("//*", Nothing)
+    , specInternalVarType = Nothing
+    , specExternalVars    = Nothing
+    , specExternalVarId   = ("//*", Nothing)
+    , specExternalVarType = Nothing
+    , specRequirements    = (requirements, Nothing)
+    , specRequirementId   = (requirementId, Nothing)
+    , specRequirementDesc = Just (requirementNameVal, Nothing)
+    , specRequirementExpr = (requirementExprVal, Nothing)
+    }
+  where
+    requirementExprVal = "//sysml:Requirement/@Text/text()"
+
+    requirementNameVal = "//sysml:Requirement/@Id/text()"
+
+    requirements = "//sysml:Requirement"
+    requirementId = "//sysml:Requirement/@Id/text()"
 
 -- * Mapping of types from FRET to Copilot
 xmlTypeToCopilotTypeMapping :: XMLSpec2CopilotOptions
                             -> [(String, String)]
-xmlTypeToCopilotTypeMapping options =
-  [ ("bool",    "Bool")
-  , ("int",     xmlSpec2CopilotIntType options)
-  , ("integer", xmlSpec2CopilotIntType options)
-  , ("real",    xmlSpec2CopilotRealType options)
-  , ("string",  "String")
-  ]
+xmlTypeToCopilotTypeMapping options = []
 
 -- * Handler for boolean expressions
 
@@ -196,6 +192,7 @@ data ExprHandler = forall a . ExprHandler
   { exprParse   :: String -> Either String a
   , exprReplace :: [(String, String)] -> a -> a
   , exprPrint   :: a -> String
+  , exprDef     :: a
   }
 
 -- | Return a handler depending on whether it should be for CoCoSpec boolean
@@ -204,6 +201,8 @@ exprHandler :: Bool -> ExprHandler
 exprHandler True  = ExprHandler (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
                                 (\_ -> id)
                                 (CoCoSpec.boolSpec2Copilot)
+                                (CoCoSpec.BoolSpecConstB CoCoSpec.BoolConstFalse)
 exprHandler False = ExprHandler (SMV.pBoolSpec . SMV.myLexer)
                                 (substituteBoolExpr)
                                 (SMV.boolSpec2Copilot)
+                                (SMV.BoolSpecConst SMV.BoolConstFalse)

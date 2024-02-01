@@ -59,8 +59,6 @@ import Command.XMLSpec2Copilot (ErrorCode, XMLSpec2CopilotOptions (..),
 data CommandOpts = CommandOpts
   { xmlSpecFileName :: FilePath
   , xmlSpecCoCoSpec :: Bool
-  , xmlSpecIntType  :: String
-  , xmlSpecRealType :: String
   , xmlSpecTarget   :: String
   }
 
@@ -78,8 +76,6 @@ command c =
     internalCommandOpts :: XMLSpec2CopilotOptions
     internalCommandOpts = XMLSpec2CopilotOptions
       { xmlSpec2CopilotUseCoCoSpec = xmlSpecCoCoSpec c
-      , xmlSpec2CopilotIntType     = xmlSpecIntType  c
-      , xmlSpec2CopilotRealType    = xmlSpecRealType c
       , xmlSpec2CopilotFilename    = xmlSpecTarget   c
       }
 
@@ -104,22 +100,6 @@ commandOptsParser = CommandOpts
         <> help strXMLCoCoDesc
         )
   <*> strOption
-        (  long "map-int-to"
-        <> short 'i'
-        <> metavar "TYPE_NAME"
-        <> help strXMLIntTypeDesc
-        <> showDefault
-        <> value "Int64"
-        )
-  <*> strOption
-        (  long "map-real-to"
-        <> short 'r'
-        <> metavar "TYPE_NAME"
-        <> help strXMLRealTypeDesc
-        <> showDefault
-        <> value "Float"
-        )
-  <*> strOption
         (  long "target-file-name"
         <> metavar "FILENAME"
         <> help strXMLTargetDesc
@@ -134,14 +114,6 @@ strXMLArgDesc = "XML file with properties or requirements."
 -- | CoCoSpec flag description
 strXMLCoCoDesc :: String
 strXMLCoCoDesc = "Interpret properties as CoCoSpec boolean expressions"
-
--- | Int type mapping flag description.
-strXMLIntTypeDesc :: String
-strXMLIntTypeDesc = "Map integer variables to the given type"
-
--- | Real type mapping flag description.
-strXMLRealTypeDesc :: String
-strXMLRealTypeDesc = "Map real variables to the given type"
 
 -- | Target file name flag description.
 strXMLTargetDesc :: String

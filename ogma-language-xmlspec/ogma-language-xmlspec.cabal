@@ -67,6 +67,8 @@ library
     , mtl
     , hxt
     , hxt-xpath
+    , hxt-regex-xmlschema
+    , pretty-simple
 
     , ogma-spec              >= 1.2.0 && < 1.3
 
