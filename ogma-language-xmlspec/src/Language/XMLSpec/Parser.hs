@@ -38,7 +38,8 @@ import Data.List                (isPrefixOf, isInfixOf)
 import Data.Maybe               (fromMaybe, isNothing)
 import Data.Tree.NTree.TypeDefs
 import Text.XML.HXT.DOM.XmlNode (getDTDAttrl, mkDTDElem, getNode)
-import Text.XML.HXT.Core hiding (xshow, getDTDAttrl, mkDTDElem, getNode)
+import Text.XML.HXT.Core hiding (xshow, getDTDAttrl, mkDTDElem, getNode, trace)
+import Debug.Trace
 --         (listA, configSysVars, no, readString, runX,
 --                                  withOutputPLAIN, withSubstDTDEntities, withErrors, withValidate, withRedirect, withCanonicalize, withRemoveWS, yes, (>>>),  xshowEscapeXml, Attributes)
 import Text.XML.HXT.DOM.ShowXml (xshow)
@@ -70,18 +71,19 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
 -- must be found in the first string of the three and replaced with the result
 -- of evaluating the expression.
 data XMLFormat = XMLFormat
-  { specInternalVars    :: Maybe String
-  , specInternalVarId   :: (String, Maybe (String, String))
-  , specInternalVarExpr :: (String, Maybe (String, String))
-  , specInternalVarType :: Maybe (String, Maybe (String, String))
-  , specExternalVars    :: Maybe String
-  , specExternalVarId   :: (String, Maybe (String, String))
-  , specExternalVarType :: Maybe (String, Maybe (String, String))
-  , specRequirements    :: (String, Maybe (String, String))
-  , specRequirementId   :: (String, Maybe (String, String))
-  , specRequirementDesc :: Maybe (String, Maybe (String, String))
-  , specRequirementExpr :: (String, Maybe (String, String))
-  }
+    { specInternalVars    :: Maybe String
+    , specInternalVarId   :: (String, Maybe (String, String))
+    , specInternalVarExpr :: (String, Maybe (String, String))
+    , specInternalVarType :: Maybe (String, Maybe (String, String))
+    , specExternalVars    :: Maybe String
+    , specExternalVarId   :: (String, Maybe (String, String))
+    , specExternalVarType :: Maybe (String, Maybe (String, String))
+    , specRequirements    :: (String, Maybe (String, String))
+    , specRequirementId   :: (String, Maybe (String, String))
+    , specRequirementDesc :: Maybe (String, Maybe (String, String))
+    , specRequirementExpr :: (String, Maybe (String, String))
+    }
+  deriving (Show, Read)
 
 -- | Parse an XML file and extract a Spec from it.
 --
@@ -291,7 +293,8 @@ parseXMLFormat xmlFormat file = do
 -- that match the path.
 executeXPath :: String -> String -> IO [String]
 executeXPath query string = do
-  let config = [withValidate no, withRedirect no, withCanonicalize no, withRemoveWS yes, withSubstDTDEntities no, withOutputPLAIN]
+  -- putStrLn $ "Executing path " ++ query ++ " in " ++ string
+  let config = [withValidate no, withRedirect no, withCanonicalize no, withRemoveWS yes, withSubstDTDEntities no, withOutputPLAIN, withSubstHTMLEntities no]
   v <- runX $ configSysVars config >>> (readString config string >>> getXPathTrees query)
 
   -- We apply xshow to every tree to turn it back into a string. That will
@@ -303,7 +306,10 @@ executeXPath query string = do
   -- putStrLn "List ends here ***************************************"
   -- putStrLn "List ends here ***************************************"
   -- putStrLn "List ends here ***************************************"
-  return $ map ((\x -> showXmlTrees showString showString x "") . (:[])) v
+  let u = map ((\x -> showXmlTrees showString showString x "") . (:[])) v
+  -- mapM_ pPrint u
+  -- putStrLn "Real end"
+  return $ u
 
 f query string = do
   let config = [withValidate no, withRedirect no, withCanonicalize no, withRemoveWS yes, withSubstDTDEntities no, withTextMode yes]
@@ -418,53 +424,54 @@ showXmlTrees cf af
 
       showTrees                 :: XmlTrees -> StringFct
       showTrees                 = foldr (.) id . map showXmlTree
-      {-# INLINE showTrees #-}
 
       showTrees'                :: XmlTrees -> StringFct
       showTrees'                = foldr (\ x y -> x . showNL . y) id . map showXmlTree
-      {-# INLINE showTrees' #-}
 
       -- ------------------------------------------------------------
 
       showXmlTree             :: XmlTree  -> StringFct
-      showXmlTree (NTree (XText s) _)                         -- common cases first
+      showXmlTree s = showXmlTree' s
+
+      showXmlTree'             :: XmlTree  -> StringFct
+      showXmlTree' (NTree (XText s) _)                         -- common cases first
                                 = cf (textEscapeXml' s)
 
-      showXmlTree (NTree (XTag t al) [])
+      showXmlTree' (NTree (XTag t al) [])
                                 = showLt . showQName t . showTrees al . showSlash . showGt
 
-      showXmlTree (NTree (XTag t al) cs)
+      showXmlTree' (NTree (XTag t al) cs)
                                 = showLt . showQName t . showTrees al . showGt
                                   . showTrees cs
                                   . showLt . showSlash . showQName t . showGt
 
-      showXmlTree (NTree (XAttr an) cs)
+      showXmlTree' (NTree (XAttr an) cs)
                                 = showBlank
                                   . showQName an
                                   . showEq
                                   . showQuot
-                                  . af (xshow cs)
+                                  . af (showXmlTrees cf af cs "")
                                   . showQuot
 
-      showXmlTree (NTree (XBlob b) _)
+      showXmlTree' (NTree (XBlob b) _)
                                 = cf . blobToString $ b
 
-      showXmlTree (NTree (XCharRef i) _)
+      showXmlTree' (NTree (XCharRef i) _)
                                 = showString "&#" . showString (show i) . showChar ';'
 
-      showXmlTree (NTree (XEntityRef r) _)
+      showXmlTree' (NTree (XEntityRef r) _)
                                 = showString "&" . showString r . showChar ';'
 
-      showXmlTree (NTree (XCmt c) _)
+      showXmlTree' (NTree (XCmt c) _)
                                 = showString "<!--" . showString c . showString "-->"
 
-      showXmlTree (NTree (XCdata d) _)
+      showXmlTree' (NTree (XCdata d) _)
                                 = showString "<![CDATA[" . showString d' . showString "]]>"
                                   where
                                     -- quote "]]>" in CDATA contents
                                     d' = sed (const "]]&gt;") "\\]\\]>" d
 
-      showXmlTree (NTree (XPi n al) _)
+      showXmlTree' (NTree (XPi n al) _)
                                 = showString "<?"
                                   . showQName n
                                   . (foldr (.) id . map showPiAttr) al
@@ -478,14 +485,14 @@ showXmlTrees cf af
                                           = showBlank . showXmlTrees showString showString cs
                                       | otherwise
                                           -- <?xml version="..." ... ?>
-                                          = showXmlTree a
+                                          = showXmlTree' a
                                   showPiAttr a
-                                      = showXmlTree a -- id
+                                      = showXmlTree' a -- id
 
-      showXmlTree (NTree (XDTD de al) cs)
+      showXmlTree' (NTree (XDTD de al) cs)
                                 = showXmlDTD de al cs
 
-      showXmlTree (NTree (XError l e) _)
+      showXmlTree' (NTree (XError l e) _)
                                 = showString "<!-- ERROR ("
                                   . shows l
                                   . showString "):\n"
@@ -778,6 +785,7 @@ concatMap'      :: (Char -> StringFct) -> String -> StringFct
 concatMap' f    = foldr (\ x r -> f x . r) id
 {-# INLINE concatMap' #-}
 
+textEscapeXml' :: String -> String
 textEscapeXml' = concatMap textEscapeChar
 
 textEscapeChar '<' = "&lt;"
