@@ -114,13 +114,9 @@ xmlSpec2Copilot' fp options (ExprHandler parse replace print def) = do
   -- All of the following operations use Either to return error messages. The
   -- use of the monadic bind to pass arguments from one function to the next
   -- will cause the program to stop at the earliest error.
-  content <- B.safeReadFile fp
-  res <- case content of
-           Left s  -> return $ Left s
-           Right b -> case eitherDecode b of
-                        Left s  -> return $ Left s
-                        Right x -> runExceptT $
-                                     parseXMLSpec parse' def mdFormat x
+  content <- readFile fp
+  res <- runExceptT $
+           parseXMLSpec parse' def mdFormat content
 
   let copilot = spec2Copilot name typeMaps replace print =<< specAnalyze =<< res
 

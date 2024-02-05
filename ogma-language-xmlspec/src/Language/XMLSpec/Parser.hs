@@ -99,6 +99,7 @@ parseXMLSpec :: (String -> ExceptT String IO a) -- ^ Parser for expressions.
              -> String                          -- ^ String containing XML
              -> ExceptT String IO (Spec a)
 parseXMLSpec parseExpr defA xmlFormat value = do
+  liftIO $ print "Hello"
   xmlFormatInternal <- parseXMLFormat xmlFormat value
 
   -- Internal variables
@@ -181,7 +182,7 @@ parseXMLSpec parseExpr defA xmlFormat value = do
                      listToMaybe <$>
                      (concatMapM (`executeXPath` def) (xfiRequirementExpr xmlFormatInternal))
 
-        reqExpr' <- maybe (return defA) parseExpr reqExpr
+        reqExpr' <- maybe (return defA) (parseExpr . textUnescape) reqExpr
 
         let msgD = "Requirement description"
         reqDesc <- maybe
@@ -792,3 +793,10 @@ textEscapeChar '<' = "&lt;"
 textEscapeChar '>' = "&gt;"
 textEscapeChar '&' = "&amp;"
 textEscapeChar x   = [x]
+
+textUnescape :: String -> String
+textUnescape ('&':'l':'t':';':xs) = '<' : textUnescape xs
+textUnescape ('&':'g':'t':';':xs) = '>' : textUnescape xs
+textUnescape ('&':'a':'m': 'p' : ';':xs) = '&' : textUnescape xs
+textUnescape (x:xs) = x : textUnescape xs
+textUnescape [] = []
