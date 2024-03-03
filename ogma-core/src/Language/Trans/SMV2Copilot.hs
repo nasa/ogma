@@ -83,7 +83,7 @@ boolSpec2Copilot b = case b of
                               ++ ")"
 
   BoolSpecEquivs spec1 spec2 -> "(" ++ boolSpec2Copilot spec1
-                             ++ " " ++ "<==>"
+                             ++ " " ++ "=="
                              ++ " " ++ boolSpec2Copilot spec2
                              ++ ")"
 
