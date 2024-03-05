@@ -1,9 +1,10 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2024-01-24
+## [1.X.Y] - 2024-03-03
 
 * Fix missing stream name substitution (#120).
 * Use generalized JSON parser for DB Spec (#122).
+* Fix translation of equivalence boolean operator from SMV (#126).
 
 ## [1.2.0] - 2024-01-21
 
