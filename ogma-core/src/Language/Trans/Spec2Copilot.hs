@@ -213,7 +213,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
         reqTrigger r = "  trigger " ++ show handlerName ++ " (not "
                        ++ propName ++ ") " ++ "[]"
           where
-            handlerName = "handler" ++ requirementName r
+            handlerName = "handler" ++ sanitizeUCIdentifier (requirementName r)
             propName    = safeMap nameSubstitutions (requirementName r)
 
     -- Main program that compiles specification to C in two files (code and
