@@ -250,7 +250,7 @@ fretCSExtractHandlers (Just cs) = map handlerNameF
                                 $ map requirementName
                                 $ requirements cs
   where
-    handlerNameF = ("handlerprop" ++) . sanitizeUCIdentifier
+    handlerNameF = ("handler" ++) . sanitizeUCIdentifier
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
