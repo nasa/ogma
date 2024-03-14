@@ -1,11 +1,12 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2024-03-13
+## [1.X.Y] - 2024-03-14
 
 * Fix missing stream name substitution (#120).
 * Use generalized JSON parser for DB Spec (#122).
 * Fix translation of equivalence boolean operator from SMV (#126).
 * Sanitize handler names (#127).
+* Use same handler name in FPrime/ROS and Copilot (#130).
 
 ## [1.2.0] - 2024-01-21
 
