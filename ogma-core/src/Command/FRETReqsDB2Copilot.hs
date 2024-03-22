@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -30,9 +31,6 @@
 --
 -- | Transform a FRET requirements database containing a temporal logic
 -- specification into a Copilot specification.
---
--- This module makes use of
--- "Language.Trans.FRETReqsDB2Copilot", which does most of the work.
 module Command.FRETReqsDB2Copilot
     ( fretReqsDB2Copilot
     , FRETReqsDB2CopilotOptions(..)
@@ -43,21 +41,31 @@ module Command.FRETReqsDB2Copilot
 -- External imports
 import Control.Monad.IfElse ( awhen )
 import Data.Aeson           ( eitherDecode )
+import Data.List            ( nub, (\\) )
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B ( safeReadFile )
-import Data.List.Extra       ( headEither )
 
 -- Internal imports: auxiliary
 import Command.Result ( Result (..) )
 import Data.Location  ( Location (..) )
 
--- Internal imports: FRET files and conversion to Copilot
-import qualified Language.FRETReqsDB.AST           as FRET ( FRETReqsDB )
-import qualified Language.Trans.FRETReqsDB2Copilot as T
-  ( fret2CopilotModule
-  , FRETReqsDB2CopilotOptions(FRETReqsDB2CopilotOptions)
-  )
+-- Internal imports: Generic specification, parser.
+import Data.OgmaSpec            (ExternalVariableDef (..),
+                                 InternalVariableDef (..), Requirement (..),
+                                 Spec (..))
+import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
+
+-- Internal imports: language ASTs, transformers
+import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec (myLexer, pBoolSpec)
+import qualified Language.SMV.ParSMV           as SMV (myLexer, pBoolSpec)
+import           Language.SMV.Substitution     (substituteBoolExpr)
+
+import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot,
+                                                              boolSpecNames)
+import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
+                                                         boolSpecNames)
+import           Language.Trans.Spec2Copilot     (spec2Copilot, specAnalyze)
 
 -- | Print the contents of a Copilot module that implements the Past-time TL
 -- formula in a FRET file.
@@ -71,23 +79,49 @@ fretReqsDB2Copilot :: FilePath -- ^ Path to a file containing a FRET
                    -> FRETReqsDB2CopilotOptions
                                -- ^ Customization options formula
                    -> IO (Result ErrorCode)
-fretReqsDB2Copilot fp useCoCoSpec = do
+fretReqsDB2Copilot fp options = do
+
+  let functions = fretExprPair (fretReqsDB2CopilotUseCoCoSpec options)
+
+  copilot <- fretReqsDB2Copilot' fp options functions
+
+  let (mOutput, result) =
+        fretReqsDB2CopilotResult options fp copilot
+
+  awhen mOutput putStrLn
+  return result
+
+-- | Print the contents of a Copilot module that implements the Past-time TL
+-- formula in a FRET file, using a subexpression handler.
+--
+-- PRE: The file given is readable, contains a valid FRET file with a PT
+-- formula in the @ptExpanded@ key, the formula does not use any identifiers
+-- that exist in Copilot, or any of @prop@, @clock@, @ftp@. All identifiers
+-- used are valid C99 identifiers.
+fretReqsDB2Copilot' :: FilePath
+                           -> FRETReqsDB2CopilotOptions
+                           -> FRETExprPair
+                           -> IO (Either String String)
+fretReqsDB2Copilot' fp options (FRETExprPair parse replace showExpr ids) = do
+  let name        = fretReqsDB2CopilotFilename options
+      useCoCoSpec = fretReqsDB2CopilotUseCoCoSpec options
+      typeMaps    = [("", "_")]
 
   -- All of the following operations use Either to return error messages. The
   -- use of the monadic bind to pass arguments from one function to the next
   -- will cause the program to stop at the earliest error.
-  fret <- parseFret fp
+  content <- B.safeReadFile fp
+  res <- case content of
+           Left s  -> return $ Left s
+           Right b -> return $ parseJSONSpec parse (fretFormat useCoCoSpec) =<< eitherDecode b
 
-  -- Extract internal command options from external command options
-  let internalOptions = fretReqsDB2CopilotOptions useCoCoSpec
+  -- Complement the specification with any missing/implicit definitions
+  let res' = fmap (addMissingIdentifiers ids) res
 
-  let copilot = T.fret2CopilotModule internalOptions =<< headEither =<< fret
+  let copilot =
+        spec2Copilot name typeMaps replace showExpr =<< specAnalyze =<< res'
 
-  let (mOutput, result) =
-        fretReqsDB2CopilotResult useCoCoSpec fp copilot
-
-  awhen mOutput putStrLn
-  return result
+  return copilot
 
 -- | Options used to customize the conversion of FRET Requirements Database
 -- to Copilot code.
@@ -95,17 +129,6 @@ data FRETReqsDB2CopilotOptions = FRETReqsDB2CopilotOptions
   { fretReqsDB2CopilotUseCoCoSpec :: Bool
   , fretReqsDB2CopilotFilename    :: String
   }
-
--- | Parse a JSON file containing a FRET requirement database.
---
--- Returns a 'Left' with an error message if the file does not have the correct
--- format.
---
--- Throws an exception if the file cannot be read.
-parseFret :: FilePath -> IO (Either String [FRET.FRETReqsDB])
-parseFret fp = do
-  content <- B.safeReadFile fp
-  return $ eitherDecode =<< content
 
 -- * Error codes
 
@@ -119,17 +142,6 @@ type ErrorCode = Int
 ecFretReqsDBError :: ErrorCode
 ecFretReqsDBError = 1
 
--- * Input arguments
-
--- | Convert command input argument options to internal transformation function
--- input arguments.
-fretReqsDB2CopilotOptions :: FRETReqsDB2CopilotOptions
-                          -> T.FRETReqsDB2CopilotOptions
-fretReqsDB2CopilotOptions options =
-  T.FRETReqsDB2CopilotOptions
-      (fretReqsDB2CopilotUseCoCoSpec options)
-      (fretReqsDB2CopilotFilename options)
-
 -- * Result
 
 -- | Process the result of the transformation function.
@@ -137,6 +149,65 @@ fretReqsDB2CopilotResult :: FRETReqsDB2CopilotOptions
                          -> FilePath
                          -> Either String String
                          -> (Maybe String, Result ErrorCode)
-fretReqsDB2CopilotResult options fp result = case result of
+fretReqsDB2CopilotResult _options fp result = case result of
   Left msg -> (Nothing, Error ecFretReqsDBError msg (LocationFile fp))
   Right t  -> (Just t, Success)
+
+-- * Parser
+
+-- | JSONPath selectors for a FRET file
+fretFormat :: Bool -> JSONFormat
+fretFormat useCoCoSpec = JSONFormat
+  { specInternalVars    = Nothing
+  , specInternalVarId   = ""
+  , specInternalVarExpr = ""
+  , specInternalVarType = Nothing
+  , specExternalVars    = Just ".semantics.variables..*.*"
+  , specExternalVarId   = ""
+  , specExternalVarType = Nothing
+  , specRequirements    = "$[:]"
+  , specRequirementId   = ".reqid"
+  , specRequirementDesc = Just ".fulltext"
+  , specRequirementExpr = if useCoCoSpec then ".semantics.CoCoSpecCode" else ".semantics.ptExpanded"
+  }
+
+-- * Handler for boolean expressions
+
+-- | Handler for boolean expressions that knows how to parse them, replace
+-- variables in them, and convert them to Copilot.
+data FRETExprPair = forall a . FRETExprPair
+  { exprParse   :: String -> Either String a
+  , exprReplace :: [(String, String)] -> a -> a
+  , exprPrint   :: a -> String
+  , exprIdents  :: a -> [String]
+  }
+
+-- | Return a handler depending on whether it should be for CoCoSpec boolean
+-- expressions or for SMV boolean expressions.
+fretExprPair :: Bool -> FRETExprPair
+fretExprPair True  = FRETExprPair (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
+                                  (\_ -> id)
+                                  (CoCoSpec.boolSpec2Copilot)
+                                  (CoCoSpec.boolSpecNames)
+fretExprPair False = FRETExprPair (SMV.pBoolSpec . SMV.myLexer)
+                                  (substituteBoolExpr)
+                                  (SMV.boolSpec2Copilot)
+                                  (SMV.boolSpecNames)
+
+-- | Add to a spec external variables for all identifiers mentioned in
+-- expressions that are not defined anywhere.
+addMissingIdentifiers :: (a -> [String]) -> Spec a -> Spec a
+addMissingIdentifiers f s = s { externalVariables = vars' }
+  where
+    vars'   = externalVariables s ++ newVars
+    newVars = map (\n -> ExternalVariableDef n "") newVarNames
+
+    -- Names that are not defined anywhere
+    newVarNames = identifiers \\ existingNames
+
+    -- Identifiers being mentioned in the requirements.
+    identifiers = nub $ concatMap (f . requirementExpr) (requirements s)
+
+    -- Names that are defined in variables.
+    existingNames = map externalVariableName (externalVariables s)
+                 ++ map internalVariableName (internalVariables s)

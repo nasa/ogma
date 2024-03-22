@@ -1,5 +1,14 @@
 # Revision history for ogma-core
 
+## [1.3.0] - 2024-03-21
+
+* Version bump 1.3.0 (#133).
+* Fix missing stream name substitution (#120).
+* Use generalized JSON parser for DB Spec (#122).
+* Fix translation of equivalence boolean operator from SMV (#126).
+* Sanitize handler names (#127).
+* Use same handler name in FPrime/ROS and Copilot (#130).
+
 ## [1.2.0] - 2024-01-21
 
 * Version bump 1.2.0 (#117).

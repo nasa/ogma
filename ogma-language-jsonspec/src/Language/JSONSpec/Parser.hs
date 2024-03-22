@@ -52,46 +52,46 @@ import           Text.Megaparsec       (eof, errorBundlePretty, parse)
 import Data.OgmaSpec
 
 data JSONFormat = JSONFormat
-  { specInternalVars    :: String
+  { specInternalVars    :: Maybe String
   , specInternalVarId   :: String
   , specInternalVarExpr :: String
-  , specInternalVarType :: String
-  , specExternalVars    :: String
+  , specInternalVarType :: Maybe String
+  , specExternalVars    :: Maybe String
   , specExternalVarId   :: String
-  , specExternalVarType :: String
+  , specExternalVarType :: Maybe String
   , specRequirements    :: String
   , specRequirementId   :: String
-  , specRequirementDesc :: String
+  , specRequirementDesc :: Maybe String
   , specRequirementExpr :: String
   }
 
 data JSONFormatInternal = JSONFormatInternal
-  { jfiInternalVars    :: [JSONPathElement]
+  { jfiInternalVars    :: Maybe [JSONPathElement]
   , jfiInternalVarId   :: [JSONPathElement]
   , jfiInternalVarExpr :: [JSONPathElement]
-  , jfiInternalVarType :: [JSONPathElement]
-  , jfiExternalVars    :: [JSONPathElement]
+  , jfiInternalVarType :: Maybe [JSONPathElement]
+  , jfiExternalVars    :: Maybe [JSONPathElement]
   , jfiExternalVarId   :: [JSONPathElement]
-  , jfiExternalVarType :: [JSONPathElement]
+  , jfiExternalVarType :: Maybe [JSONPathElement]
   , jfiRequirements    :: [JSONPathElement]
   , jfiRequirementId   :: [JSONPathElement]
-  , jfiRequirementDesc :: [JSONPathElement]
+  , jfiRequirementDesc :: Maybe [JSONPathElement]
   , jfiRequirementExpr :: [JSONPathElement]
   }
 
 parseJSONFormat :: JSONFormat -> Either String JSONFormatInternal
 parseJSONFormat jsonFormat = do
-  jfi2  <- showErrors $ parseJSONPath (pack (specInternalVars    jsonFormat))
-  jfi3  <- showErrors $ parseJSONPath (pack (specInternalVarId   jsonFormat))
-  jfi4  <- showErrors $ parseJSONPath (pack (specInternalVarExpr jsonFormat))
-  jfi5  <- showErrors $ parseJSONPath (pack (specInternalVarType jsonFormat))
-  jfi6  <- showErrors $ parseJSONPath (pack (specExternalVars    jsonFormat))
-  jfi7  <- showErrors $ parseJSONPath (pack (specExternalVarId   jsonFormat))
-  jfi8  <- showErrors $ parseJSONPath (pack (specExternalVarType jsonFormat))
-  jfi9  <- showErrors $ parseJSONPath (pack (specRequirements    jsonFormat))
-  jfi10 <- showErrors $ parseJSONPath (pack (specRequirementId   jsonFormat))
-  jfi11 <- showErrors $ parseJSONPath (pack (specRequirementDesc jsonFormat))
-  jfi12 <- showErrors $ parseJSONPath (pack (specRequirementExpr jsonFormat))
+  jfi2  <- showErrorsM $ fmap (parseJSONPath . pack) $ specInternalVars    jsonFormat
+  jfi3  <- showErrors $ parseJSONPath $ pack $ specInternalVarId   jsonFormat
+  jfi4  <- showErrors $ parseJSONPath $ pack $ specInternalVarExpr jsonFormat
+  jfi5  <- showErrorsM $ fmap (parseJSONPath . pack) $ specInternalVarType jsonFormat
+  jfi6  <- showErrorsM $ fmap (parseJSONPath . pack) $ specExternalVars    jsonFormat
+  jfi7  <- showErrors $ parseJSONPath $ pack $ specExternalVarId   jsonFormat
+  jfi8  <- showErrorsM $ fmap (parseJSONPath . pack) $ specExternalVarType jsonFormat
+  jfi9  <- showErrors $ parseJSONPath $ pack $ specRequirements    jsonFormat
+  jfi10 <- showErrors $ parseJSONPath $ pack $ specRequirementId   jsonFormat
+  jfi11 <- showErrorsM $ fmap (parseJSONPath . pack) $ specRequirementDesc jsonFormat
+  jfi12 <- showErrors $ parseJSONPath $ pack $ specRequirementExpr jsonFormat
   return $ JSONFormatInternal
              { jfiInternalVars    = jfi2
              , jfiInternalVarId   = jfi3
@@ -111,7 +111,7 @@ parseJSONSpec parseExpr jsonFormat value = do
   jsonFormatInternal <- parseJSONFormat jsonFormat
 
   let values :: [Value]
-      values = executeJSONPath (jfiInternalVars jsonFormatInternal) value
+      values = maybe [] (`executeJSONPath` value) (jfiInternalVars jsonFormatInternal)
 
       internalVarDef :: Value -> Either String InternalVariableDef
       internalVarDef value = do
@@ -119,7 +119,7 @@ parseJSONSpec parseExpr jsonFormat value = do
         varId   <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiInternalVarId jsonFormatInternal) value))
 
         let msg = "internal variable type"
-        varType <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiInternalVarType jsonFormatInternal) value))
+        varType <- maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) (jfiInternalVarType jsonFormatInternal)
 
         let msg = "internal variable expr"
         varExpr <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiInternalVarExpr jsonFormatInternal) value))
@@ -133,7 +133,7 @@ parseJSONSpec parseExpr jsonFormat value = do
   internalVariableDefs <- mapM internalVarDef values
 
   let values :: [Value]
-      values = executeJSONPath (jfiExternalVars jsonFormatInternal) value
+      values = maybe [] (`executeJSONPath` value) (jfiExternalVars jsonFormatInternal)
 
       externalVarDef :: Value -> Either String ExternalVariableDef
       externalVarDef value = do
@@ -142,7 +142,7 @@ parseJSONSpec parseExpr jsonFormat value = do
         varId   <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiExternalVarId jsonFormatInternal) value))
 
         let msg = "external variable type"
-        varType <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiExternalVarType jsonFormatInternal) value))
+        varType <- maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) (jfiExternalVarType jsonFormatInternal)
 
         return $ ExternalVariableDef
                    { externalVariableName    = varId
@@ -164,7 +164,7 @@ parseJSONSpec parseExpr jsonFormat value = do
         reqExpr' <- parseExpr reqExpr
 
         let msg = "Requirement description"
-        reqDesc <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiRequirementDesc jsonFormatInternal) value))
+        reqDesc <- maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) (jfiRequirementDesc jsonFormatInternal)
 
         return $ Requirement
                    { requirementName        = reqId
@@ -192,3 +192,8 @@ parseJSONPath = first errorBundlePretty . parse (jsonPath eof) ""
 showErrors :: Show a => Either a b -> Either String b
 showErrors (Left s)  = Left (show s)
 showErrors (Right x) = Right x
+
+showErrorsM :: Show a => Maybe (Either a b) -> Either String (Maybe b)
+showErrorsM Nothing          = Right Nothing
+showErrorsM (Just (Left s))  = Left (show s)
+showErrorsM (Just (Right x)) = Right (Just x)
