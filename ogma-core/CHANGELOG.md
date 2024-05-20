@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.X] - 2024-05-20
+
+* Make ros command generate dockerfile (#136).
+
 ## [1.3.0] - 2024-03-21
 
 * Version bump 1.3.0 (#133).
