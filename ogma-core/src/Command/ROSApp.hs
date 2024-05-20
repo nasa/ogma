@@ -136,7 +136,7 @@ rosApp' targetDir varNames varDB monitors =
           foldr f ([], [], [], []) varNames
 
     let rosFileName =
-          targetDir </> "src" </> "copilot_monitor.cpp"
+          targetDir </> "copilot" </> "src" </> "copilot_monitor.cpp"
         rosFileContents =
           unlines $
             rosMonitorContents varNames vars ids infos datas monitors
@@ -144,7 +144,7 @@ rosApp' targetDir varNames varDB monitors =
     writeFile rosFileName rosFileContents
 
     let rosFileName =
-          targetDir </> "src" </> "copilot_logger.cpp"
+          targetDir </> "copilot" </> "src" </> "copilot_logger.cpp"
         rosFileContents =
           unlines $
             rosLoggerContents varNames vars ids infos datas monitors
