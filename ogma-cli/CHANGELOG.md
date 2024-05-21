@@ -1,7 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.X] - 2024-05-19
+## [1.X.X] - 2024-05-20
+
 * Introduce CI test job (#139).
+* Introduce test job for ROS package generation (#136).
 
 ## [1.3.0] - 2024-03-21
 
