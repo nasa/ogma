@@ -219,6 +219,16 @@ ros_demo/copilot/src/copilot_monitor.cpp
 ros_demo/copilot/src/copilot_logger.cpp
 ros_demo/copilot/src/.keep
 ros_demo/copilot/package.xml
+ros_demo/Dockerfile
+```
+
+The Dockerfile can be used to compile the application inside the base image for
+the Space ROS distribution. To build the image, first place the core
+implementation of the monitors in C inside the directory
+`ros_demo/copilot/src/` (see 'Current limitations' for details). After, you can
+compile the image with:
+```
+docker build .
 ```
 
 ### Current limitations
