@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.X] - 2024-05-21
+## [1.4.0] - 2024-05-21
 
+* Version bump 1.4.0 (#145).
 * Make ros command generate dockerfile (#136).
 * Map float and double to the same types in C++ (#138).
 
