@@ -1,5 +1,9 @@
 # Revision history for ogma-language-jsonspec
 
+## [1.4.0] - 2024-05-21
+
+* Version bump 1.4.0 (#145).
+
 ## [1.3.0] - 2024-03-21
 
 * Version bump 1.3.0 (#133).
