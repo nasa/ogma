@@ -1,0 +1,54 @@
+name: ros-ghc-8.6-cabal-2.4
+
+# Trigger the workflow on push or pull request
+on:
+  - pull_request
+  - push
+
+jobs:
+  cabal:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cabal: ["2.4"]
+        ghc:
+          - "8.6"
+
+    steps:
+
+    - uses: haskell-actions/setup@main
+      id: setup-haskell-cabal
+      name: Setup Haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
+    - name: Prepare environment
+      run: |
+        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+
+    - uses: actions/checkout@v4
+
+    - name: Create sandbox
+      run: |
+        echo "$PWD/.cabal-sandbox/bin" >> $GITHUB_PATH
+        cabal v1-sandbox init
+
+    - name: Install dependencies
+      run: |
+        cabal v1-install alex happy
+
+    - name: Install ogma
+      run: |
+        cabal v1-install copilot ogma-**/ --constraint="copilot >= 3.19.1"
+
+    - name: Generate ROS app
+      run: |
+        ogma ros --app-target-dir demo --variable-db ogma-cli/examples/ros-copilot/vars-db --variable-file ogma-cli/examples/ros-copilot/variables --handlers-file ogma-cli/examples/ros-copilot/handlers
+        cabal v1-exec -- runhaskell ogma-cli/examples/ros-copilot/ROS.hs
+        find demo/
+        cd demo/
+        docker build .

@@ -136,7 +136,7 @@ rosApp' targetDir varNames varDB monitors =
           foldr f ([], [], [], []) varNames
 
     let rosFileName =
-          targetDir </> "src" </> "copilot_monitor.cpp"
+          targetDir </> "copilot" </> "src" </> "copilot_monitor.cpp"
         rosFileContents =
           unlines $
             rosMonitorContents varNames vars ids infos datas monitors
@@ -144,7 +144,7 @@ rosApp' targetDir varNames varDB monitors =
     writeFile rosFileName rosFileContents
 
     let rosFileName =
-          targetDir </> "src" </> "copilot_logger.cpp"
+          targetDir </> "copilot" </> "src" </> "copilot_logger.cpp"
         rosFileContents =
           unlines $
             rosLoggerContents varNames vars ids infos datas monitors
@@ -403,8 +403,8 @@ rosMonitorContents varNames variables msgIds msgNames msgDatas monitors =
           "int16_t"  -> "std::int16_t"
           "int32_t"  -> "std::int32_t"
           "int64_t"  -> "std::int64_t"
-          "float"    -> "std::float32"
-          "double"   -> "std::float64"
+          "float"    -> "float"
+          "double"   -> "double"
           def        -> def
 
     msgSubscriptionS     = unlines
