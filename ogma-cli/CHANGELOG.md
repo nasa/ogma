@@ -1,9 +1,10 @@
 # Revision history for ogma-cli
 
-## [1.X.X] - 2024-05-20
+## [1.X.X] - 2024-05-21
 
 * Introduce CI test job (#139).
 * Introduce test job for ROS package generation (#136).
+* Add a float and a double input variable to ROS example (#138).
 
 ## [1.3.0] - 2024-03-21
 

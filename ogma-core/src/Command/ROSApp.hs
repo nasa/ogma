@@ -403,8 +403,8 @@ rosMonitorContents varNames variables msgIds msgNames msgDatas monitors =
           "int16_t"  -> "std::int16_t"
           "int32_t"  -> "std::int32_t"
           "int64_t"  -> "std::int64_t"
-          "float"    -> "std::float32"
-          "double"   -> "std::float64"
+          "float"    -> "float"
+          "double"   -> "double"
           def        -> def
 
     msgSubscriptionS     = unlines
