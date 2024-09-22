@@ -43,7 +43,7 @@ jobs:
 
     - name: Install ogma
       run: |
-        cabal v1-install copilot ogma-**/ --constraint="copilot >= 3.19.1"
+        cabal v1-install copilot ogma-**/ --constraint="copilot >= 3.19.1" --constraint="aeson >= 2.0.3.0"
 
     - name: Generate ROS app
       run: |
