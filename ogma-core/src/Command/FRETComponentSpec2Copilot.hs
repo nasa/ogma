@@ -41,9 +41,9 @@ module Command.FRETComponentSpec2Copilot
   where
 
 -- External imports
-import Control.Monad.IfElse ( awhen )
 import Data.Aeson           ( eitherDecode, decode )
 import Data.ByteString.Lazy (fromStrict)
+import Data.Foldable        (for_)
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B ( safeReadFile )
@@ -91,7 +91,7 @@ fretComponentSpec2Copilot fp options = do
   let (mOutput, result) =
         fretComponentSpec2CopilotResult options fp copilot
 
-  awhen mOutput putStrLn
+  for_ mOutput putStrLn
   return result
 
 -- | Print the contents of a Copilot module that implements the Past-time TL
