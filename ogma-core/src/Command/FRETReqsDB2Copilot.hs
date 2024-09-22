@@ -39,9 +39,9 @@ module Command.FRETReqsDB2Copilot
   where
 
 -- External imports
-import Control.Monad.IfElse ( awhen )
-import Data.Aeson           ( eitherDecode )
-import Data.List            ( nub, (\\) )
+import Data.Aeson    (eitherDecode)
+import Data.Foldable (for_)
+import Data.List     (nub, (\\))
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B ( safeReadFile )
@@ -88,7 +88,7 @@ fretReqsDB2Copilot fp options = do
   let (mOutput, result) =
         fretReqsDB2CopilotResult options fp copilot
 
-  awhen mOutput putStrLn
+  for_ mOutput putStrLn
   return result
 
 -- | Print the contents of a Copilot module that implements the Past-time TL

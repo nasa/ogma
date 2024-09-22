@@ -107,7 +107,6 @@ library
     , aeson                   >= 2.0.0.0  && < 2.2
     , bytestring
     , filepath
-    , IfElse
     , mtl
 
     , ogma-extra              >= 1.4.0 && < 1.5
