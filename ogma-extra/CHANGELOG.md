@@ -1,7 +1,8 @@
 # Revision history for ogma-extra
 
-## [1.4.X] - 2024-09-21
+## [1.4.1] - 2024-09-21
 
+* Version bump 1.4.1 (#155).
 * Replace homepage (#147).
 
 ## [1.4.0] - 2024-05-21
