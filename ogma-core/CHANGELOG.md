@@ -1,5 +1,11 @@
 # Revision history for ogma-core
 
+## [1.4.1] - 2024-09-21
+
+* Version bump 1.4.1 (#155).
+* Remove dependency on IfElse (#150).
+* Replace homepage (#147).
+
 ## [1.4.0] - 2024-05-21
 
 * Version bump 1.4.0 (#145).

@@ -32,8 +32,8 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.4.0
-homepage:            http://nasa.gov
+version:             1.4.1
+homepage:            https://github.com/nasa/ogma
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
@@ -141,7 +141,7 @@ executable ogma
   build-depends:
       base                 >= 4.11.0.0 && < 5
     , optparse-applicative
-    , ogma-core            >= 1.4.0 && < 1.5
+    , ogma-core            >= 1.4.1 && < 1.5
 
   hs-source-dirs:
     src

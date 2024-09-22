@@ -53,11 +53,10 @@ jobs:
         # the dependencies do not change and cabal does not change the
         # installation plan (which would mean we'd be running the tests with a
         # version of ogma compiled with different dependencies).
-        cabal v1-install ogma-**/ --enable-tests
-
+        cabal v1-install ogma-**/ --enable-tests --constraint="aeson >= 2.0.3.0"
     - name: Test all packages
       run: |
         # We want to document the build process, and get detailed information
         # if there is a problem (or if all goes well). We therefore execute the
         # installation with -j1.
-        cabal v1-install ogma-**/ --enable-tests --run-tests -j1
+        cabal v1-install ogma-**/ --enable-tests --run-tests -j1 --constraint="aeson >= 2.0.3.0"

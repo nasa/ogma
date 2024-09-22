@@ -1,5 +1,11 @@
 # Revision history for ogma-cli
 
+## [1.4.1] - 2024-09-21
+
+* Version bump 1.4.1 (#155).
+* Constrain version of dependency in CI jobs (#151).
+* Replace homepage (#147).
+
 ## [1.4.0] - 2024-05-21
 
 * Version bump 1.4.0 (#145).
