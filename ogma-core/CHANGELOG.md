@@ -3,6 +3,7 @@
 ## [1.4.X] - 2024-09-21
 
 * Remove dependency on IfElse (#150).
+* Replace homepage (#147).
 
 ## [1.4.0] - 2024-05-21
 
