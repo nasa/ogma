@@ -19,7 +19,7 @@
 #include "Icarous_msgids.h"
 #include "Icarous_msg.h"
 
-position_t my_position;
+{{variablesS}}
 void split(void);
 void step(void);
 
@@ -98,7 +98,7 @@ void COPILOT_AppInit(void)
     **  messages
     */
     CFE_SB_CreatePipe(&COPILOT_CommandPipe, COPILOT_PIPE_DEPTH,"COPILOT_CMD_PIPE");
-    CFE_SB_Subscribe(ICAROUS_POSITION_MID, COPILOT_CommandPipe);
+{{msgSubscriptionsS}}
 
     CFE_EVS_SendEvent (COPILOT_STARTUP_INF_EID, CFE_EVS_INFORMATION,
                "COPILOT App Initialized. Version %d.%d.%d.%d",
@@ -125,9 +125,7 @@ void COPILOT_ProcessCommandPacket(void)
 
     switch (MsgId)
     {
-        case ICAROUS_POSITION_MID:
-            COPILOT_ProcessIcarousPosition();
-            break;
+{{ msgCasesS }}
         default:
             COPILOT_HkTelemetryPkt.copilot_command_error_count++;
             CFE_EVS_SendEvent(COPILOT_COMMAND_ERR_EID,CFE_EVS_ERROR,
@@ -139,18 +137,7 @@ void COPILOT_ProcessCommandPacket(void)
 
 } /* End COPILOT_ProcessCommandPacket */
 
-/**
- * Make ICAROUS data available to Copilot and run monitors.
- */
-void COPILOT_ProcessIcarousPosition(void)
-{
-    position_t* msg;
-    msg = (position_t*) COPILOTMsgPtr;
-    my_position = *msg;
-
-    // Run all copilot monitors.
-    step();
-}
+{{msgHandlerS}}
 
 /**
  * Report copilot property violations.
