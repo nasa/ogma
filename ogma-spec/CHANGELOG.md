@@ -1,5 +1,9 @@
 # Revision history for ogma-spec
 
+## [1.4.X] - 2024-09-21
+
+* Replace homepage (#147).
+
 ## [1.4.0] - 2024-05-21
 
 * Version bump 1.4.0 (#145).
