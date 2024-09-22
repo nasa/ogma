@@ -33,7 +33,7 @@ build-type:          Simple
 
 name:                ogma-language-jsonspec
 version:             1.4.0
-homepage:            http://nasa.gov
+homepage:            https://github.com/nasa/ogma
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
