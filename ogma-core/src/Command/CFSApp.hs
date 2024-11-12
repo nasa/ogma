@@ -71,13 +71,14 @@ import Paths_ogma_core ( getDataDir )
 -- | Generate a new CFS application connected to Copilot.
 cFSApp :: FilePath       -- ^ Target directory where the application
                          --   should be created.
+       -> Maybe FilePath -- ^ Directory where the template is to be found.
        -> FilePath       -- ^ File containing a list of variables to make
                          --   available to Copilot.
        -> Maybe FilePath -- ^ File containing a list of known variables
                          --   with their types and the message IDs they
                          --   can be obtained from.
        -> IO (Result ErrorCode)
-cFSApp targetDir varNameFile varDBFile = do
+cFSApp targetDir mTemplateDir varNameFile varDBFile = do
 
   -- We first try to open the two files we need to fill in details in the CFS
   -- app template.
@@ -106,8 +107,11 @@ cFSApp targetDir varNameFile varDBFile = do
         Right varNames -> do
 
           -- Obtain template dir
-          dataDir <- getDataDir
-          let templateDir = dataDir </> "templates" </> "copilot-cfs"
+          templateDir <- case mTemplateDir of
+                           Just x  -> return x
+                           Nothing -> do
+                             dataDir <- getDataDir
+                             return $ dataDir </> "templates" </> "copilot-cfs"
 
           E.handle (return . cannotCopyTemplate) $ do
 
