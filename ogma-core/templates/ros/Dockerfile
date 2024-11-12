@@ -1,4 +1,4 @@
-FROM osrf/space-ros:latest
+FROM osrf/space-ros:humble-2024.10.0
 
 ARG USER=spaceros-user
 ARG PACKAGE_PATH=/home/${USER}/monitors
@@ -12,5 +12,5 @@ USER ${USER}
 
 SHELL ["/bin/bash", "-c"]
 WORKDIR ${PACKAGE_PATH}
-RUN source ${ROS_PATH}/install/setup.bash && \
+RUN source /opt/spaceros/install/setup.bash && \
     colcon build
