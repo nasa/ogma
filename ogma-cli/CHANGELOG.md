@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2024-11-11
+
+* Provide ability to customize template in cfs command (#157).
+
 ## [1.4.1] - 2024-09-21
 
 * Version bump 1.4.1 (#155).
