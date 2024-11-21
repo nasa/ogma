@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -32,17 +33,28 @@
 module System.Directory.Extra
     ( copyDirectoryRecursive
     , copyFile'
+    , copyTemplate
     )
   where
 
 -- External imports
+import           Control.Monad             ( filterM, forM_ )
 import qualified Control.Exception         as E
+import           Data.Aeson                ( Value (..) )
+import qualified Data.ByteString.Lazy      as B
+import           Data.Text.Lazy            ( pack, unpack )
+import           Data.Text.Lazy.Encoding   ( encodeUtf8 )
 import           Distribution.Simple.Utils ( getDirectoryContentsRecursive )
 import           System.Directory          ( copyFile,
-                                             createDirectoryIfMissing )
+                                             createDirectoryIfMissing,
+                                             doesFileExist )
 import           System.Exit               ( ExitCode (ExitFailure), exitWith )
-import           System.FilePath           ( takeDirectory, (</>) )
+import           System.FilePath           ( makeRelative, splitFileName,
+                                             takeDirectory, (</>) )
 import           System.IO                 ( hPutStrLn, stderr )
+import           Text.Microstache          ( compileMustacheFile,
+                                             compileMustacheText,
+                                             renderMustache )
 
 -- | Copy all files from one directory to another.
 copyDirectoryRecursive :: FilePath  -- ^ Source directory
@@ -79,3 +91,48 @@ copyDirectoryRecursiveErrorHandler sourceDir targetDir _exception = do
   hPutStrLn stderr $
     "ogma: error: cannot copy " ++ sourceDir ++ " to " ++ targetDir
   exitWith (ExitFailure 1)
+
+-- * Generic template handling
+
+-- | Copy a template directory into a target location, expanding variables
+-- provided in a map in a JSON value, both in the file contents and in the
+-- filepaths themselves.
+copyTemplate :: FilePath -> Value -> FilePath -> IO ()
+copyTemplate templateDir subst targetDir = do
+
+  -- Get all files (not directories) in the template dir. To keep a directory,
+  -- create an empty file in it (e.g., .keep).
+  tmplContents <- map (templateDir </>) . filter (`notElem` ["..", "."])
+                    <$> getDirectoryContentsRecursive templateDir
+  tmplFiles <- filterM doesFileExist tmplContents
+
+  -- Copy files to new locations, expanding their name and contents as
+  -- mustache templates.
+  forM_ tmplFiles $ \fp -> do
+
+    -- New file name in target directory, treating file
+    -- name as mustache template.
+    let fullPath = targetDir </> newFP
+          where
+            -- If file name has mustache markers, expand, otherwise use
+            -- relative file path
+            newFP = either (const relFP)
+                           (unpack . (`renderMustache` subst))
+                           fpAsTemplateE
+
+            -- Local file name within template dir
+            relFP = makeRelative templateDir fp
+
+            -- Apply mustache substitutions to file name
+            fpAsTemplateE = compileMustacheText "fp" (pack relFP)
+
+    -- File contents, treated as a mustache template.
+    contents <- encodeUtf8 <$> (`renderMustache` subst)
+                           <$> compileMustacheFile fp
+
+    -- Create target directory if necessary
+    let dirName = fst $ splitFileName fullPath
+    createDirectoryIfMissing True dirName
+
+    -- Write expanded contents to expanded file path
+    B.writeFile fullPath contents

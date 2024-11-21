@@ -68,11 +68,14 @@ library
     System.Directory.Extra
 
   build-depends:
-      base       >= 4.11.0.0 && < 5
+      base        >= 4.11.0.0 && < 5
+    , aeson       >= 2.0.0.0  && < 2.2
     , bytestring
     , Cabal
     , directory
     , filepath
+    , microstache >= 1.0      && < 1.1
+    , text        >= 1.2.3.1  && < 2.1
 
   hs-source-dirs:
     src

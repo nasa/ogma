@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -46,15 +47,16 @@ module Command.ROSApp
 import qualified Control.Exception    as E
 import           Control.Monad.Except (ExceptT, liftEither, liftIO, runExceptT,
                                        throwError)
-import           Data.Aeson           (eitherDecode)
+import           Data.Aeson           (eitherDecode, object, (.=))
 import           Data.List            (find, intersperse)
 import           Data.Maybe           (fromMaybe)
+import           Data.Text.Lazy       (pack)
 import           System.FilePath      ((</>))
 
 -- External imports: auxiliary
 import Data.ByteString.Extra  as B (safeReadFile)
 import Data.String.Extra      (sanitizeLCIdentifier, sanitizeUCIdentifier)
-import System.Directory.Extra (copyDirectoryRecursive)
+import System.Directory.Extra (copyTemplate)
 
 -- External imports: ogma
 import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
@@ -73,6 +75,7 @@ import Paths_ogma_core ( getDataDir )
 -- | Generate a new ROS application connected to Copilot.
 rosApp :: FilePath       -- ^ Target directory where the application
                          --   should be created.
+       -> Maybe FilePath -- ^ Directory where the template is to be found.
        -> Maybe FilePath -- ^ FRET Component specification file.
        -> Maybe FilePath -- ^ File containing a list of variables to make
                          --   available to Copilot.
@@ -83,7 +86,7 @@ rosApp :: FilePath       -- ^ Target directory where the application
                          --   Copilot specification. The handlers are assumed
                          --   to receive no arguments.
        -> IO (Result ErrorCode)
-rosApp targetDir fretCSFile varNameFile varDBFile handlersFile =
+rosApp targetDir mTemplateDir fretCSFile varNameFile varDBFile handlersFile =
   processResult $ do
     cs    <- parseOptionalFRETCS fretCSFile
     vs    <- parseOptionalVariablesFile varNameFile
@@ -95,13 +98,15 @@ rosApp targetDir fretCSFile varNameFile varDBFile handlersFile =
     let varNames = fromMaybe (fretCSExtractExternalVariables cs) vs
         monitors = fromMaybe (fretCSExtractHandlers cs) rs
 
-    e <- liftIO $ rosApp' targetDir varNames varDB monitors
+    e <- liftIO $ rosApp' targetDir mTemplateDir varNames varDB monitors
     liftEither e
 
 -- | Generate a new ROS application connected to Copilot, by copying the
 -- template and filling additional necessary files.
 rosApp' :: FilePath                           -- ^ Target directory where the
                                               -- application should be created.
+        -> Maybe FilePath                     -- ^ Directory where the template
+                                              -- is to be found.
         -> [String]                           -- ^ List of variable names
                                               -- (data sources).
         -> [(String, String, String, String)] -- ^ List of variables with their
@@ -112,14 +117,14 @@ rosApp' :: FilePath                           -- ^ Target directory where the
                                               -- to the monitors (or
                                               -- requirements monitored).
         -> IO (Either ErrorTriplet ())
-rosApp' targetDir varNames varDB monitors =
+rosApp' targetDir mTemplateDir varNames varDB monitors =
   E.handle (return . Left . cannotCopyTemplate) $ do
     -- Obtain template dir
-    dataDir <- getDataDir
-    let templateDir = dataDir </> "templates" </> "ros"
-
-    -- Expand template
-    copyDirectoryRecursive templateDir targetDir
+    templateDir <- case mTemplateDir of
+                     Just x  -> return x
+                     Nothing -> do
+                       dataDir <- getDataDir
+                       return $ dataDir </> "templates" </> "ros"
 
     let f n o@(oVars, oIds, oInfos, oDatas) =
           case variableMap varDB n of
@@ -135,21 +140,29 @@ rosApp' targetDir varNames varDB monitors =
     let (vars, ids, infos, datas) =
           foldr f ([], [], [], []) varNames
 
-    let rosFileName =
-          targetDir </> "copilot" </> "src" </> "copilot_monitor.cpp"
-        rosFileContents =
-          unlines $
-            rosMonitorContents varNames vars ids infos datas monitors
+    let (variablesS,         msgSubscriptionS, msgPublisherS,
+         msgHandlerInClassS, msgCallbacks,     msgSubscriptionDeclrs,
+         msgPublisherDeclrs, msgHandlerGlobalS) =
+          rosMonitorComponents varNames vars ids infos datas monitors
 
-    writeFile rosFileName rosFileContents
+        (logMsgSubscriptionS, logMsgCallbacks, logMsgSubscriptionDeclrs) =
+            rosLoggerComponents varNames vars ids infos datas monitors
 
-    let rosFileName =
-          targetDir </> "copilot" </> "src" </> "copilot_logger.cpp"
-        rosFileContents =
-          unlines $
-            rosLoggerContents varNames vars ids infos datas monitors
+        subst = object $
+                  [ "variablesS"               .= pack variablesS
+                  , "msgSubscriptionS"         .= pack msgSubscriptionS
+                  , "msgPublisherS"            .= pack msgPublisherS
+                  , "msgHandlerInClassS"       .= pack msgHandlerInClassS
+                  , "msgCallbacks"             .= pack msgCallbacks
+                  , "msgSubscriptionDeclrs"    .= pack msgSubscriptionDeclrs
+                  , "msgPublisherDeclrs"       .= pack msgPublisherDeclrs
+                  , "msgHandlerGlobalS"        .= pack msgHandlerGlobalS
+                  , "logMsgSubscriptionS"      .= pack logMsgSubscriptionS
+                  , "logMsgCallbacks"          .= pack logMsgCallbacks
+                  , "logMsgSubscriptionDeclrs" .= pack logMsgSubscriptionDeclrs
+                  ]
 
-    writeFile rosFileName rosFileContents
+    copyTemplate templateDir subst targetDir
 
     return $ Right ()
 
@@ -301,52 +314,24 @@ data MsgData = MsgData
 -- * ROS apps content
 
 -- | Return the contents of the main ROS application.
-rosMonitorContents :: [String]     -- Variables
-                   -> [VarDecl]
-                   -> [MsgInfoId]
-                   -> [MsgInfo]
-                   -> [MsgData]
-                   -> [String]     -- Monitors
-                   -> [String]
-rosMonitorContents varNames variables msgIds msgNames msgDatas monitors =
-    [ "#include <functional>"
-    , "#include <memory>"
-    , ""
-    , "#include \"rclcpp/rclcpp.hpp\""
-    , ""
-    , typeIncludes
-    , copilotIncludes
-    , "using std::placeholders::_1;"
-    , ""
-    , variablesS
-    , "class CopilotRV : public rclcpp::Node {"
-    , "  public:"
-    , "    CopilotRV() : Node(\"copilotrv\") {"
+rosMonitorComponents
+  :: [String]     -- Variables
+  -> [VarDecl]
+  -> [MsgInfoId]
+  -> [MsgInfo]
+  -> [MsgData]
+  -> [String]     -- Monitors
+  -> (String, String, String, String, String, String, String, String)
+rosMonitorComponents varNames variables msgIds msgNames msgDatas monitors =
+    ( variablesS
     , msgSubscriptionS
     , msgPublisherS
-    , "    }"
-    , ""
     , msgHandlerInClassS
-    , "    // Needed so we can report messages to the log."
-    , "    static CopilotRV& getInstance() {"
-    , "      static CopilotRV instance;"
-    , "      return instance;"
-    , "    }"
-    , ""
-    , "  private:"
     , msgCallbacks
     , msgSubscriptionDeclrs
     , msgPublisherDeclrs
-    , "};"
-    , ""
     , msgHandlerGlobalS
-    , "int main(int argc, char* argv[]) {"
-    , "  rclcpp::init(argc, argv);"
-    , "  rclcpp::spin(std::make_shared<CopilotRV>());"
-    , "  rclcpp::shutdown();"
-    , "  return 0;"
-    , "}"
-    ]
+    )
 
   where
 
@@ -368,27 +353,6 @@ rosMonitorContents varNames variables msgIds msgNames msgDatas monitors =
         ty = "std_msgs::msg::Empty"
 
         publisher = monitor ++ "_publisher_"
-
-    typeIncludes = unlines
-      [ "#include \"std_msgs/msg/bool.hpp\""
-      , "#include \"std_msgs/msg/empty.hpp\""
-      , "#include \"std_msgs/msg/u_int8.hpp\""
-      , "#include \"std_msgs/msg/u_int16.hpp\""
-      , "#include \"std_msgs/msg/u_int32.hpp\""
-      , "#include \"std_msgs/msg/u_int64.hpp\""
-      , "#include \"std_msgs/msg/int8.hpp\""
-      , "#include \"std_msgs/msg/int16.hpp\""
-      , "#include \"std_msgs/msg/int32.hpp\""
-      , "#include \"std_msgs/msg/int64.hpp\""
-      , "#include \"std_msgs/msg/float32.hpp\""
-      , "#include \"std_msgs/msg/float64.hpp\""
-      , "#include <cstdint>"
-      ]
-
-    copilotIncludes = unlines
-      [ "#include \"monitor.h\""
-      , "#include \"monitor.c\""
-      ]
 
     variablesS = unlines $ map toVarDecl variables
     toVarDecl varDecl =
@@ -515,49 +479,17 @@ rosMonitorContents varNames variables msgIds msgNames msgDatas monitors =
         publisher = nm ++ "_publisher_"
 
 -- | Return the contents of the logger ROS application.
-rosLoggerContents :: [String]     -- Variables
-                  -> [VarDecl]
-                  -> [MsgInfoId]
-                  -> [MsgInfo]
-                  -> [MsgData]
-                  -> [String]     -- Monitors
-                  -> [String]
-rosLoggerContents varNames variables msgIds msgNames msgDatas monitors =
-    rosFileContents
+rosLoggerComponents :: [String]     -- Variables
+                    -> [VarDecl]
+                    -> [MsgInfoId]
+                    -> [MsgInfo]
+                    -> [MsgData]
+                    -> [String]     -- Monitors
+                    -> (String, String, String)
+rosLoggerComponents varNames variables msgIds msgNames msgDatas monitors =
+    (msgSubscriptionS, msgCallbacks, msgSubscriptionDeclrs)
 
   where
-
-    rosFileContents =
-      [ "#include <functional>"
-      , "#include <memory>"
-      , ""
-      , "#include \"rclcpp/rclcpp.hpp\""
-      , ""
-      , typeIncludes
-      , "using std::placeholders::_1;"
-      , ""
-      , "class CopilotLogger : public rclcpp::Node {"
-      , "  public:"
-      , "    CopilotLogger() : Node(\"copilotlogger\") {"
-      , msgSubscriptionS
-      , "    }"
-      , ""
-      , "  private:"
-      , msgCallbacks
-      , msgSubscriptionDeclrs
-      , "};"
-      , ""
-      , "int main(int argc, char* argv[]) {"
-      , "  rclcpp::init(argc, argv);"
-      , "  rclcpp::spin(std::make_shared<CopilotLogger>());"
-      , "  rclcpp::shutdown();"
-      , "  return 0;"
-      , "}"
-      ]
-
-    typeIncludes = unlines
-      [ "#include \"std_msgs/msg/empty.hpp\""
-      ]
 
     msgSubscriptionS     = unlines
                          $ concat

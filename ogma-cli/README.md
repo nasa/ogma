@@ -236,9 +236,10 @@ the data needed by the monitors and report any violations. At present, support
 for ROS app generation is considered preliminary.
 
 ROS applications are generated using the Ogma command `ros`, which receives
-four main arguments:
+five main arguments:
 - `--app-target-dir DIR`: location where the ROS application files must be
   stored.
+- `--app-template-dir DIR`: location of the ROS application template to use.
 - `--variable-file FILENAME`: a file containing a list of variables that must
 be made available to the monitor.
 - `--variable-db FILENAME`: a file containing a database of known variables,
@@ -298,6 +299,74 @@ For a more concrete example, see the files in `ogma-cli/examples/ros-copilot/`
 and the last step of the script
 `.github/workflows/repo-ghc-8.6-cabal-2.4-ros.yml`, which generates a ROS
 monitor with multiple variables and compiles the resulting code.
+
+### Template Customization
+
+By default, Ogma uses a pre-defined template to generate the ROS monitoring
+package. It's possible to customize the output by providing a directory with a
+set of files with a ROS package template, which Ogma will use instead.
+
+To choose this feature, one must call Ogma's `ros` command with the argument
+`--app-template-dir DIR`, where `DIR` is the path to a directory containing a
+ROS 2 package template. For example, assuming that the directory `my_template`
+contains a custom ROS package template, one can execute:
+
+```
+$ ogma ros --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db ros-variable-db --app-target-dir ros_demo
+```
+
+Ogma will copy the files in that directory to the target path, filling in
+several holes with specific information. For the monitoring node, the variables
+are:
+
+- `{{variablesS}}`: this will be replaced by a list of variable declarations,
+  one for each global variable that holds information read from the ROS
+software bus that must be made accessible to the monitoring code.
+
+- `{{msgSubscriptionsS}}`: this will be replaced by a list of calls to
+  `create_subscription`, subscribing to the necessary information coming in the
+software bus.
+
+- `{{msgPublisherS}}`: this will be replaced by a list of calls to
+  `create_publisher`, to create topics to report property violations on the
+software bus.
+
+- `{{msgHandlerInClassS}}`: this will be replaced by the functions that will be
+  called to report a property violation via one of the property violation
+topics (publishers).
+
+- `{{msgCallbacks}}`: this will be replaced by function definitions of the
+  functions that will be called to actually update the variables with
+information coming from the software bus, and re-evaluate the monitors.
+
+- `{{msgSubscriptionDeclrs}}`: this will be replaced by declarations of
+  subscriptions used in `{{msgSubscriptionsS}}`.
+
+- `{{msgPublisherDeclrs}}`: this will be replaced by declarations of publishers
+  used in `{{msgPublishersS}}`.
+
+- `{{msgHandlerGlobalS}}`: this will be replaced by top-level functions that
+  call the handlers from the single monitoring class instance (singleton).
+
+Ogma will also generate a logging node that can be used for debugging purposes,
+to print property violations to a log. This second node listens to the messages
+published by the monitoring node in the software bus. For that node, the
+variables used are:
+
+- `{{logMsgSubscriptionsS}}`: this will be replaced by a list of calls to
+  `create_subscription`, subscribing to the necessary information coming in the
+software bus.
+
+- `{{logMsgCallbacks}}`: this will be replaced by function definitions of the
+  functions called to report the violations in the log. These functions are
+used as handlers to incoming messages in the subscriptions.
+
+- `{{logMsgSubscriptionDeclrs}}`: this will be replaced by declarations of
+  subscriptions used in `{{logMsgSubscriptionsS}}`.
+
+We understand that this level of customization may be insufficient for your
+application. If that is the case, feel free to reach out to our team to discuss
+how we could make the template expansion system more versatile.
 
 ### Current limitations
 
