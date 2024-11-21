@@ -75,6 +75,7 @@ import Paths_ogma_core ( getDataDir )
 -- | Generate a new ROS application connected to Copilot.
 rosApp :: FilePath       -- ^ Target directory where the application
                          --   should be created.
+       -> Maybe FilePath -- ^ Directory where the template is to be found.
        -> Maybe FilePath -- ^ FRET Component specification file.
        -> Maybe FilePath -- ^ File containing a list of variables to make
                          --   available to Copilot.
@@ -85,7 +86,7 @@ rosApp :: FilePath       -- ^ Target directory where the application
                          --   Copilot specification. The handlers are assumed
                          --   to receive no arguments.
        -> IO (Result ErrorCode)
-rosApp targetDir fretCSFile varNameFile varDBFile handlersFile =
+rosApp targetDir mTemplateDir fretCSFile varNameFile varDBFile handlersFile =
   processResult $ do
     cs    <- parseOptionalFRETCS fretCSFile
     vs    <- parseOptionalVariablesFile varNameFile
@@ -97,13 +98,15 @@ rosApp targetDir fretCSFile varNameFile varDBFile handlersFile =
     let varNames = fromMaybe (fretCSExtractExternalVariables cs) vs
         monitors = fromMaybe (fretCSExtractHandlers cs) rs
 
-    e <- liftIO $ rosApp' targetDir varNames varDB monitors
+    e <- liftIO $ rosApp' targetDir mTemplateDir varNames varDB monitors
     liftEither e
 
 -- | Generate a new ROS application connected to Copilot, by copying the
 -- template and filling additional necessary files.
 rosApp' :: FilePath                           -- ^ Target directory where the
                                               -- application should be created.
+        -> Maybe FilePath                     -- ^ Directory where the template
+                                              -- is to be found.
         -> [String]                           -- ^ List of variable names
                                               -- (data sources).
         -> [(String, String, String, String)] -- ^ List of variables with their
@@ -114,11 +117,14 @@ rosApp' :: FilePath                           -- ^ Target directory where the
                                               -- to the monitors (or
                                               -- requirements monitored).
         -> IO (Either ErrorTriplet ())
-rosApp' targetDir varNames varDB monitors =
+rosApp' targetDir mTemplateDir varNames varDB monitors =
   E.handle (return . Left . cannotCopyTemplate) $ do
     -- Obtain template dir
-    dataDir <- getDataDir
-    let templateDir = dataDir </> "templates" </> "ros"
+    templateDir <- case mTemplateDir of
+                     Just x  -> return x
+                     Nothing -> do
+                       dataDir <- getDataDir
+                       return $ dataDir </> "templates" </> "ros"
 
     let f n o@(oVars, oIds, oInfos, oDatas) =
           case variableMap varDB n of
