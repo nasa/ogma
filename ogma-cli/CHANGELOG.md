@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2024-11-11
+## [1.X.Y] - 2024-11-20
 
 * Provide ability to customize template in cfs command (#157).
+* Provide ability to customize template in ros command (#162).
 
 ## [1.4.1] - 2024-09-21
 
