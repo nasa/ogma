@@ -1,5 +1,9 @@
 # Revision history for ogma-extra
 
+## [1.X.Y] - 2024-11-20
+
+* Introduce template expansion functionality (#162).
+
 ## [1.4.1] - 2024-09-21
 
 * Version bump 1.4.1 (#155).
