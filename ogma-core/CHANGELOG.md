@@ -8,6 +8,7 @@
 * Fix comment in generated Copilot spec (#164).
 * Add missing notPreviousNot to generated spec (#168).
 * Introduce new standalone command (#170).
+* Correct name in documentation (#176).
 
 ## [1.4.1] - 2024-09-21
 
