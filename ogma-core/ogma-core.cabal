@@ -68,6 +68,10 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/fprime/CMakeLists.txt
                      templates/fprime/Dockerfile
                      templates/fprime/instance-copilot
+                     data/formats/fcs_smv
+                     data/formats/fcs_cocospec
+                     data/formats/fdb_smv
+                     data/formats/fdb_cocospec
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -87,6 +91,7 @@ library
     Command.FRETReqsDB2Copilot
     Command.Result
     Command.ROSApp
+    Command.Standalone
 
     Data.Location
 
