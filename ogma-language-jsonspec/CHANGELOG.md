@@ -1,7 +1,8 @@
 # Revision history for ogma-language-jsonspec
 
-## [1.X.Y] - 2024-11-21
+## [1.5.0] - 2024-11-21
 
+* Version bump 1.5.0 (#178).
 * Make JSONFormat readable (#170).
 
 ## [1.4.1] - 2024-09-21
