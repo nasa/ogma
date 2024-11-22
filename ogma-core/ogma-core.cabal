@@ -87,8 +87,6 @@ library
     Command.CStructs2Copilot
     Command.CStructs2MsgHandlers
     Command.FPrimeApp
-    Command.FRETComponentSpec2Copilot
-    Command.FRETReqsDB2Copilot
     Command.Result
     Command.ROSApp
     Command.Standalone
