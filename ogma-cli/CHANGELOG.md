@@ -5,6 +5,7 @@
 * Provide ability to customize template in cfs command (#157).
 * Provide ability to customize template in ros command (#162).
 * Introduce new standalone command (#170).
+* Update README to demonstrate robotics (#172).
 
 ## [1.4.1] - 2024-09-21
 
