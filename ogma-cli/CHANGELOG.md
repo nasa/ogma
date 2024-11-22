@@ -1,5 +1,15 @@
 # Revision history for ogma-cli
 
+## [1.5.0] - 2024-11-21
+
+* Version bump 1.5.0 (#178).
+* Provide ability to customize template in cfs command (#157).
+* Provide ability to customize template in ros command (#162).
+* Introduce new standalone command (#170).
+* Update README to demonstrate robotics (#172).
+* Remove unused resources (#174).
+* Add version bounds to base (#180).
+
 ## [1.4.1] - 2024-09-21
 
 * Version bump 1.4.1 (#155).

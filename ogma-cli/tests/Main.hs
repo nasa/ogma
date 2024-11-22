@@ -42,16 +42,10 @@ tests =
   , testCase "cli-cmd-cfs-fail" (runErrorCode ["cfs", "--incorrect-argument"] False)
     -- Should fail due to arguments being incorrect
 
-  , testCase "cli-cmd-fret-component-spec" (runErrorCode ["fret-component-spec", "--help" ] True)
+  , testCase "cli-cmd-fret-component-spec" (runErrorCode ["standalone", "--help" ] True)
     -- Should pass
 
-  , testCase "cli-cmd-fret-component-spec-fail" (runErrorCode ["fret-component-spec", "--incorrect-argument"] False)
-    -- Should fail due to arguments being incorrect
-
-  , testCase "cli-cmd-fret-reqs-db" (runErrorCode ["fret-reqs-db", "--help" ] True)
-    -- Should pass
-
-  , testCase "cli-cmd-fret-reqs-db-fail" (runErrorCode ["fret-reqs-db", "--incorrect-argument"] False)
+  , testCase "cli-cmd-fret-component-spec-fail" (runErrorCode ["standalone", "--incorrect-argument"] False)
     -- Should fail due to arguments being incorrect
 
   , testCase "fret-cmd-fret-parse-ok" (parseFretCopilot "examples/fret.json" True)
@@ -133,7 +127,7 @@ parseFretCopilot file success = do
 
     assertBool errorMsg testPass
   where
-    args     = ["fret-component-spec", "--fret-file-name", file]
+    args     = ["standalone", "--file-name", file]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
 -- | Test FRET CoCoSpec-based parser for a particular file.
@@ -155,7 +149,8 @@ parseFretCoCoSpec file = do
     (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
     assertBool errorMsg (ec == ExitSuccess)
   where
-    args     = ["fret-reqs-db", "--fret-file-name", file, "--cocospec"]
+    args     = [ "standalone", "--file-name", file, "--input-format", "fdb"
+               , "--prop-format", "cocospec"]
     errorMsg = "Parsing file " ++ file ++ " failed"
 
 -- | Test ogma by running it and checking the error code.

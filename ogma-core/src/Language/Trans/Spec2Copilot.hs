@@ -67,6 +67,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
       , ftp
       , pre
       , tpre
+      , notPreviousNot
       , copilotSpec
       , main'
       ]
@@ -194,12 +195,19 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
            , "tpre = ([True] ++)"
            ]
 
+    -- Auxiliary streams: notPreviousNot
+    notPreviousNot :: [String]
+    notPreviousNot = [ ""
+                     , "notPreviousNot :: Stream Bool -> Stream Bool"
+                     , "notPreviousNot = not . PTLTL.previous . not"
+                     ]
+
     -- Main specification
     copilotSpec :: [String]
     copilotSpec = [ ""
-                  , "-- | Complete specification. Calls the C function void "
-                    ++ " handler(); when"
-                  , "-- the property is violated."
+                  , "-- | Complete specification. Calls C handler functions"
+                    ++ " when"
+                  , "-- properties are violated."
                   , "spec :: Spec"
                   , "spec = do"
                   ]

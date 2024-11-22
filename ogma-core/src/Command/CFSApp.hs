@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -45,16 +46,17 @@ module Command.CFSApp
   where
 
 -- External imports
-import qualified Control.Exception as E
-import           Data.List         ( find )
-import           System.FilePath   ( (</>) )
-
--- External imports: auxiliary
-import System.Directory.Extra ( copyDirectoryRecursive )
+import qualified Control.Exception         as E
+import           Data.Aeson                (decode, object, (.=))
+import           Data.List                 (find)
+import           Data.Text                 (Text)
+import           Data.Text.Lazy            (pack, unpack)
+import           System.FilePath           ( (</>) )
 
 -- Internal imports: auxiliary
-import Command.Result ( Result (..) )
-import Data.Location  ( Location (..) )
+import Command.Result         ( Result (..) )
+import Data.Location          ( Location (..) )
+import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
 import Paths_ogma_core ( getDataDir )
@@ -62,13 +64,14 @@ import Paths_ogma_core ( getDataDir )
 -- | Generate a new CFS application connected to Copilot.
 cFSApp :: FilePath       -- ^ Target directory where the application
                          --   should be created.
+       -> Maybe FilePath -- ^ Directory where the template is to be found.
        -> FilePath       -- ^ File containing a list of variables to make
                          --   available to Copilot.
        -> Maybe FilePath -- ^ File containing a list of known variables
                          --   with their types and the message IDs they
                          --   can be obtained from.
        -> IO (Result ErrorCode)
-cFSApp targetDir varNameFile varDBFile = do
+cFSApp targetDir mTemplateDir varNameFile varDBFile = do
 
   -- We first try to open the two files we need to fill in details in the CFS
   -- app template.
@@ -97,12 +100,13 @@ cFSApp targetDir varNameFile varDBFile = do
         Right varNames -> do
 
           -- Obtain template dir
-          dataDir <- getDataDir
-          let templateDir = dataDir </> "templates" </> "copilot-cfs"
+          templateDir <- case mTemplateDir of
+                           Just x  -> return x
+                           Nothing -> do
+                             dataDir <- getDataDir
+                             return $ dataDir </> "templates" </> "copilot-cfs"
 
           E.handle (return . cannotCopyTemplate) $ do
-            -- Expand template
-            copyDirectoryRecursive templateDir targetDir
 
             let f n o@(oVars, oIds, oInfos, oDatas) =
                   case variableMap varDB n of
@@ -113,10 +117,18 @@ cFSApp targetDir varNameFile varDBFile = do
             -- This is a Data.List.unzip4
             let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
 
-            let cfsFileName = targetDir </> "fsw" </> "src" </> "copilot_cfs.c"
-                cfsFileContents = unlines $ fileContents vars ids infos datas
+            let (variablesS, msgSubscriptionS, msgCasesS, msgHandlerS) =
+                  appComponents vars ids infos datas
+                subst = object $
+                          [ "variablesS"        .= pack variablesS
+                          , "msgSubscriptionsS" .= pack msgSubscriptionS
+                          , "msgCasesS"         .= pack msgCasesS
+                          , "msgHandlerS"       .= pack msgHandlerS
+                          ]
 
-            writeFile cfsFileName cfsFileContents
+            -- Expand template
+            copyTemplate templateDir subst targetDir
+
             return Success
 
 -- | Predefined list of Icarous variables that are known to Ogma
@@ -170,9 +182,10 @@ data MsgData = MsgData
   , msgDataVarType :: String
   }
 
--- | Return the contents of the main CFS application.
-fileContents :: [VarDecl] -> [MsgInfoId] -> [MsgInfo] -> [MsgData] -> [String]
-fileContents variables msgIds msgNames msgDatas = cfsFileContents
+-- | Return the components that are customized in a cFS application.
+appComponents :: [VarDecl] -> [MsgInfoId] -> [MsgInfo] -> [MsgData]
+              -> (String, String, String, String)
+appComponents variables msgIds msgNames msgDatas = cfsFileContents
   where
     variablesS = unlines $ map toVarDecl variables
     toVarDecl varDecl = varDeclType varDecl ++ " " ++ varDeclName varDecl ++ ";"
@@ -205,157 +218,11 @@ fileContents variables msgIds msgNames msgDatas = cfsFileContents
               ]
 
     cfsFileContents =
-      [ "/********************************************************************"
-      , "** File: copilot_cfs.c"
-      , "**"
-      , "** Purpose:"
-      , "**   This file contains the source code for the Copilot App."
-      , "**"
-      , "*********************************************************************/"
-      , ""
-      , "/*"
-      , "**   Include Files:"
-      , "*/"
-      , ""
-      , "#include \"copilot_cfs.h\""
-      , "#include \"copilot_cfs_perfids.h\""
-      , "#include \"copilot_cfs_msgids.h\""
-      , "#include \"copilot_cfs_msg.h\""
-      , "#include \"copilot_cfs_events.h\""
-      , "#include \"copilot_cfs_version.h\""
-      , "#include \"Icarous_msgids.h\""
-      , "#include \"Icarous_msg.h\""
-      , ""
-      , variablesS
-      , "void split(void);"
-      , "void step(void);"
-      , ""
-      , "/*"
-      , "** global data"
-      , "*/"
-      , ""
-      , "copilot_hk_tlm_t    COPILOT_HkTelemetryPkt;"
-      , "CFE_SB_PipeId_t    COPILOT_CommandPipe;"
-      , "CFE_SB_MsgPtr_t    COPILOTMsgPtr;"
-      , ""
-      , "static CFE_EVS_BinFilter_t  COPILOT_EventFilters[] ="
-      , "       {  /* Event ID    mask */"
-      , "          {COPILOT_STARTUP_INF_EID,       0x0000},"
-      , "          {COPILOT_COMMAND_ERR_EID,       0x0000},"
-      , "          {COPILOT_COMMANDCPVIOL_INF_EID,    0x0000},"
-      , "       };"
-      , ""
-      , "/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */"
-      , "/* COPILOT_AppMain() -- App entry point and main process loop  */"
-      , "/*                                                             */"
-      , "/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */"
-      , "void COPILOT_AppMain( void )"
-      , "{"
-      , "    int32  status;"
-      , "    uint32 RunStatus = CFE_ES_APP_RUN;"
-      , ""
-      , "    CFE_ES_PerfLogEntry(COPILOT_CFS_PERF_ID);"
-      , ""
-      , "    COPILOT_AppInit();"
-      , ""
-      , "    /*"
-      , "    ** COPILOT Runloop"
-      , "    */"
-      , "    while (CFE_ES_RunLoop(&RunStatus) == TRUE)"
-      , "    {"
-      , "        CFE_ES_PerfLogExit(COPILOT_CFS_PERF_ID);"
-      , ""
-      , "        // Pend on receipt of command packet"
-      , "        // (timeout set to 500 millisecs)"
-      , "        status = CFE_SB_RcvMsg (&COPILOTMsgPtr,"
-      , "                                COPILOT_CommandPipe,"
-      , "                                500);"
-      , "        "
-      , "        CFE_ES_PerfLogEntry(COPILOT_CFS_PERF_ID);"
-      , ""
-      , "        if (status == CFE_SUCCESS)"
-      , "        {"
-      , "            COPILOT_ProcessCommandPacket();"
-      , "        }"
-      , ""
-      , "    }"
-      , ""
-      , "    CFE_ES_ExitApp(RunStatus);"
-      , ""
-      , "} /* End of COPILOT_AppMain() */"
-      , ""
-      , "/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */"
-      , "/*                                                             */"
-      , "/* COPILOT_AppInit() --  initialization                        */"
-      , "/*                                                             */"
-      , "/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */"
-      , "void COPILOT_AppInit(void)"
-      , "{"
-      , "    // Register the app with Executive services"
-      , "    CFE_ES_RegisterApp();"
-      , ""
-      , "    // Register the events"
-      , "    CFE_EVS_Register(COPILOT_EventFilters,"
-      , "                     sizeof(COPILOT_EventFilters) / "
-        ++ "sizeof(CFE_EVS_BinFilter_t),"
-      , "                     CFE_EVS_BINARY_FILTER);"
-      , ""
-      , "    // Create the Software Bus command pipe and subscribe to "
-      , "    // housekeeping messages"
-      , "    CFE_SB_CreatePipe(&COPILOT_CommandPipe, COPILOT_PIPE_DEPTH,"
-        ++ "\"COPILOT_CMD_PIPE\");"
+      ( variablesS
       , msgSubscriptionS
-      , ""
-      , "    CFE_EVS_SendEvent (COPILOT_STARTUP_INF_EID,"
-      , "                       CFE_EVS_INFORMATION,"
-      , "                      \"COPILOT App Initialized. Ver %d.%d.%d.%d\","
-      , "                       COPILOT_CFS_MAJOR_VERSION,"
-      , "                       COPILOT_CFS_MINOR_VERSION, "
-      , "                       COPILOT_CFS_REVISION, "
-      , "                       COPILOT_CFS_MISSION_REV);"
-      , ""
-      , "} /* End of COPILOT_AppInit() */"
-      , ""
-      , "/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */"
-      , "/*  Name:  COPILOT_ProcessCommandPacket                        */"
-      , "/*                                                             */"
-      , "/*  Purpose:                                                   */"
-      , "/*     This routine will process any packet that is received   */"
-      , "/*      on the COPILOT command pipe.                           */"
-      , "/*                                                             */"
-      , "/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */"
-      , "void COPILOT_ProcessCommandPacket(void)"
-      , "{"
-      , "    CFE_SB_MsgId_t  MsgId;"
-      , ""
-      , "    MsgId = CFE_SB_GetMsgId(COPILOTMsgPtr);"
-      , ""
-      , "    switch (MsgId)"
-      , "    {"
       , msgCasesS
-      , "        default:"
-      , "            COPILOT_HkTelemetryPkt.copilot_command_error_count++;"
-      , "            CFE_EVS_SendEvent(COPILOT_COMMAND_ERR_EID,CFE_EVS_ERROR,"
-      , "                              "
-        ++ "\"COPILOT: invalid command packet,MID = 0x%x\","
-      , "                              MsgId);"
-      , "            break;"
-      , "    }"
-      , ""
-      , "    return;"
-      , ""
-      , "} /* End COPILOT_ProcessCommandPacket */"
-      , ""
       , msgHandlerS
-      , ""
-      , "/**"
-      , " * Report copilot property violations."
-      , " */"
-      , "void split(void) {"
-      , "    CFE_EVS_SendEvent(COPILOT_COMMANDCPVIOL_INF_EID, CFE_EVS_ERROR,"
-      , "        \"COPILOT: violation\");"
-      , "}"
-      ]
+      )
 
 -- * Exception handlers
 

@@ -56,9 +56,10 @@ import Command.CFSApp ( ErrorCode, cFSApp )
 
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
-  { cFSAppTarget   :: String
-  , cFSAppVarNames :: String
-  , cFSAppVarDB    :: Maybe String
+  { cFSAppTarget      :: String
+  , cFSAppTemplateDir :: Maybe String
+  , cFSAppVarNames    :: String
+  , cFSAppVarDB       :: Maybe String
   }
 
 -- | Create <https://cfs.gsfc.nasa.gov/ NASA core Flight System> (cFS)
@@ -68,7 +69,11 @@ data CommandOpts = CommandOpts
 -- This is just an uncurried version of "Command.CFSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
 command c =
-  cFSApp (cFSAppTarget c) (cFSAppVarNames c) (cFSAppVarDB c)
+  cFSApp
+    (cFSAppTarget c)
+    (cFSAppTemplateDir c)
+    (cFSAppVarNames c)
+    (cFSAppVarDB c)
 
 -- * CLI
 
@@ -86,6 +91,13 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "copilot-cfs-demo"
         <> help strCFSAppDirArgDesc
+        )
+  <*> optional
+        ( strOption
+            (  long "app-template-dir"
+            <> metavar "DIR"
+            <> help strCFSAppTemplateDirArgDesc
+            )
         )
   <*> strOption
         (  long "variable-file"
@@ -105,6 +117,11 @@ commandOptsParser = CommandOpts
 -- | Argument target directory to cFS app generation command
 strCFSAppDirArgDesc :: String
 strCFSAppDirArgDesc = "Target directory"
+
+-- | Argument template directory to cFS app generation command
+strCFSAppTemplateDirArgDesc :: String
+strCFSAppTemplateDirArgDesc =
+  "Directory holding cFS application source template"
 
 -- | Argument variable list to cFS app generation command
 strCFSAppVarListArgDesc :: String

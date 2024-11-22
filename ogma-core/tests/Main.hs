@@ -7,14 +7,9 @@ import Test.Framework.Providers.HUnit ( testCase )
 import Test.HUnit                     ( assertBool )
 
 -- Internal imports
-import Command.CStructs2Copilot          ( cstructs2Copilot )
-import Command.FRETComponentSpec2Copilot ( FRETComponentSpec2CopilotOptions (..)
-                                         , fretComponentSpec2Copilot
-                                         )
-import Command.FRETReqsDB2Copilot        ( FRETReqsDB2CopilotOptions (..)
-                                         , fretReqsDB2Copilot
-                                         )
-import Command.Result                    ( isSuccess )
+import Command.CStructs2Copilot (cstructs2Copilot)
+import Command.Result           (isSuccess)
+import Command.Standalone       (StandaloneOptions (..), standalone)
 
 -- | Run all unit tests on ogma-core.
 main :: IO ()
@@ -106,13 +101,13 @@ testFretComponentSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON requirements
                               -> Bool
                               -> IO ()
 testFretComponentSpec2Copilot file success = do
-    let opts = FRETComponentSpec2CopilotOptions
-                 { fretCS2CopilotUseCoCoSpec = False
-                 , fretCS2CopilotIntType     = "Int64"
-                 , fretCS2CopilotRealType    = "Float"
-                 , fretCS2CopilotFilename    = "fret"
+    let opts = StandaloneOptions
+                 { standaloneFormat      = "fcs"
+                 , standalonePropFormat  = "smv"
+                 , standaloneTypeMapping = [("int", "Int64"), ("real", "Float")]
+                 , standaloneFilename    = "fret"
                  }
-    result <- fretComponentSpec2Copilot file opts
+    result <- standalone file opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
@@ -138,11 +133,13 @@ testFretReqsDBCoCoSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON
                                -> Bool
                                -> IO ()
 testFretReqsDBCoCoSpec2Copilot file success = do
-    let opts = FRETReqsDB2CopilotOptions
-                 { fretReqsDB2CopilotUseCoCoSpec = True
-                 , fretReqsDB2CopilotFilename    = "fret"
+    let opts = StandaloneOptions
+                 { standaloneFormat      = "fdb"
+                 , standalonePropFormat  = "cocospec"
+                 , standaloneTypeMapping = []
+                 , standaloneFilename    = "fret"
                  }
-    result <- fretReqsDB2Copilot file opts
+    result <- standalone file opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.

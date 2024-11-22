@@ -1,5 +1,16 @@
 # Revision history for ogma-core
 
+## [1.5.0] - 2024-11-21
+
+* Version bump 1.5.0 (#178).
+* Fix incorrect path when using Space ROS humble-2024.10.0 (#158).
+* Use template expansion system to generate cFS monitoring application (#157).
+* Use template expansion system to generate ROS monitoring application (#162).
+* Fix comment in generated Copilot spec (#164).
+* Add missing notPreviousNot to generated spec (#168).
+* Introduce new standalone command (#170).
+* Correct name in documentation (#176).
+
 ## [1.4.1] - 2024-09-21
 
 * Version bump 1.4.1 (#155).

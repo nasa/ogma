@@ -56,11 +56,12 @@ import Command.ROSApp ( ErrorCode, rosApp )
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppTarget   :: String
-  , rosAppFRETFile :: Maybe String
-  , rosAppVarNames :: Maybe String
-  , rosAppVarDB    :: Maybe String
-  , rosAppHandlers :: Maybe String
+  { rosAppTarget      :: String
+  , rosAppTemplateDir :: Maybe String
+  , rosAppFRETFile    :: Maybe String
+  , rosAppVarNames    :: Maybe String
+  , rosAppVarDB       :: Maybe String
+  , rosAppHandlers    :: Maybe String
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -72,6 +73,7 @@ command :: CommandOpts -> IO (Result ErrorCode)
 command c =
   rosApp
     (rosAppTarget c)
+    (rosAppTemplateDir c)
     (rosAppFRETFile c)
     (rosAppVarNames c)
     (rosAppVarDB c)
@@ -93,6 +95,13 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "ros"
         <> help strROSAppDirArgDesc
+        )
+  <*> optional
+        ( strOption
+            (  long "app-template-dir"
+            <> metavar "DIR"
+            <> help strROSAppTemplateDirArgDesc
+            )
         )
   <*> optional
         ( strOption
@@ -126,6 +135,11 @@ commandOptsParser = CommandOpts
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
 strROSAppDirArgDesc = "Target directory"
+
+-- | Argument template directory to ROS app generation command
+strROSAppTemplateDirArgDesc :: String
+strROSAppTemplateDirArgDesc =
+  "Directory holding ROS application source template"
 
 -- | Argument FRET CS to ROS app generation command
 strROSAppFRETFileNameArgDesc :: String
