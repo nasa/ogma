@@ -29,7 +29,7 @@
 -- AGREEMENT.
 --
 
--- | Transform a FRET TL specification into a Copilot specification.
+-- | Transform an SMV TL specification into a Copilot specification.
 --
 -- Normally, this module would be implemented as a conversion between ASTs,
 -- but we want to add comments to the generated code, which are not
@@ -40,7 +40,7 @@ import Language.SMV.AbsSMV (AdditiveOp (..), BoolConst (..), BoolSpec (..),
                             Ident (..), MultOp (..), NumExpr (..), Number (..),
                             Op1Name (..), OpOne (..), OpTwo (..), OrdOp (..))
 
--- | Return the Copilot representation of a FRET BoolSpec.
+-- | Return the Copilot representation of an SMV BoolSpec.
 --
 -- This function returns the temporal property only. The string does not
 -- contain any top-level names, any imports, or auxiliary definitions that may
@@ -96,7 +96,7 @@ boolSpec2Copilot b = case b of
                               ++ " " ++ boolSpec2Copilot spec2
                               ++ ")"
 
--- | Return the Copilot representation of a FRET boolean constant.
+-- | Return the Copilot representation of an SMV boolean constant.
 const2Copilot :: BoolConst -> String
 const2Copilot BoolConstTrue  = "true"
 const2Copilot BoolConstFalse = "false"
@@ -119,17 +119,17 @@ numExpr2Copilot (NumMult x op y) = "("
                                    ++ numExpr2Copilot y
                                    ++ ")"
 
--- | Return the Copilot representation of a FRET additive operator.
+-- | Return the Copilot representation of an SMV additive operator.
 additiveOp2Copilot :: AdditiveOp -> String
 additiveOp2Copilot OpPlus  = "+"
 additiveOp2Copilot OpMinus = "-"
 
--- | Return the Copilot representation of a FRET multiplicative operator.
+-- | Return the Copilot representation of an SMV multiplicative operator.
 multOp2Copilot :: MultOp -> String
 multOp2Copilot OpTimes = "*"
 multOp2Copilot OpDiv   = "/"
 
--- | Return the Copilot representation of a FRET comparison operator.
+-- | Return the Copilot representation of an SMV comparison operator.
 ordOp2Copilot :: OrdOp -> String
 ordOp2Copilot OrdOpLT = "<"
 ordOp2Copilot OrdOpLE = "<="
@@ -138,13 +138,13 @@ ordOp2Copilot OrdOpNE = "/="
 ordOp2Copilot OrdOpGT = ">"
 ordOp2Copilot OrdOpGE = ">="
 
--- | Return the Copilot representation of a unary logical FRET operator.
+-- | Return the Copilot representation of a unary logical SMV operator.
 opOne2Copilot :: OpOne -> String
 opOne2Copilot (Op1Alone x)    = opOneAlone2Copilot x
 opOne2Copilot (Op1MTL x op v) = opOneMTL2Copilot x op v
 opOne2Copilot (Op1MTLRange op mn mx) = opOneMTLRange2Copilot op mn mx
 
--- | Return the Copilot representation of a unary logical non-MTL FRET
+-- | Return the Copilot representation of a unary logical non-MTL SMV
 -- operator.
 opOneAlone2Copilot :: Op1Name -> String
 opOneAlone2Copilot Op1Pre  = "pre"
@@ -156,7 +156,7 @@ opOneAlone2Copilot Op1Z    = "notPreviousNot"
 opOneAlone2Copilot Op1Hist = "PTLTL.alwaysBeen"
 opOneAlone2Copilot Op1O    = "PTLTL.eventuallyPrev"
 
--- | Return the Copilot representation of a unary logical MTL FRET operator.
+-- | Return the Copilot representation of a unary logical MTL SMV operator.
 opOneMTL2Copilot :: Op1Name -> OrdOp -> Number -> String
 opOneMTL2Copilot operator _comparison number =
   opOneMTL2Copilot' operator ++ " " ++ show (0 :: Int)
@@ -164,7 +164,7 @@ opOneMTL2Copilot operator _comparison number =
                              ++ " " ++ "clock" ++ " "
                              ++ show (1 :: Int)
 
--- | Return the Copilot representation of a unary logical MTL FRET operator
+-- | Return the Copilot representation of a unary logical MTL SMV operator
 -- that uses an explicit range.
 opOneMTLRange2Copilot :: Op1Name -> Number -> Number -> String
 opOneMTLRange2Copilot operator mn mx =
@@ -173,7 +173,7 @@ opOneMTLRange2Copilot operator mn mx =
                              ++ " " ++ "clock" ++ " "
                              ++ show (1 :: Int)
 
--- | Return the Copilot representation of a unary logical possibly MTL FRET
+-- | Return the Copilot representation of a unary logical possibly MTL SMV
 -- operator.
 opOneMTL2Copilot' :: Op1Name -> String
 opOneMTL2Copilot' Op1Pre  = "pre"
@@ -185,11 +185,11 @@ opOneMTL2Copilot' Op1Z    = "notPreviousNot"
 opOneMTL2Copilot' Op1Hist = "MTL.alwaysBeen"
 opOneMTL2Copilot' Op1O    = "MTL.eventuallyPrev"
 
--- | Return the Copilot representation of a FRET number.
+-- | Return the Copilot representation of an SMV number.
 number2Copilot :: Number -> String
 number2Copilot (NumberInt n) = show n
 
--- | Return the Copilot representation of a binary logical non-MTL FRET
+-- | Return the Copilot representation of a binary logical non-MTL SMV
 -- operator.
 opTwo2Copilot :: OpTwo -> String
 opTwo2Copilot Op2S = "`since`"
@@ -197,7 +197,7 @@ opTwo2Copilot Op2T = "`triggers`"
 opTwo2Copilot Op2V = "`releases`"
 opTwo2Copilot Op2U = "`until`"
 
--- | Return the Copilot representation of a FRET identifier.
+-- | Return the Copilot representation of an SMV identifier.
 ident2Copilot :: Ident -> String
 ident2Copilot (Ident i) = i
 
