@@ -7,6 +7,7 @@
 * Introduce new standalone command (#170).
 * Update README to demonstrate robotics (#172).
 * Remove unused resources (#174).
+* Add version bounds to base (#180).
 
 ## [1.4.1] - 2024-09-21
 
