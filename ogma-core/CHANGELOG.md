@@ -1,10 +1,11 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2024-11-20
+## [1.X.Y] - 2024-11-21
 
 * Fix incorrect path when using Space ROS humble-2024.10.0 (#158).
 * Use template expansion system to generate cFS monitoring application (#157).
 * Use template expansion system to generate ROS monitoring application (#162).
+* Fix comment in generated Copilot spec (#164).
 
 ## [1.4.1] - 2024-09-21
 

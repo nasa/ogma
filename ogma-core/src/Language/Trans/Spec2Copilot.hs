@@ -197,9 +197,9 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
     -- Main specification
     copilotSpec :: [String]
     copilotSpec = [ ""
-                  , "-- | Complete specification. Calls the C function void "
-                    ++ " handler(); when"
-                  , "-- the property is violated."
+                  , "-- | Complete specification. Calls C handler functions"
+                    ++ " when"
+                  , "-- properties are violated."
                   , "spec :: Spec"
                   , "spec = do"
                   ]
