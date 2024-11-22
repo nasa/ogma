@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.4.1
+version:             1.5.0
 homepage:            https://github.com/nasa/ogma
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -114,13 +114,13 @@ library
     , mtl
     , text                    >= 1.2.3.1  && < 2.1
 
-    , ogma-extra              >= 1.4.1 && < 1.5
-    , ogma-language-c         >= 1.4.1 && < 1.5
-    , ogma-language-cocospec  >= 1.4.1 && < 1.5
-    , ogma-language-copilot   >= 1.4.1 && < 1.5
-    , ogma-language-jsonspec  >= 1.4.1 && < 1.5
-    , ogma-language-smv       >= 1.4.1 && < 1.5
-    , ogma-spec               >= 1.4.1 && < 1.5
+    , ogma-extra              >= 1.5.0 && < 1.6
+    , ogma-language-c         >= 1.5.0 && < 1.6
+    , ogma-language-cocospec  >= 1.5.0 && < 1.6
+    , ogma-language-copilot   >= 1.5.0 && < 1.6
+    , ogma-language-jsonspec  >= 1.5.0 && < 1.6
+    , ogma-language-smv       >= 1.5.0 && < 1.6
+    , ogma-spec               >= 1.5.0 && < 1.6
 
   hs-source-dirs:
     src
