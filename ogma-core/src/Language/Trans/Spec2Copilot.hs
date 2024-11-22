@@ -67,6 +67,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
       , ftp
       , pre
       , tpre
+      , notPreviousNot
       , copilotSpec
       , main'
       ]
@@ -193,6 +194,13 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
            , "tpre :: Stream Bool -> Stream Bool"
            , "tpre = ([True] ++)"
            ]
+
+    -- Auxiliary streams: notPreviousNot
+    notPreviousNot :: [String]
+    notPreviousNot = [ ""
+                     , "notPreviousNot :: Stream Bool -> Stream Bool"
+                     , "notPreviousNot = not . PTLTL.previous . not"
+                     ]
 
     -- Main specification
     copilotSpec :: [String]
