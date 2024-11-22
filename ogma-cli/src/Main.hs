@@ -37,9 +37,8 @@
 -- framework <https://cfs.gsfc.nasa.gov/ Copilot>. Currently, features
 -- supported are:
 --
--- * Translation of ptLTL and Cocospec properties defined in a
--- <https://github.com/NASA-SW-VnV/fret FRET> file into corresponding
--- expressions in Copilot.
+-- * Translation properties defined in structured natural language into
+-- corresponding expressions in Copilot.
 --
 -- * Translation of C headers declaring structs into the corresponding Copilot
 -- Struct definitions.

@@ -50,9 +50,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      Some use cases supported by Ogma include:
                      .
-                     - Translating requirements defined in
-                       <https://github.com/NASA-SW-VnV/fret NASA requirements elicitation tool FRET>
-                       into corresponding monitors in Copilot.
+                     - Translating requirements defined in structured natural
+                       language into monitors in Copilot.
                      .
                      - Generating the glue code necessary to work with C
                        structs in Copilot.
@@ -91,10 +90,6 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  handlers                 Generate message handlers from C structs
                      >  cfs                      Generate a complete CFS/Copilot application
                      >  fprime                   Generate a complete F' monitoring component
-                     >  fret-component-spec      Generate a Copilot file from a FRET Component
-                     >                           Specification
-                     >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
-                     >                           Database
                      >  ros                      Generate a ROS 2 monitoring application
                      >  standalone               Generate a Copilot file from an input specification
                      .
@@ -103,8 +98,6 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      - <https://github.com/nasa/ogma The Ogma repository>.
                      .
                      - <https://copilot-language.github.io/ The Copilot web page>.
-                     .
-                     - <https://github.com/NASA-SW-VnV/fret The FRET repository>.
                      .
                      - <https://cfs.gsfc.nasa.gov/ The NASA Core Flight System web page>.
                      .
@@ -133,8 +126,6 @@ executable ogma
     CLI.CommandCStructs2Copilot
     CLI.CommandCStructs2MsgHandlers
     CLI.CommandFPrimeApp
-    CLI.CommandFretComponentSpec2Copilot
-    CLI.CommandFretReqsDB2Copilot
     CLI.CommandROSApp
     CLI.CommandStandalone
     CLI.CommandTop
