@@ -52,18 +52,19 @@ import           Text.Megaparsec       (eof, errorBundlePretty, parse)
 import Data.OgmaSpec
 
 data JSONFormat = JSONFormat
-  { specInternalVars    :: Maybe String
-  , specInternalVarId   :: String
-  , specInternalVarExpr :: String
-  , specInternalVarType :: Maybe String
-  , specExternalVars    :: Maybe String
-  , specExternalVarId   :: String
-  , specExternalVarType :: Maybe String
-  , specRequirements    :: String
-  , specRequirementId   :: String
-  , specRequirementDesc :: Maybe String
-  , specRequirementExpr :: String
-  }
+    { specInternalVars    :: Maybe String
+    , specInternalVarId   :: String
+    , specInternalVarExpr :: String
+    , specInternalVarType :: Maybe String
+    , specExternalVars    :: Maybe String
+    , specExternalVarId   :: String
+    , specExternalVarType :: Maybe String
+    , specRequirements    :: String
+    , specRequirementId   :: String
+    , specRequirementDesc :: Maybe String
+    , specRequirementExpr :: String
+    }
+  deriving (Read)
 
 data JSONFormatInternal = JSONFormatInternal
   { jfiInternalVars    :: Maybe [JSONPathElement]

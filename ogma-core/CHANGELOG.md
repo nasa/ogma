@@ -7,6 +7,7 @@
 * Use template expansion system to generate ROS monitoring application (#162).
 * Fix comment in generated Copilot spec (#164).
 * Add missing notPreviousNot to generated spec (#168).
+* Introduce new standalone command (#170).
 
 ## [1.4.1] - 2024-09-21
 
