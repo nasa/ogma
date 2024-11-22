@@ -93,6 +93,7 @@ import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandFretComponentSpec2Copilot
 import qualified CLI.CommandFretReqsDB2Copilot
 import qualified CLI.CommandROSApp
+import qualified CLI.CommandStandalone
 
 -- * Command
 
@@ -109,6 +110,7 @@ data CommandOpts =
   | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
   | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
+  | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
 
 -- * CLI
 
@@ -127,6 +129,7 @@ commandOptsParser = subparser
   <> subcommandFretComponentSpec
   <> subcommandFretReqs
   <> subcommandROSApp
+  <> subcommandStandalone
   )
 
 -- | Modifier for the CStruct to Copilot Struct generation subcommand, linking
@@ -199,6 +202,15 @@ subcommandFPrimeApp =
     (CommandOptsFPrimeApp <$> CLI.CommandFPrimeApp.commandOptsParser)
     CLI.CommandFPrimeApp.commandDesc
 
+-- | Modifier for the standalone subcommand, linking the subcommand options and
+-- description to the command @standalone@ at top level.
+subcommandStandalone :: Mod CommandFields CommandOpts
+subcommandStandalone =
+  subcommand
+    "standalone"
+    (CommandOptsStandalone <$> CLI.CommandStandalone.commandOptsParser)
+    CLI.CommandStandalone.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -235,6 +247,8 @@ command (CommandOptsFretReqsDB2Copilot c) =
   id <$> CLI.CommandFretReqsDB2Copilot.command c
 command (CommandOptsROSApp c) =
   id <$> CLI.CommandROSApp.command c
+command (CommandOptsStandalone c) =
+  id <$> CLI.CommandStandalone.command c
 
 -- We indicate to HLint that the use of (id <$>) above should not trigger a
 -- warning. Conceptually, there is a transformation taking place, but no change
