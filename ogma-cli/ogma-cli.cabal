@@ -153,7 +153,7 @@ test-suite test-ogma
     Main.hs
 
   build-depends:
-      base
+      base                 >= 4.11.0.0 && < 5
     , HUnit
     , process
     , test-framework
