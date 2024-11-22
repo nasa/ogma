@@ -6,6 +6,7 @@
 * Use template expansion system to generate cFS monitoring application (#157).
 * Use template expansion system to generate ROS monitoring application (#162).
 * Fix comment in generated Copilot spec (#164).
+* Add missing notPreviousNot to generated spec (#168).
 
 ## [1.4.1] - 2024-09-21
 
