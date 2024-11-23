@@ -517,13 +517,34 @@ individual `x` and `y` fields of a `Point` in a stream.
 # Contributions
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-The best way to contribute to Ogma is to report any issues you find via the
-issue tracker, and to use Ogma to build applications or in your own research
-and let us know about your results.
+We'd love to receive your contributions, be it code fixes, new features, bug
+reports, discussions, or anything else that can help the Ogma project.
 
-We kindly ask users not to send PRs to this project. Instead, please document
-the bugs you find or other suggestions as issues and we will make the necessary
-changes.
+If you have any comments, questions, ideas, or other topics that you think may
+be of interest, start a new discussion
+[here](https://github.com/nasa/ogma/discussions).
+
+If you would like to contribute a fix for an issue, please comment on the issue
+indicating that you want to fix it so that we can assign it to you and track
+the status on our end. If the issue does not exist, create it first or ask that
+an existing discussion be promoted to an issue.
+
+If you are unsure about whether your submission should be filed as an issue or
+as a discussion, file it as a discussion. We can always move it later.
+
+To facilitate merging any pull requests that you send, please:
+- Reference the issue you are addressing with the text `Refs #<ISSUENUMBER>.`
+  at the end of the subject line of each commit message, in *every commit*.
+  Replace `<ISSUENUMBER>` with the number of the specific issue that your pull
+  request is addressing.
+- Describe what each commit does individually *in the commit's message*. It's
+  best to err on the side of being more descriptive than less.
+- Update the CHANGELOGs in the *last commit(s)*.
+
+You can take a look at the repository's [commit
+history](https://github.com/nasa/ogma/commits/develop/) to better
+understand the process we follow. Click on each commit to see how we write
+commit messages.
 
 # Acknowledgements
 <sup>[(Back to top)](#table-of-contents)</sup>
