@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -42,16 +43,17 @@ module Command.FPrimeApp
 import qualified Control.Exception    as E
 import           Control.Monad.Except ( ExceptT, liftEither, liftIO, runExceptT,
                                         throwError )
-import           Data.Aeson           ( eitherDecode )
+import           Data.Aeson           ( eitherDecode, object, (.=) )
 import           Data.Char            ( toUpper )
 import           Data.List            ( find, intercalate, nub, sort )
 import           Data.Maybe           ( fromMaybe )
+import           Data.Text.Lazy       ( pack )
 import           System.FilePath      ( (</>) )
 
 -- External imports: auxiliary
 import Data.ByteString.Extra  as B ( safeReadFile )
 import Data.String.Extra      ( sanitizeLCIdentifier, sanitizeUCIdentifier )
-import System.Directory.Extra ( copyDirectoryRecursive )
+import System.Directory.Extra ( copyTemplate )
 
 -- External imports: ogma
 import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
@@ -112,9 +114,6 @@ fprimeApp' targetDir varNames varDB monitors =
     dataDir <- getDataDir
     let templateDir = dataDir </> "templates" </> "fprime"
 
-    -- Expand template
-    copyDirectoryRecursive templateDir targetDir
-
     let f n o@(oVars) =
           case variableMap varDB n of
             Nothing   -> o
@@ -123,29 +122,32 @@ fprimeApp' targetDir varNames varDB monitors =
     -- This is a Data.List.unzip4
     let vars = foldr f [] varNames
 
-    let fprimeFileName =
-          targetDir </> "Copilot.fpp"
-        fprimeFileContents =
-          unlines $
-            componentInterface vars monitors
+        -- Copilot.fpp
+        (ifaceTypePorts, ifaceInputPorts, ifaceViolationEvents) =
+          componentInterface vars monitors
 
-    writeFile fprimeFileName fprimeFileContents
+        -- Copilot.hpp
+        hdrHandlers = componentHeader vars monitors
 
-    let fprimeFileName =
-          targetDir </> "Copilot.hpp"
-        fprimeFileContents =
-          unlines $
-            componentHeader vars monitors
+        -- Copilot.cpp
+        (implInputs,             implMonitorResults, implInputHandlers,
+         implTriggerResultReset, implTriggerChecks,  implTriggers) =
+          componentImpl vars monitors
 
-    writeFile fprimeFileName fprimeFileContents
+        subst = object $
+                  [ "ifaceTypePorts"         .= pack ifaceTypePorts
+                  , "ifaceInputPorts"        .= pack ifaceInputPorts
+                  , "ifaceViolationEvents"   .= pack ifaceViolationEvents
+                  , "hdrHandlers"            .= pack hdrHandlers
+                  , "implInputs"             .= pack implInputs
+                  , "implMonitorResults"     .= pack implMonitorResults
+                  , "implInputHandlers"      .= pack implInputHandlers
+                  , "implTriggerResultReset" .= pack implTriggerResultReset
+                  , "implTriggerChecks"      .= pack implTriggerChecks
+                  , "implTriggers"           .= pack implTriggers
+                  ]
 
-    let fprimeFileName =
-          targetDir </> "Copilot.cpp"
-        fprimeFileContents =
-          unlines $
-            componentImpl vars monitors
-
-    writeFile fprimeFileName fprimeFileContents
+    copyTemplate templateDir subst targetDir
 
     return $ Right ()
 
@@ -280,93 +282,19 @@ data VarDecl = VarDecl
 -- | Return the contents of the FPrime component interface (.fpp) specification.
 componentInterface :: [VarDecl]
                    -> [String]     -- Monitors
-                   -> [String]
+                   -> (String, String, String)
 componentInterface variables monitors =
-    [ "module Ref {"
-    , ""
-    ]
-    ++ typePorts ++
-    [ ""
-    , "  @ Monitoring component"
-    , "  queued component Copilot {"
-    , ""
-    , "    # ----------------------------------------------------------------------"
-    , "    # General ports"
-    , "    # ----------------------------------------------------------------------"
-    , ""
-    ]
-    ++ inputPorts ++
-    [ ""
-    , "    # ----------------------------------------------------------------------"
-    , "    # Special ports"
-    , "    # ----------------------------------------------------------------------"
-    , ""
-    , "    @ Command receive"
-    , "    command recv port cmdIn"
-    , ""
-    , "    @ Command registration"
-    , "    command reg port cmdRegOut"
-    , ""
-    , "    @ Command response"
-    , "    command resp port cmdResponseOut"
-    , ""
-    , "    @ Event"
-    , "    event port eventOut"
-    , ""
-    , "    @ Parameter get"
-    , "    param get port prmGetOut"
-    , ""
-    , "    @ Parameter set"
-    , "    param set port prmSetOut"
-    , ""
-    , "    @ Telemetry"
-    , "    telemetry port tlmOut"
-    , ""
-    , "    @ Text event"
-    , "    text event port textEventOut"
-    , ""
-    , "    @ Time get"
-    , "    time get port timeGetOut"
-    , ""
-    , "    # ----------------------------------------------------------------------"
-    , "    # Parameters"
-    , "    # ----------------------------------------------------------------------"
-    , ""
-    , "    # This section intentionally left blank"
-    , ""
-    , "    # ----------------------------------------------------------------------"
-    , "    # Events"
-    , "    # ----------------------------------------------------------------------"
-    , ""
-    ]
-    ++ violationEvents ++
-    [ ""
-    , "    # ----------------------------------------------------------------------"
-    , "    # Commands"
-    , "    # ----------------------------------------------------------------------"
-    , ""
-    , "    sync command CHECK_MONITORS()"
-    , ""
-    , "    # ----------------------------------------------------------------------"
-    , "    # Telemetry"
-    , "    # ----------------------------------------------------------------------"
-    , ""
-    , "    # This section intentionally left blank"
-    , ""
-    , "  }"
-    , ""
-    , "}"
-    ]
+    (typePorts, inputPorts, violationEvents)
   where
 
-    typePorts = nub $ sort $ map toTypePort variables
+    typePorts = unlines' $ nub $ sort $ map toTypePort variables
     toTypePort varDecl = "    port "
                        ++ fprimeVarDeclType varDecl
                        ++ "Value(value: "
                        ++ fprimeVarDeclType varDecl
                        ++ ")"
 
-    inputPorts = map toInputPortDecl variables
+    inputPorts = unlines' $ map toInputPortDecl variables
     toInputPortDecl varDecl = "    async input port "
                             ++ varDeclName varDecl
                             ++ "In : " ++ fprimeVarDeclType varDecl
@@ -385,7 +313,8 @@ componentInterface variables monitors =
       "double"   -> "F64"
       def        -> def
 
-    violationEvents = intercalate [""]
+    violationEvents = unlines'
+                    $ intercalate [""]
                     $ map violationEvent monitors
     violationEvent monitor =
         [ "    @ " ++ monitor ++ " violation"
@@ -401,78 +330,11 @@ componentInterface variables monitors =
 -- | Return the contents of the FPrime component header file.
 componentHeader :: [VarDecl]
                 -> [String]     -- Monitors
-                -> [String]
-componentHeader variables _monitors =
-    [ "// ======================================================================"
-    , "// \\title  Copilot.hpp"
-    , "// \\author root"
-    , "// \\brief  hpp file for Copilot component implementation class"
-    , "// ======================================================================"
-    , ""
-    , "#ifndef Copilot_HPP"
-    , "#define Copilot_HPP"
-    , ""
-    , "#include \"Ref/Copilot/CopilotComponentAc.hpp\""
-    , ""
-    , "namespace Ref {"
-    , ""
-    , "  class Copilot :"
-    , "    public CopilotComponentBase"
-    , "  {"
-    , ""
-    , "    public:"
-    , ""
-    , "      // ----------------------------------------------------------------------"
-    , "      // Construction, initialization, and destruction"
-    , "      // ----------------------------------------------------------------------"
-    , ""
-    , "      //! Construct object Copilot"
-    , "      //!"
-    , "      Copilot("
-    , "          const char *const compName /*!< The component name*/"
-    , "      );"
-    , ""
-    , "      //! Initialize object Copilot"
-    , "      //!"
-    , "      void init("
-    , "          const NATIVE_INT_TYPE queueDepth, /*!< The queue depth*/"
-    , "          const NATIVE_INT_TYPE instance = 0 /*!< The instance number*/"
-    , "      );"
-    , ""
-    , "      //! Destroy object Copilot"
-    , "      //!"
-    , "      ~Copilot();"
-    , ""
-    , "    PRIVATE:"
-    , ""
-    , "      // ----------------------------------------------------------------------"
-    , "      // Handler implementations for user-defined typed input ports"
-    , "      // ----------------------------------------------------------------------"
-    , ""
-    ]
-    ++ handlers ++
-    [ ""
-    , "    PRIVATE:"
-    , ""
-    , "      // ----------------------------------------------------------------------"
-    , "      // Command handler implementations"
-    , "      // ----------------------------------------------------------------------"
-    , ""
-    , "      //! Implementation for CHECK_MONITORS command handler"
-    , "      //! "
-    , "      void CHECK_MONITORS_cmdHandler("
-    , "          const FwOpcodeType opCode, /*!< The opcode*/"
-    , "          const U32 cmdSeq /*!< The command sequence number*/"
-    , "      );"
-    , ""
-    , "    };"
-    , ""
-    , "} // end namespace Ref"
-    , ""
-    , "#endif"
-    ]
+                -> String
+componentHeader variables _monitors = handlers
   where
-    handlers = intercalate [""]
+    handlers = unlines'
+             $ intercalate [""]
              $ map toInputHandler variables
     toInputHandler nm =
         [ "      //! Handler implementation for " ++ varDeclName nm ++ "In"
@@ -489,103 +351,29 @@ componentHeader variables _monitors =
 -- | Return the contents of the main FPrime component.
 componentImpl :: [VarDecl]
               -> [String]     -- Monitors
-              -> [String]
+              -> (String, String, String, String, String, String)
 componentImpl variables monitors =
-    [ "// ======================================================================"
-    , "// \\title  Copilot.cpp"
-    , "// \\author Ogma"
-    , "// \\brief  cpp file for Copilot component implementation class"
-    , "// ======================================================================"
-    , ""
-    , ""
-    , "#include <Ref/Copilot/Copilot.hpp>"
-    , "#include \"Fw/Types/BasicTypes.hpp\""
-    , ""
-    , "#ifdef __cplusplus"
-    , "extern \"C\" {"
-    , "#endif"
-    , ""
-    , "#include \"copilot.h\""
-    , "#include \"copilot_types.h\""
-    , ""
-    , "#ifdef __cplusplus"
-    , "}"
-    , "#endif"
-    , ""
-    ]
-    ++ inputs
-    ++ monitorResults ++
-    [ ""
-    , "namespace Ref {"
-    , ""
-    , "  // ----------------------------------------------------------------------"
-    , "  // Construction, initialization, and destruction"
-    , "  // ----------------------------------------------------------------------"
-    , ""
-    , "  Copilot ::"
-    , "    Copilot("
-    , "        const char *const compName"
-    , "    ) : CopilotComponentBase(compName)"
-    , "  {"
-    , ""
-    , "  }"
-    , ""
-    , "  void Copilot ::"
-    , "    init("
-    , "        const NATIVE_INT_TYPE queueDepth,"
-    , "        const NATIVE_INT_TYPE instance"
-    , "    )"
-    , "  {"
-    , "    CopilotComponentBase::init(queueDepth, instance);"
-    , "  }"
-    , ""
-    , "  Copilot ::"
-    , "    ~Copilot()"
-    , "  {"
-    , ""
-    , "  }"
-    , ""
-    , "  // ----------------------------------------------------------------------"
-    , "  // Handler implementations for user-defined typed input ports"
-    , "  // ----------------------------------------------------------------------"
-    , ""
-    ]
-    ++ inputHandlers ++
-    [ ""
-    , "  // ----------------------------------------------------------------------"
-    , "  // Command handler implementations"
-    , "  // ----------------------------------------------------------------------"
-    , ""
-    , "  void Copilot ::"
-    , "    CHECK_MONITORS_cmdHandler("
-    , "        const FwOpcodeType opCode,"
-    , "        const U32 cmdSeq"
-    , "    )"
-    , "  {"
-    ]
-    ++ triggerResultReset ++
-    [ "    step();"
-    , "    this->cmdResponse_out(opCode,cmdSeq,Fw::CmdResponse::OK);"
-    ]
-    ++ triggerChecks ++
-    [ "  }"
-    , ""
-    , "} // end namespace Ref"
-    , ""
-    ]
-    ++ triggers
+    ( inputs
+    , monitorResults
+    , inputHandlers
+    , triggerResultReset
+    , triggerChecks
+    , triggers
+    )
 
   where
 
-    inputs = variablesS
+    inputs = unlines' variablesS
 
-    monitorResults = intercalate [""]
+    monitorResults = unlines'
+                   $ intercalate [""]
                    $ map monitorResult monitors
     monitorResult monitor =
         [ "bool " ++ monitor ++ "_result;"
         ]
 
-    inputHandlers = intercalate [""]
+    inputHandlers = unlines'
+                  $ intercalate [""]
                   $ map toInputHandler variables
     toInputHandler nm =
         [ "  void Copilot :: "
@@ -601,13 +389,15 @@ componentImpl variables monitors =
         portTy = varDeclType nm
         ty     = varDeclType nm
 
-    triggerResultReset = intercalate [""]
+    triggerResultReset = unlines'
+                       $ intercalate [""]
                        $ map monitorResultReset monitors
     monitorResultReset monitor =
         [ "    " ++ monitor ++ "_result = false;"
         ]
 
-    triggerChecks = intercalate [""]
+    triggerChecks = unlines'
+                  $ intercalate [""]
                   $ map triggerCheck monitors
     triggerCheck monitor =
         [ "    if (" ++ monitor ++ "_result) {"
@@ -617,8 +407,9 @@ componentImpl variables monitors =
       where
         ucMonitor = map toUpper monitor
 
-    triggers :: [String]
-    triggers = intercalate [""]
+    triggers :: String
+    triggers = unlines'
+             $ intercalate [""]
              $ map triggerImpl monitors
     triggerImpl monitor =
         [ "void " ++ monitor ++ "() {"
@@ -753,3 +544,11 @@ fretFormat = JSONFormat
   , specRequirementDesc = Just ".fretish"
   , specRequirementExpr = ".ptLTL"
   }
+
+-- * Auxliary functions
+
+-- | Create a string from a list of strings, inserting new line characters
+-- between them. Unlike 'Prelude.unlines', this function does not insert
+-- an end of line character at the end of the last string.
+unlines' :: [String] -> String
+unlines' = intercalate "\n"
