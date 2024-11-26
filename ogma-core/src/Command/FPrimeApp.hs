@@ -72,6 +72,7 @@ import Paths_ogma_core ( getDataDir )
 -- | Generate a new FPrime component connected to Copilot.
 fprimeApp :: FilePath       -- ^ Target directory where the component
                             --   should be created.
+          -> Maybe FilePath -- ^ Directory where the template is to be found.
           -> Maybe FilePath -- ^ FRET Component specification file.
           -> Maybe FilePath -- ^ File containing a list of variables to make
                             --   available to Copilot.
@@ -82,7 +83,7 @@ fprimeApp :: FilePath       -- ^ Target directory where the component
                             --   Copilot specification. The handlers are assumed
                             --   to receive no arguments.
           -> IO (Result ErrorCode)
-fprimeApp targetDir fretCSFile varNameFile varDBFile handlersFile =
+fprimeApp targetDir mTemplateDir fretCSFile varNameFile varDBFile handlersFile =
   processResult $ do
     cs    <- parseOptionalFRETCS fretCSFile
     vs    <- parseOptionalVariablesFile varNameFile
@@ -94,13 +95,15 @@ fprimeApp targetDir fretCSFile varNameFile varDBFile handlersFile =
     let varNames = fromMaybe (fretCSExtractExternalVariables cs) vs
         monitors = fromMaybe (fretCSExtractHandlers cs) rs
 
-    e <- liftIO $ fprimeApp' targetDir varNames varDB monitors
+    e <- liftIO $ fprimeApp' targetDir mTemplateDir varNames varDB monitors
     liftEither e
 
 -- | Generate a new FPrime component connected to Copilot, by copying the
 -- template and filling additional necessary files.
 fprimeApp' :: FilePath           -- ^ Target directory where the component
                                  -- should be created.
+           -> Maybe FilePath     -- ^ Directory where the template is to be
+                                 -- found.
            -> [String]           -- ^ List of variable names (data sources).
            -> [(String, String)] -- ^ List of variables with their types, and
                                  -- the message IDs (topics) they can be
@@ -108,11 +111,14 @@ fprimeApp' :: FilePath           -- ^ Target directory where the component
            -> [String]           -- ^ List of handlers associated to the
                                  -- monitors (or requirements monitored).
            -> IO (Either ErrorTriplet ())
-fprimeApp' targetDir varNames varDB monitors =
+fprimeApp' targetDir mTemplateDir varNames varDB monitors =
   E.handle (return . Left . cannotCopyTemplate) $ do
     -- Obtain template dir
-    dataDir <- getDataDir
-    let templateDir = dataDir </> "templates" </> "fprime"
+    templateDir <- case mTemplateDir of
+                     Just x  -> return x
+                     Nothing -> do
+                       dataDir <- getDataDir
+                       return $ dataDir </> "templates" </> "fprime"
 
     let f n o@(oVars) =
           case variableMap varDB n of
