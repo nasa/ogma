@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2024-12-04
 
 * Replace queueSize with QUEUE_SIZE in FPP file (#186).
+* Use template expansion system to generate F' monitoring component (#185).
 
 ## [1.5.0] - 2024-11-21
 
