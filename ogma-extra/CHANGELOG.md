@@ -1,5 +1,9 @@
 # Revision history for ogma-extra
 
+## [1.X.Y] - 2024-12-05
+
+* Deprecate unnecessary functions (#185).
+
 ## [1.5.0] - 2024-11-21
 
 * Version bump 1.5.0 (#178).
