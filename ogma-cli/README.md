@@ -401,6 +401,7 @@ F' components are generated using the Ogma command `fprime`, which receives
 five main arguments:
 - `--app-target-dir DIR`: location where the F' application files must be
   stored.
+- `--app-template-dir DIR`: directory holding F' component source template.
 - `--variable-file FILENAME`: a file containing a list of variables that must
 be made available to the monitor.
 - `--variable-db FILENAME`: a file containing a database of known variables,
@@ -463,6 +464,67 @@ FPrime component should restrict to monitoring. They are listed one per line:
 $ cat handlers
 handlerpropREQ_001
 ```
+
+### Template Customization
+
+By default, Ogma uses a pre-defined template to generate the F' monitoring
+component. It's possible to customize the output by providing a directory with
+a set of files with an F' component template, which Ogma will use instead.
+
+To choose this feature, one must call Ogma's `fprime` command with the argument
+`--app-template-dir DIR`, where `DIR` is the path to a directory containing an
+F' component specification template. For example, assuming that the directory
+`my_template` contains a custom F' component template, one can execute:
+
+```
+$ ogma fprime --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db fprime-variable-db --app-target-dir fprime_demo
+```
+
+Ogma will copy the files in that directory to the target path, filling in
+several holes with specific information. For the component interface, the
+variables are:
+
+- {{{ifaceTypePorts}}}: Contain the type declarations for the types used by the
+  ports.
+
+- {{{ifaceInputPorts}}}: Contains the declarations of the `async input` port,
+  to provide information needed by the monitors.
+
+- {{{ifaceViolationEvents}}}: Contains the output port declarations, used to
+  emit property violations.
+
+For the monitor's header file, the variables are:
+
+- {{{hdrHandlers}}}: Contains the declarations of operations to execute when
+  new information is received in an input port, prior to re-evaluating the
+  monitors.
+
+For the monitor's implementation, the variables are:
+
+- {{{implInputs}}}: Contains the declarations of the variables with inputs
+  needed by the monitor.
+
+- {{{implMonitorResults}}}: Contains the declarations of boolean variables,
+  each holding the result of the evaluation of one of the monitors.
+
+- {{{implInputHandlers}}}: Contains the implementations of operations to
+  execute when new information is received in an input port, prior to
+  re-evaluating the monitors.
+
+- {{{implTriggerResultReset}}}: Contains instructions that reset the status of
+  the monitors.
+
+- {{{implTriggerChecks}}}: Contains instructions that check whether any monitor
+  has resulted in a violation and, if so, sends an event via the corresponding
+  port.
+
+- {{{implTriggers}}}: Contains the implementations of the functions that set
+  the result of a monitor evaluation to true when the Copilot implementation
+  finds a violation.
+
+We understand that this level of customization may be insufficient for your
+application. If that is the case, feel free to reach out to our team to discuss
+how we could make the template expansion system more versatile.
 
 ### Current limitations
 

@@ -56,6 +56,7 @@ import           Text.Microstache          ( compileMustacheFile,
                                              compileMustacheText,
                                              renderMustache )
 
+{-# DEPRECATED copyDirectoryRecursive "This function is deprecated in ogma-extra-1.6.0." #-}
 -- | Copy all files from one directory to another.
 copyDirectoryRecursive :: FilePath  -- ^ Source directory
                        -> FilePath  -- ^ Target directory
@@ -74,6 +75,7 @@ copyDirectoryRecursive sourceDir targetDir =
     -- Copy all the files, replacing the top directory.
     mapM_ (copyFile' . sourceAndDest) files
 
+{-# DEPRECATED copyFile' "This function is deprecated in ogma-extra-1.6.0." #-}
 -- | Copy file origin to dest, creating the target directory if it does not
 -- exist.
 copyFile' :: (FilePath, FilePath) -> IO ()

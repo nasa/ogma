@@ -66,6 +66,9 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/ros/copilot/src/copilot_monitor.cpp
                      templates/ros/copilot/package.xml
                      templates/fprime/CMakeLists.txt
+                     templates/fprime/Copilot.cpp
+                     templates/fprime/Copilot.fpp
+                     templates/fprime/Copilot.hpp
                      templates/fprime/Dockerfile
                      templates/fprime/instance-copilot
                      data/formats/fcs_smv

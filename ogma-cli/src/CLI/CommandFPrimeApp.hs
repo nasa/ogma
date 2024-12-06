@@ -56,11 +56,12 @@ import Command.FPrimeApp ( ErrorCode, fprimeApp )
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppTarget   :: String
-  , fprimeAppFRETFile :: Maybe String
-  , fprimeAppVarNames :: Maybe String
-  , fprimeAppVarDB    :: Maybe String
-  , fprimeAppHandlers :: Maybe String
+  { fprimeAppTarget      :: String
+  , fprimeAppTemplateDir :: Maybe String
+  , fprimeAppFRETFile    :: Maybe String
+  , fprimeAppVarNames    :: Maybe String
+  , fprimeAppVarDB       :: Maybe String
+  , fprimeAppHandlers    :: Maybe String
   }
 
 -- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
@@ -72,6 +73,7 @@ command :: CommandOpts -> IO (Result ErrorCode)
 command c =
   fprimeApp
     (fprimeAppTarget c)
+    (fprimeAppTemplateDir c)
     (fprimeAppFRETFile c)
     (fprimeAppVarNames c)
     (fprimeAppVarDB c)
@@ -93,6 +95,13 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "fprime"
         <> help strFPrimeAppDirArgDesc
+        )
+  <*> optional
+        ( strOption
+            (  long "app-template-dir"
+            <> metavar "DIR"
+            <> help strFPrimeAppTemplateDirArgDesc
+            )
         )
   <*> optional
         ( strOption
@@ -126,6 +135,11 @@ commandOptsParser = CommandOpts
 -- | Argument target directory to FPrime component generation command
 strFPrimeAppDirArgDesc :: String
 strFPrimeAppDirArgDesc = "Target directory"
+
+-- | Argument template directory to FPrime component generation command
+strFPrimeAppTemplateDirArgDesc :: String
+strFPrimeAppTemplateDirArgDesc =
+  "Directory holding F' component source template"
 
 -- | Argument FRET CS to FPrime component generation command
 strFPrimeAppFRETFileNameArgDesc :: String
