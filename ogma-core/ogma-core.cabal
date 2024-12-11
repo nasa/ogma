@@ -71,6 +71,7 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/fprime/Copilot.hpp
                      templates/fprime/Dockerfile
                      templates/fprime/instance-copilot
+                     templates/standalone/Copilot.hs
                      data/formats/fcs_smv
                      data/formats/fcs_cocospec
                      data/formats/fdb_smv
