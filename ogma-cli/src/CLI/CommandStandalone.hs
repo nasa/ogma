@@ -58,7 +58,8 @@ import qualified Command.Standalone
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { standaloneFileName   :: FilePath
+  { standaloneTargetDir  :: FilePath
+  , standaloneFileName   :: FilePath
   , standaloneFormat     :: String
   , standalonePropFormat :: String
   , standaloneTypes      :: [String]
@@ -71,7 +72,8 @@ command c = standalone (standaloneFileName c) internalCommandOpts
   where
     internalCommandOpts :: Command.Standalone.StandaloneOptions
     internalCommandOpts = Command.Standalone.StandaloneOptions
-      { Command.Standalone.standaloneFormat      = standaloneFormat c
+      { Command.Standalone.standaloneTargetDir   = standaloneTargetDir c
+      , Command.Standalone.standaloneFormat      = standaloneFormat c
       , Command.Standalone.standalonePropFormat  = standalonePropFormat c
       , Command.Standalone.standaloneTypeMapping = types
       , Command.Standalone.standaloneFilename    = standaloneTarget c
@@ -98,6 +100,13 @@ commandDesc =
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> strOption
+        (  long "target-dir"
+        <> metavar "DIR"
+        <> showDefault
+        <> value "copilot"
+        <> help strStandaloneTargetDirDesc
+        )
+  <*> strOption
         (  long "file-name"
         <> metavar "FILENAME"
         <> help strStandaloneFilenameDesc
@@ -132,6 +141,10 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "monitor"
         )
+
+-- | Target dir flag description.
+strStandaloneTargetDirDesc :: String
+strStandaloneTargetDirDesc = "Target directory"
 
 -- | Filename flag description.
 strStandaloneFilenameDesc :: String
