@@ -144,6 +144,7 @@ test-suite unit-tests
 
   build-depends:
       base
+    , directory
     , HUnit
     , QuickCheck
     , test-framework

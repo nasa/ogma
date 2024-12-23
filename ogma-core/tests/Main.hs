@@ -5,6 +5,7 @@ import Data.Monoid                    ( mempty )
 import Test.Framework                 ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.HUnit ( testCase )
 import Test.HUnit                     ( assertBool )
+import System.Directory               ( getTemporaryDirectory )
 
 -- Internal imports
 import Command.CStructs2Copilot (cstructs2Copilot)
@@ -101,11 +102,13 @@ testFretComponentSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON requirements
                               -> Bool
                               -> IO ()
 testFretComponentSpec2Copilot file success = do
+    targetDir <- getTemporaryDirectory
     let opts = StandaloneOptions
                  { standaloneFormat      = "fcs"
                  , standalonePropFormat  = "smv"
                  , standaloneTypeMapping = [("int", "Int64"), ("real", "Float")]
                  , standaloneFilename    = "fret"
+                 , standaloneTargetDir   = targetDir
                  }
     result <- standalone file opts
 
@@ -133,11 +136,13 @@ testFretReqsDBCoCoSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON
                                -> Bool
                                -> IO ()
 testFretReqsDBCoCoSpec2Copilot file success = do
+    targetDir <- getTemporaryDirectory
     let opts = StandaloneOptions
                  { standaloneFormat      = "fdb"
                  , standalonePropFormat  = "cocospec"
                  , standaloneTypeMapping = []
                  , standaloneFilename    = "fret"
+                 , standaloneTargetDir   = targetDir
                  }
     result <- standalone file opts
 
