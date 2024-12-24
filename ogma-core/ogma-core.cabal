@@ -34,6 +34,7 @@ build-type:          Simple
 name:                ogma-core
 version:             1.5.0
 homepage:            https://github.com/nasa/ogma
+bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
@@ -83,6 +84,11 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
 -- Because this is a NASA project, we want to make sure that users obtain
 -- exactly what we publish, unmodified by anyone external to our project.
 x-curation: uncurated
+
+source-repository head
+  type:     git
+  location: git@github.com:nasa/ogma.git
+  subdir:   ogma-core
 
 library
 
