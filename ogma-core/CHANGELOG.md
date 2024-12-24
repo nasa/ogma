@@ -6,6 +6,7 @@
 * Use template expansion system to generate F' monitoring component (#185).
 * Use template expansion system to generate standalone Copilot monitor (#189).
 * Add repository information to cabal package (#148).
+* Add version bounds to all dependencies (#119).
 
 ## [1.5.0] - 2024-11-21
 
