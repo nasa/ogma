@@ -1,5 +1,9 @@
 # Revision history for ogma-language-cocospec
 
+## [1.X.Y] - 2024-12-24
+
+* Add repository information to cabal package (#148).
+
 ## [1.5.0] - 2024-11-21
 
 * Version bump 1.5.0 (#178).
