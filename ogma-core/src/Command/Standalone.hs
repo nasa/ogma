@@ -92,8 +92,11 @@ standalone :: FilePath          -- ^ Path to a file containing a specification
 standalone fp options = do
   E.handle (return . standaloneTemplateError options fp) $ do
     -- Obtain template dir
-    dataDir <- getDataDir
-    let templateDir = dataDir </> "templates" </> "standalone"
+    templateDir <- case standaloneTemplateDir options of
+                     Just x  -> return x
+                     Nothing -> do
+                       dataDir <- getDataDir
+                       return $ dataDir </> "templates" </> "standalone"
 
     let functions = exprPair (standalonePropFormat options)
 
@@ -160,6 +163,7 @@ standalone' fp options (ExprPair parse replace print ids) = do
 -- code.
 data StandaloneOptions = StandaloneOptions
   { standaloneTargetDir   :: FilePath
+  , standaloneTemplateDir :: Maybe FilePath
   , standaloneFormat      :: String
   , standalonePropFormat  :: String
   , standaloneTypeMapping :: [(String, String)]
