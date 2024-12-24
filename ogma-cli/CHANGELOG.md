@@ -6,6 +6,7 @@
 * Provide ability to customize template in fprime command (#185).
 * Provide ability to customize template in standalone command (#189).
 * Add repository information to cabal package (#148).
+* Add version bounds to all dependencies (#119).
 
 ## [1.5.0] - 2024-11-21
 
