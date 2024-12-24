@@ -1,9 +1,10 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2024-11-26
+## [1.X.Y] - 2024-12-23
 
 * Update contribution guidelines (#161).
 * Provide ability to customize template in fprime command (#185).
+* Provide ability to customize template in standalone command (#189).
 
 ## [1.5.0] - 2024-11-21
 
