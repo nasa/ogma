@@ -43,7 +43,7 @@ module CLI.CommandStandalone
   where
 
 -- External imports
-import Options.Applicative (Parser, help, long, metavar, many, short,
+import Options.Applicative (Parser, help, long, many, metavar, optional, short,
                             showDefault, strOption, switch, value)
 
 -- External imports: command results
@@ -58,11 +58,13 @@ import qualified Command.Standalone
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { standaloneFileName   :: FilePath
-  , standaloneFormat     :: String
-  , standalonePropFormat :: String
-  , standaloneTypes      :: [String]
-  , standaloneTarget     :: String
+  { standaloneTargetDir   :: FilePath
+  , standaloneTemplateDir :: Maybe FilePath
+  , standaloneFileName    :: FilePath
+  , standaloneFormat      :: String
+  , standalonePropFormat  :: String
+  , standaloneTypes       :: [String]
+  , standaloneTarget      :: String
   }
 
 -- | Transform an input specification into a Copilot specification.
@@ -71,7 +73,9 @@ command c = standalone (standaloneFileName c) internalCommandOpts
   where
     internalCommandOpts :: Command.Standalone.StandaloneOptions
     internalCommandOpts = Command.Standalone.StandaloneOptions
-      { Command.Standalone.standaloneFormat      = standaloneFormat c
+      { Command.Standalone.standaloneTargetDir   = standaloneTargetDir c
+      , Command.Standalone.standaloneTemplateDir = standaloneTemplateDir c
+      , Command.Standalone.standaloneFormat      = standaloneFormat c
       , Command.Standalone.standalonePropFormat  = standalonePropFormat c
       , Command.Standalone.standaloneTypeMapping = types
       , Command.Standalone.standaloneFilename    = standaloneTarget c
@@ -98,6 +102,20 @@ commandDesc =
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> strOption
+        (  long "target-dir"
+        <> metavar "DIR"
+        <> showDefault
+        <> value "copilot"
+        <> help strStandaloneTargetDirDesc
+        )
+  <*> optional
+        ( strOption
+            (  long "template-dir"
+            <> metavar "DIR"
+            <> help strStandaloneTemplateDirArgDesc
+            )
+        )
+  <*> strOption
         (  long "file-name"
         <> metavar "FILENAME"
         <> help strStandaloneFilenameDesc
@@ -132,6 +150,14 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "monitor"
         )
+
+-- | Target dir flag description.
+strStandaloneTargetDirDesc :: String
+strStandaloneTargetDirDesc = "Target directory"
+
+-- | Template dir flag description.
+strStandaloneTemplateDirArgDesc :: String
+strStandaloneTemplateDirArgDesc = "Directory holding standalone source template"
 
 -- | Filename flag description.
 strStandaloneFilenameDesc :: String

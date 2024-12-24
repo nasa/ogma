@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE OverloadedStrings         #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -38,15 +39,18 @@ module Command.Standalone
   where
 
 -- External imports
-import Data.Aeson           (decode, eitherDecode)
-import Data.ByteString.Lazy (fromStrict, pack)
+import Control.Exception    as E
+import Data.Aeson           (decode, eitherDecode, object, (.=))
+import Data.ByteString.Lazy (fromStrict)
 import Data.Foldable        (for_)
 import Data.List            (nub, (\\))
 import Data.Maybe           (fromMaybe)
 import System.FilePath      ((</>))
+import Data.Text.Lazy       (pack)
 
 -- External imports: auxiliary
-import Data.ByteString.Extra as B ( safeReadFile )
+import Data.ByteString.Extra  as B ( safeReadFile )
+import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports: auxiliary
 import Command.Result  (Result (..))
@@ -73,38 +77,61 @@ import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
                                                          boolSpecNames)
 import           Language.Trans.Spec2Copilot     (spec2Copilot, specAnalyze)
 
--- | Print the contents of a Copilot module that implements the spec in an
+-- | Generate a new standalone Copilot monitor that implements the spec in an
 -- input file.
 --
 -- PRE: The file given is readable, contains a valid file with recognizable
 -- format, the formulas in the file do not use any identifiers that exist in
 -- Copilot, or any of @prop@, @clock@, @ftp@, @notPreviousNot@. All identifiers
--- used are valid C99 identifiers.
+-- used are valid C99 identifiers. The template, if provided, exists and uses
+-- the variables needed by the standalone application generator. The target
+-- directory is writable and there's enough disk space to copy the files over.
 standalone :: FilePath          -- ^ Path to a file containing a specification
            -> StandaloneOptions -- ^ Customization options
            -> IO (Result ErrorCode)
 standalone fp options = do
+  E.handle (return . standaloneTemplateError options fp) $ do
+    -- Obtain template dir
+    templateDir <- case standaloneTemplateDir options of
+                     Just x  -> return x
+                     Nothing -> do
+                       dataDir <- getDataDir
+                       return $ dataDir </> "templates" </> "standalone"
 
-  let functions = exprPair (standalonePropFormat options)
+    let functions = exprPair (standalonePropFormat options)
 
-  copilot <- standalone' fp options functions
+    copilot <- standalone' fp options functions
 
-  let (mOutput, result) = standaloneResult options fp copilot
+    let (mOutput, result) = standaloneResult options fp copilot
 
-  for_ mOutput putStrLn
-  return result
+    for_ mOutput $ \(externs, internals, reqs, triggers, specName) -> do
+      let subst = object $
+                    [ "externs"   .= pack externs
+                    , "internals" .= pack internals
+                    , "reqs"      .= pack reqs
+                    , "triggers"  .= pack triggers
+                    , "specName"  .= pack specName
+                    ]
 
--- | Print the contents of a Copilot module that implements the spec in an
+      let targetDir = standaloneTargetDir options
+
+      copyTemplate templateDir subst targetDir
+
+    return result
+
+-- | Generate a new standalone Copilot monitor that implements the spec in an
 -- input file, using a subexpression handler.
 --
 -- PRE: The file given is readable, contains a valid file with recognizable
 -- format, the formulas in the file do not use any identifiers that exist in
 -- Copilot, or any of @prop@, @clock@, @ftp@, @notPreviousNot@. All identifiers
--- used are valid C99 identifiers.
+-- used are valid C99 identifiers. The template, if provided, exists and uses
+-- the variables needed by the standalone application generator. The target
+-- directory is writable and there's enough disk space to copy the files over.
 standalone' :: FilePath
             -> StandaloneOptions
             -> ExprPair
-            -> IO (Either String String)
+            -> IO (Either String (String, String, String, String, String))
 standalone' fp options (ExprPair parse replace print ids) = do
   let name     = standaloneFilename options
       typeMaps = typeToCopilotTypeMapping options
@@ -135,7 +162,9 @@ standalone' fp options (ExprPair parse replace print ids) = do
 -- | Options used to customize the conversion of specifications to Copilot
 -- code.
 data StandaloneOptions = StandaloneOptions
-  { standaloneFormat      :: String
+  { standaloneTargetDir   :: FilePath
+  , standaloneTemplateDir :: Maybe FilePath
+  , standaloneFormat      :: String
   , standalonePropFormat  :: String
   , standaloneTypeMapping :: [(String, String)]
   , standaloneFilename    :: String
@@ -153,16 +182,35 @@ type ErrorCode = Int
 ecStandaloneError :: ErrorCode
 ecStandaloneError = 1
 
+-- | Error: standalone component generation failed during the copy/write
+-- process.
+ecStandaloneTemplateError :: ErrorCode
+ecStandaloneTemplateError = 2
+
 -- * Result
 
 -- | Process the result of the transformation function.
 standaloneResult :: StandaloneOptions
                  -> FilePath
-                 -> Either String String
-                 -> (Maybe String, Result ErrorCode)
+                 -> Either String a
+                 -> (Maybe a, Result ErrorCode)
 standaloneResult options fp result = case result of
   Left msg -> (Nothing, Error ecStandaloneError msg (LocationFile fp))
   Right t  -> (Just t, Success)
+
+-- | Report an error when trying to open or copy the template
+standaloneTemplateError :: StandaloneOptions
+                        -> FilePath
+                        -> E.SomeException
+                        -> Result ErrorCode
+standaloneTemplateError options fp exception =
+    Error ecStandaloneTemplateError msg (LocationFile fp)
+  where
+    msg =
+      "Standlone monitor generation failed during copy/write operation. Check"
+      ++ " that there's free space in the disk and that you have the necessary"
+      ++ " permissions to write in the destination directory. "
+      ++ show exception
 
 -- * Mapping of types from input format to Copilot
 typeToCopilotTypeMapping :: StandaloneOptions -> [(String, String)]
