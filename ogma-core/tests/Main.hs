@@ -109,6 +109,7 @@ testFretComponentSpec2Copilot file success = do
                  , standaloneTypeMapping = [("int", "Int64"), ("real", "Float")]
                  , standaloneFilename    = "fret"
                  , standaloneTargetDir   = targetDir
+                 , standaloneTemplateDir = Nothing
                  }
     result <- standalone file opts
 
@@ -143,6 +144,7 @@ testFretReqsDBCoCoSpec2Copilot file success = do
                  , standaloneTypeMapping = []
                  , standaloneFilename    = "fret"
                  , standaloneTargetDir   = targetDir
+                 , standaloneTemplateDir = Nothing
                  }
     result <- standalone file opts
 
