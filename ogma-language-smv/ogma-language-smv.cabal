@@ -34,6 +34,7 @@ build-type:          Custom
 name:                ogma-language-smv
 version:             1.5.0
 homepage:            https://github.com/nasa/ogma
+bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
@@ -61,6 +62,11 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
 -- Because this is a NASA project, we want to make sure that users obtain
 -- exactly what we publish, unmodified by anyone external to our project.
 x-curation: uncurated
+
+source-repository head
+  type:     git
+  location: git@github.com:nasa/ogma.git
+  subdir:   ogma-language-smv
 
 custom-setup
   setup-depends:

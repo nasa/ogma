@@ -1,8 +1,9 @@
 # Revision history for ogma-extra
 
-## [1.X.Y] - 2024-12-05
+## [1.X.Y] - 2024-12-24
 
 * Deprecate unnecessary functions (#185).
+* Add repository information to cabal package (#148).
 
 ## [1.5.0] - 2024-11-21
 
