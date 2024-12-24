@@ -1,10 +1,11 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2024-12-23
+## [1.X.Y] - 2024-12-24
 
 * Update contribution guidelines (#161).
 * Provide ability to customize template in fprime command (#185).
 * Provide ability to customize template in standalone command (#189).
+* Add repository information to cabal package (#148).
 
 ## [1.5.0] - 2024-11-21
 
