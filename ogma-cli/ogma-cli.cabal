@@ -139,7 +139,7 @@ executable ogma
 
   build-depends:
       base                 >= 4.11.0.0 && < 5
-    , optparse-applicative
+    , optparse-applicative >= 0.14     && < 0.19
     , ogma-core            >= 1.5.0 && < 1.6
 
   hs-source-dirs:
@@ -160,11 +160,11 @@ test-suite test-ogma
 
   build-depends:
       base                 >= 4.11.0.0 && < 5
-    , HUnit
-    , process
-    , test-framework
-    , test-framework-hunit
-    , unix
+    , HUnit                >= 1.2.0.0  && < 1.7
+    , process              >= 1.6      && < 1.7
+    , test-framework       >= 0.8.2    && < 0.9
+    , test-framework-hunit >= 0.2.0    && < 0.4
+    , unix                 >= 2.7.2.2  && < 2.9
 
   hs-source-dirs:
     tests

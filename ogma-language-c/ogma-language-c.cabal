@@ -71,8 +71,8 @@ custom-setup
   setup-depends:
       base    >= 4.11.0.0 && < 5
     , Cabal   >= 2.0 && < 3.9
-    , process
-    , BNFC    >= 2.9.1
+    , process >= 1.6      && < 1.7
+    , BNFC    >= 2.9.1    && < 2.10
 
 library
 
@@ -91,7 +91,7 @@ library
 
   build-depends:
       base  >= 4.11.0.0 && < 5
-    , array >= 0.5.2.0
+    , array >= 0.5.2.0  && < 0.6
 
   hs-source-dirs:
     src
@@ -108,9 +108,9 @@ test-suite unit-tests
 
   build-depends:
       base                       >= 4.11.0.0 && < 5
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
+    , QuickCheck                 >= 2.8.2    && < 2.16
+    , test-framework             >= 0.8.2    && < 0.9
+    , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4
 
     , ogma-language-c
 
