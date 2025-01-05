@@ -65,6 +65,7 @@ data CommandOpts = CommandOpts
   , standalonePropFormat  :: String
   , standaloneTypes       :: [String]
   , standaloneTarget      :: String
+  , standalonePropVia     :: Maybe String
   }
 
 -- | Transform an input specification into a Copilot specification.
@@ -79,6 +80,7 @@ command c = standalone (standaloneFileName c) internalCommandOpts
       , Command.Standalone.standalonePropFormat  = standalonePropFormat c
       , Command.Standalone.standaloneTypeMapping = types
       , Command.Standalone.standaloneFilename    = standaloneTarget c
+      , Command.Standalone.standalonePropVia     = standalonePropVia c
       }
 
     types :: [(String, String)]
@@ -150,6 +152,13 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "monitor"
         )
+  <*> optional
+        ( strOption
+            (  long "parse-prop-via"
+            <> metavar "COMMAND"
+            <> help strStandalonePropViaDesc
+            )
+        )
 
 -- | Target dir flag description.
 strStandaloneTargetDirDesc :: String
@@ -179,6 +188,11 @@ strStandaloneMapTypeDesc = "Map a type to another type"
 strStandaloneTargetDesc :: String
 strStandaloneTargetDesc =
   "Filename prefix for monitoring files in target language"
+
+-- | External command to pre-process individual properties.
+strStandalonePropViaDesc :: String
+strStandalonePropViaDesc =
+  "Command to pre-process individual properties"
 
 -- * Error codes
 
