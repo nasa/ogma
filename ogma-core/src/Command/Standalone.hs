@@ -1,5 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -45,6 +46,7 @@ import Data.ByteString.Lazy (fromStrict)
 import Data.Foldable        (for_)
 import Data.List            (nub, (\\))
 import Data.Maybe           (fromMaybe)
+import System.Process       (readProcess)
 import System.FilePath      ((</>))
 import Data.Text.Lazy       (pack)
 
@@ -144,13 +146,17 @@ standalone' fp options (ExprPair parse replace print ids) = do
 
   format <- read <$> readFile formatFile
 
+  let wrapper = wrapVia (standalonePropVia options) parse
+
   -- All of the following operations use Either to return error messages. The
   -- use of the monadic bind to pass arguments from one function to the next
   -- will cause the program to stop at the earliest error.
   content <- B.safeReadFile fp
   res <- case content of
            Left s  -> return $ Left s
-           Right b -> return $ parseJSONSpec parse format =<< eitherDecode b
+           Right b -> do case eitherDecode b of
+                           Left e  -> return $ Left e
+                           Right v -> parseJSONSpec wrapper format v
 
   -- Complement the specification with any missing/implicit definitions
   let res' = fmap (addMissingIdentifiers ids) res
@@ -158,6 +164,23 @@ standalone' fp options (ExprPair parse replace print ids) = do
   let copilot = spec2Copilot name typeMaps replace print =<< specAnalyze =<< res'
 
   return copilot
+
+-- | Parse a property using an auxiliary program to first translate it, if
+-- available.
+--
+-- If a program is given, it is first called on the property, and then the
+-- result is parsed with the parser passed as an argument. If a program is not
+-- given, then the parser is applied to the given string.
+wrapVia :: Maybe String                -- ^ Auxiliary program to translate the
+                                       -- property.
+        -> (String -> Either String a) -- ^ Parser used on the result.
+        -> String                      -- ^ Property to parse.
+        -> IO (Either String a)
+wrapVia Nothing  parse s = return (parse s)
+wrapVia (Just f) parse s =
+  E.handle (\(e :: IOException) -> return $ Left $ show e) $ do
+    out <- readProcess f [] s
+    return $ parse out
 
 -- | Options used to customize the conversion of specifications to Copilot
 -- code.
@@ -168,6 +191,7 @@ data StandaloneOptions = StandaloneOptions
   , standalonePropFormat  :: String
   , standaloneTypeMapping :: [(String, String)]
   , standaloneFilename    :: String
+  , standalonePropVia     :: Maybe String
   }
 
 -- * Error codes
