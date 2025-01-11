@@ -131,6 +131,7 @@ executable ogma
     CLI.CommandCFSApp
     CLI.CommandCStructs2Copilot
     CLI.CommandCStructs2MsgHandlers
+    CLI.CommandDiagram
     CLI.CommandFPrimeApp
     CLI.CommandROSApp
     CLI.CommandStandalone

@@ -89,6 +89,7 @@ import Command.Result ( Result )
 import qualified CLI.CommandCFSApp
 import qualified CLI.CommandCStructs2Copilot
 import qualified CLI.CommandCStructs2MsgHandlers
+import qualified CLI.CommandDiagram
 import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandROSApp
 import qualified CLI.CommandStandalone
@@ -104,6 +105,7 @@ data CommandOpts =
     CommandOptsCFSApp                    CLI.CommandCFSApp.CommandOpts
   | CommandOptsCStructs2Copilot          CLI.CommandCStructs2Copilot.CommandOpts
   | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
+  | CommandOptsDiagram                   CLI.CommandDiagram.CommandOpts
   | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
   | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
@@ -124,6 +126,7 @@ commandOptsParser = subparser
   <> subcommandFPrimeApp
   <> subcommandROSApp
   <> subcommandStandalone
+  <> subcommandDiagram
   )
 
 -- | Modifier for the CStruct to Copilot Struct generation subcommand, linking
@@ -183,6 +186,15 @@ subcommandStandalone =
     (CommandOptsStandalone <$> CLI.CommandStandalone.commandOptsParser)
     CLI.CommandStandalone.commandDesc
 
+-- | Modifier for the diagram subcommand, linking the subcommand options and
+-- description to the command @diagram@ at top level.
+subcommandDiagram :: Mod CommandFields CommandOpts
+subcommandDiagram =
+  subcommand
+    "diagram"
+    (CommandOptsDiagram <$> CLI.CommandDiagram.commandOptsParser)
+    CLI.CommandDiagram.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -217,6 +229,8 @@ command (CommandOptsROSApp c) =
   id <$> CLI.CommandROSApp.command c
 command (CommandOptsStandalone c) =
   id <$> CLI.CommandStandalone.command c
+command (CommandOptsDiagram c) =
+  id <$> CLI.CommandDiagram.command c
 
 -- We indicate to HLint that the use of (id <$>) above should not trigger a
 -- warning. Conceptually, there is a transformation taking place, but no change
