@@ -75,6 +75,9 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                        <https://github.com/nasa/fprime F'>
                        components that use Copilot for monitoring.
                      .
+                     - Generating monitors from state diagrams specified using
+                       a graphical notation.
+                     .
                      The main invocation with @--help@ lists sub-commands available.
                      .
                      >$ ogma --help
@@ -93,6 +96,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  fprime                   Generate a complete F' monitoring component
                      >  ros                      Generate a ROS 2 monitoring application
                      >  standalone               Generate a Copilot file from an input specification
+                     >  diagram                  Generate a monitor from a state machine diagram
                      .
                      For further information, see:
                      .
