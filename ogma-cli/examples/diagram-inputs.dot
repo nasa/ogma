@@ -1,0 +1,8 @@
+digraph g{
+   rankdir="LR";
+   edge[splines="curved"]
+   0 -> 1 [label = "10"];
+   1 -> 0 [label = "0"];
+   0 -> 2 [label = "20"];
+   2 -> 0 [label = "0"];
+}

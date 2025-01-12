@@ -66,6 +66,7 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/ros/copilot/src/copilot_logger.cpp
                      templates/ros/copilot/src/copilot_monitor.cpp
                      templates/ros/copilot/package.xml
+                     templates/diagram/Copilot.hs
                      templates/fprime/CMakeLists.txt
                      templates/fprime/Copilot.cpp
                      templates/fprime/Copilot.fpp
@@ -96,6 +97,7 @@ library
     Command.CFSApp
     Command.CStructs2Copilot
     Command.CStructs2MsgHandlers
+    Command.Diagram
     Command.FPrimeApp
     Command.Result
     Command.ROSApp
@@ -120,7 +122,10 @@ library
       base                    >= 4.11.0.0 && < 5
     , aeson                   >= 2.0.0.0  && < 2.2
     , bytestring              >= 0.10.8.2 && < 0.13
+    , containers              >= 0.5      && < 0.8
     , filepath                >= 1.4.2    && < 1.6
+    , graphviz                >= 2999.20  && < 2999.21
+    , megaparsec              >= 8.0.0    && < 9.10
     , mtl                     >= 2.2.2    && < 2.4
     , text                    >= 1.2.3.1  && < 2.1
 

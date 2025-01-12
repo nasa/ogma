@@ -1,0 +1,6 @@
+graph TD;
+    1-->|input > 10|2;
+    2-->|input > 20|3;
+    3-->|input > 30|3;
+    3-->|input > 40|4;
+    4-->|true|4;
