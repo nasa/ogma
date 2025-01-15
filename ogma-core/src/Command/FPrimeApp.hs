@@ -41,8 +41,8 @@ module Command.FPrimeApp
 
 -- External imports
 import qualified Control.Exception    as E
-import           Control.Monad.Except ( ExceptT, liftEither, liftIO, runExceptT,
-                                        throwError )
+import           Control.Monad.Except ( ExceptT(..), liftEither, liftIO,
+                                        runExceptT, throwError )
 import           Data.Aeson           ( eitherDecode, object, (.=) )
 import           Data.Char            ( toUpper )
 import           Data.List            ( find, intercalate, nub, sort )
@@ -167,12 +167,15 @@ parseOptionalFRETCS Nothing   = return Nothing
 parseOptionalFRETCS (Just fp) = do
   -- Throws an exception if the file cannot be read.
   content <- liftIO $ B.safeReadFile fp
-  let fretCS :: Either String (Spec String)
-      fretCS = parseJSONSpec return fretFormat =<< eitherDecode =<< content
 
-  case fretCS of
-    Left e   -> throwError $ cannotOpenFRETFile fp e
-    Right cs -> return $ Just cs
+  fretCS <- case eitherDecode =<< content of
+              Left e  -> ExceptT $ return $ Left $ cannotOpenFRETFile fp e
+              Right v -> ExceptT $ do
+                           p <- parseJSONSpec (return . return) fretFormat v
+                           case p of
+                             Left e  -> return $ Left $ cannotOpenFRETFile fp e
+                             Right r -> return $ Right r
+  return $ Just fretCS
 
 -- | Process a variable selection file, if available, and return the variable
 -- names.

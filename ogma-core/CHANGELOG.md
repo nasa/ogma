@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-01-10
+## [1.X.Y] - 2025-01-14
 
 * Replace queueSize with QUEUE_SIZE in FPP file (#186).
 * Use template expansion system to generate F' monitoring component (#185).
@@ -8,6 +8,7 @@
 * Add repository information to cabal package (#148).
 * Add version bounds to all dependencies (#119).
 * Add command to transform state diagrams into monitors (#194).
+* Extend standalone command to use external process to parse properties (#197).
 
 ## [1.5.0] - 2024-11-21
 

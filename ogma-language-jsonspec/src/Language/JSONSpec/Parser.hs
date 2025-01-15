@@ -33,6 +33,7 @@
 module Language.JSONSpec.Parser where
 
 -- External imports
+import           Control.Monad.Except  (ExceptT (..), runExceptT)
 import           Data.Aeson            (FromJSON (..), Value (..), decode, (.:))
 import           Data.Aeson.Key        (toString)
 import qualified Data.Aeson.KeyMap     as M
@@ -107,9 +108,9 @@ parseJSONFormat jsonFormat = do
              , jfiRequirementExpr = jfi12
              }
 
-parseJSONSpec :: (String -> Either String a) -> JSONFormat -> Value -> Either String (Spec a)
-parseJSONSpec parseExpr jsonFormat value = do
-  jsonFormatInternal <- parseJSONFormat jsonFormat
+parseJSONSpec :: (String -> IO (Either String a)) -> JSONFormat -> Value -> IO (Either String (Spec a))
+parseJSONSpec parseExpr jsonFormat value = runExceptT $ do
+  jsonFormatInternal <- except $ parseJSONFormat jsonFormat
 
   let values :: [Value]
       values = maybe [] (`executeJSONPath` value) (jfiInternalVars jsonFormatInternal)
@@ -131,7 +132,7 @@ parseJSONSpec parseExpr jsonFormat value = do
                    , internalVariableExpr    = varExpr
                    }
 
-  internalVariableDefs <- mapM internalVarDef values
+  internalVariableDefs <- except $ mapM internalVarDef values
 
   let values :: [Value]
       values = maybe [] (`executeJSONPath` value) (jfiExternalVars jsonFormatInternal)
@@ -150,7 +151,7 @@ parseJSONSpec parseExpr jsonFormat value = do
                    , externalVariableType    = varType
                    }
 
-  externalVariableDefs <- mapM externalVarDef values
+  externalVariableDefs <- except $ mapM externalVarDef values
 
   let values :: [Value]
       values = executeJSONPath (jfiRequirements jsonFormatInternal) value
@@ -158,14 +159,14 @@ parseJSONSpec parseExpr jsonFormat value = do
       -- requirementDef :: Value -> Either String (Requirement a)
       requirementDef value = do
         let msg = "Requirement name"
-        reqId <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiRequirementId jsonFormatInternal) value))
+        reqId <- except $ valueToString msg =<< (listToEither msg (executeJSONPath (jfiRequirementId jsonFormatInternal) value))
 
         let msg = "Requirement expression"
-        reqExpr <- valueToString msg =<< (listToEither msg (executeJSONPath (jfiRequirementExpr jsonFormatInternal) value))
-        reqExpr' <- parseExpr reqExpr
+        reqExpr <- except $ valueToString msg =<< (listToEither msg (executeJSONPath (jfiRequirementExpr jsonFormatInternal) value))
+        reqExpr' <- ExceptT $ parseExpr reqExpr
 
         let msg = "Requirement description"
-        reqDesc <- maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) (jfiRequirementDesc jsonFormatInternal)
+        reqDesc <- except $ maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) (jfiRequirementDesc jsonFormatInternal)
 
         return $ Requirement
                    { requirementName        = reqId
@@ -198,3 +199,7 @@ showErrorsM :: Show a => Maybe (Either a b) -> Either String (Maybe b)
 showErrorsM Nothing          = Right Nothing
 showErrorsM (Just (Left s))  = Left (show s)
 showErrorsM (Just (Right x)) = Right (Just x)
+
+-- | Wrap an 'Either' value in an @ExceptT m@ monad.
+except :: Monad m => Either e a -> ExceptT e m a
+except = ExceptT . return
