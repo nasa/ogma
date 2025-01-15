@@ -110,6 +110,7 @@ testFretComponentSpec2Copilot file success = do
                  , standaloneFilename    = "fret"
                  , standaloneTargetDir   = targetDir
                  , standaloneTemplateDir = Nothing
+                 , standalonePropVia     = Nothing
                  }
     result <- standalone file opts
 
@@ -145,6 +146,7 @@ testFretReqsDBCoCoSpec2Copilot file success = do
                  , standaloneFilename    = "fret"
                  , standaloneTargetDir   = targetDir
                  , standaloneTemplateDir = Nothing
+                 , standalonePropVia     = Nothing
                  }
     result <- standalone file opts
 
