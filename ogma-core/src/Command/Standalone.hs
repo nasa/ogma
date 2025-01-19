@@ -44,8 +44,9 @@ import Control.Exception    as E
 import Data.Aeson           (decode, eitherDecode, object, (.=))
 import Data.ByteString.Lazy (fromStrict)
 import Data.Foldable        (for_)
-import Data.List            (nub, (\\))
+import Data.List            (isInfixOf, nub, (\\))
 import Data.Maybe           (fromMaybe)
+import System.Directory     (doesFileExist)
 import System.Process       (readProcess)
 import System.FilePath      ((</>))
 import Data.Text.Lazy       (pack)
@@ -138,32 +139,45 @@ standalone' fp options (ExprPair parse replace print ids) = do
   let name     = standaloneFilename options
       typeMaps = typeToCopilotTypeMapping options
 
-  -- Obtain format file
+  -- Obtain format file.
+  --
+  -- A format name that exists as a file in the disk always takes preference
+  -- over a file format included with Ogma. A file format with a forward slash
+  -- in the name is always assumed to be a user-provided filename.
+  -- Regardless of whether the file is user-provided or known to Ogma, we check
+  -- (again) whether the file exists, and print an error message if not.
+  let formatName = standaloneFormat options
+  exists  <- doesFileExist formatName
   dataDir <- getDataDir
-  let formatFile =
-        dataDir </> "data" </> "formats" </>
-          (standaloneFormat options ++ "_" ++ standalonePropFormat options)
+  let formatFile
+        | isInfixOf "/" formatName || exists
+        = formatName
+        | otherwise
+        = dataDir </> "data" </> "formats" </>
+             (standaloneFormat options ++ "_" ++ standalonePropFormat options)
+  formatMissing <- not <$> doesFileExist formatFile
 
-  format <- read <$> readFile formatFile
+  if formatMissing
+    then return $ Left $ standaloneIncorrectFormatSpec formatFile
+    else do
+      format <- read <$> readFile formatFile
 
-  let wrapper = wrapVia (standalonePropVia options) parse
+      let wrapper = wrapVia (standalonePropVia options) parse
 
-  -- All of the following operations use Either to return error messages. The
-  -- use of the monadic bind to pass arguments from one function to the next
-  -- will cause the program to stop at the earliest error.
-  content <- B.safeReadFile fp
-  res <- case content of
-           Left s  -> return $ Left s
-           Right b -> do case eitherDecode b of
-                           Left e  -> return $ Left e
-                           Right v -> parseJSONSpec wrapper format v
+      -- All of the following operations use Either to return error messages.
+      -- The use of the monadic bind to pass arguments from one function to the
+      -- next will cause the program to stop at the earliest error.
+      content <- B.safeReadFile fp
+      res <- case content of
+               Left s  -> return $ Left s
+               Right b -> do case eitherDecode b of
+                               Left e  -> return $ Left e
+                               Right v -> parseJSONSpec wrapper format v
 
-  -- Complement the specification with any missing/implicit definitions
-  let res' = fmap (addMissingIdentifiers ids) res
+      -- Complement the specification with any missing/implicit definitions
+      let res' = fmap (addMissingIdentifiers ids) res
 
-  let copilot = spec2Copilot name typeMaps replace print =<< specAnalyze =<< res'
-
-  return copilot
+      return $ spec2Copilot name typeMaps replace print =<< specAnalyze =<< res'
 
 -- | Parse a property using an auxiliary program to first translate it, if
 -- available.
@@ -235,6 +249,12 @@ standaloneTemplateError options fp exception =
       ++ " that there's free space in the disk and that you have the necessary"
       ++ " permissions to write in the destination directory. "
       ++ show exception
+
+-- | Error message associated to the format file not being found.
+standaloneIncorrectFormatSpec :: String -> String
+standaloneIncorrectFormatSpec formatFile =
+  "The format specification " ++ formatFile ++ " does not exist or is not "
+  ++ "readable"
 
 -- * Mapping of types from input format to Copilot
 typeToCopilotTypeMapping :: StandaloneOptions -> [(String, String)]
