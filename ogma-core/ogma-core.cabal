@@ -78,6 +78,10 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      data/formats/fcs_cocospec
                      data/formats/fdb_smv
                      data/formats/fdb_cocospec
+                     data/formats/xml-md_cocospec
+                     data/formats/xml-md_smv
+                     data/formats/xml-reqif_cocospec
+                     data/formats/xml-reqif_smv
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
