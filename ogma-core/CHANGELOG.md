@@ -10,6 +10,7 @@
 * Add command to transform state diagrams into monitors (#194).
 * Extend standalone command to use external process to parse properties (#197).
 * Enable using user-provided file as format definition spec (#200).
+* Add support for XML files to standalone backend (#202).
 
 ## [1.5.0] - 2024-11-21
 
