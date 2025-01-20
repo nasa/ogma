@@ -304,6 +304,11 @@ exprPair "cocospec" = ExprPair (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
                                (CoCoSpec.boolSpec2Copilot)
                                (CoCoSpec.boolSpecNames)
                                (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
+exprPair "literal"  = ExprPair Right
+                               (\_ -> id)
+                               id
+                               (const [])
+                               "undefined"
 exprPair _          = ExprPair (SMV.pBoolSpec . SMV.myLexer)
                                (substituteBoolExpr)
                                (SMV.boolSpec2Copilot)
