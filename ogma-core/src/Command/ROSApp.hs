@@ -40,6 +40,7 @@
 module Command.ROSApp
     ( rosApp
     , ErrorCode
+    , ROSAppOptions(..)
     )
   where
 
@@ -73,33 +74,29 @@ import Paths_ogma_core ( getDataDir )
 -- * ROS app generation
 
 -- | Generate a new ROS application connected to Copilot.
-rosApp :: FilePath       -- ^ Target directory where the application
-                         --   should be created.
-       -> Maybe FilePath -- ^ Directory where the template is to be found.
-       -> Maybe FilePath -- ^ Input specification file.
-       -> Maybe FilePath -- ^ File containing a list of variables to make
-                         --   available to Copilot.
-       -> Maybe FilePath -- ^ File containing a list of known variables
-                         --   with their types and the message IDs they
-                         --   can be obtained from.
-       -> Maybe FilePath -- ^ File containing a list of handlers used in the
-                         --   Copilot specification. The handlers are assumed
-                         --   to receive no arguments.
+rosApp :: Maybe FilePath -- ^ Input specification file.
+       -> ROSAppOptions  -- ^ Options to the ROS backend.
        -> IO (Result ErrorCode)
-rosApp targetDir mTemplateDir fp varNameFile varDBFile handlersFile =
-  processResult $ do
-    spec  <- parseOptionalInputFile fp
-    vs    <- parseOptionalVariablesFile varNameFile
-    rs    <- parseOptionalRequirementsListFile handlersFile
-    varDB <- parseOptionalVarDBFile varDBFile
+rosApp fp options =
+    processResult $ do
+      spec  <- parseOptionalInputFile fp
+      vs    <- parseOptionalVariablesFile varNameFile
+      rs    <- parseOptionalRequirementsListFile handlersFile
+      varDB <- parseOptionalVarDBFile varDBFile
 
-    liftEither $ checkArguments spec vs rs
+      liftEither $ checkArguments spec vs rs
 
-    let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = fromMaybe (specExtractHandlers spec) rs
+      let varNames = fromMaybe (specExtractExternalVariables spec) vs
+          monitors = fromMaybe (specExtractHandlers spec) rs
 
-    e <- liftIO $ rosApp' targetDir mTemplateDir varNames varDB monitors
-    liftEither e
+      e <- liftIO $ rosApp' targetDir mTemplateDir varNames varDB monitors
+      liftEither e
+  where
+    targetDir    = rosAppTargetDir options
+    mTemplateDir = rosAppTemplateDir options
+    varNameFile  = rosAppVariables options
+    varDBFile    = rosAppVariableDB options
+    handlersFile = rosAppHandlers options
 
 -- | Generate a new ROS application connected to Copilot, by copying the
 -- template and filling additional necessary files.
@@ -167,6 +164,26 @@ rosApp' targetDir mTemplateDir varNames varDB monitors =
     return $ Right ()
 
 -- ** Argument processing
+
+-- | Options used to customize the conversion of specifications to ROS
+-- applications.
+data ROSAppOptions = ROSAppOptions
+  { rosAppTargetDir   :: FilePath       -- ^ Target directory where the
+                                        -- application should be created.
+  , rosAppTemplateDir :: Maybe FilePath -- ^ Directory where the template is
+                                        -- to be found.
+  , rosAppVariables   :: Maybe FilePath -- ^ File containing a list of
+                                        -- variables to make available to
+                                        -- Copilot.
+  , rosAppVariableDB  :: Maybe FilePath -- ^ File containing a list of known
+                                        -- variables with their types and the
+                                        -- message IDs they can be obtained
+                                        -- from.
+  , rosAppHandlers    :: Maybe FilePath -- ^ File containing a list of
+                                        -- handlers used in the Copilot
+                                        -- specification. The handlers are
+                                        -- assumed to receive no arguments.
+  }
 
 -- | Process input specification, if available, and return its abstract
 -- representation.
