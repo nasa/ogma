@@ -1,6 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -56,6 +57,7 @@ import           Data.Maybe           (fromMaybe)
 import           Data.Text.Lazy       (pack)
 import           System.Directory     (doesFileExist)
 import           System.FilePath      ((</>))
+import           System.Process       (readProcess)
 
 -- External imports: auxiliary
 import Data.ByteString.Extra  as B (safeReadFile)
@@ -207,6 +209,8 @@ data ROSAppOptions = ROSAppOptions
                                         -- assumed to receive no arguments.
   , rosAppFormat      :: String         -- ^ Format of the input file.
   , rosAppPropFormat  :: String         -- ^ Format used for input properties.
+  , rosAppPropVia     :: Maybe String   -- ^ Use external command to
+                                        -- pre-process system properties.
   }
 
 -- | Process input specification, if available, and return its abstract
@@ -219,6 +223,7 @@ parseOptionalInputFile Nothing   _    _ =
   return Nothing
 parseOptionalInputFile (Just fp) opts (ExprPair parse replace print ids def) =
   ExceptT $ do
+    let wrapper = wrapVia (rosAppPropVia opts) parse
     -- Obtain format file.
     --
     -- A format name that exists as a file in the disk always takes preference
@@ -252,7 +257,7 @@ parseOptionalInputFile (Just fp) opts (ExprPair parse replace print ids def) =
              -> do let xmlFormat = read format
                    content <- readFile fp
                    parseXMLSpec
-                     (return . fmap print . parse) (print def) xmlFormat content
+                     (fmap (fmap print) . wrapper) (print def) xmlFormat content
              | otherwise
              -> do let jsonFormat = read format
                    content <- B.safeReadFile fp
@@ -260,9 +265,11 @@ parseOptionalInputFile (Just fp) opts (ExprPair parse replace print ids def) =
                      Left e  -> return $ Left e
                      Right b -> do case eitherDecode b of
                                      Left e  -> return $ Left e
-                                     Right v -> parseJSONSpec
-                                                  (return . fmap print . parse)
-                                                  jsonFormat v
+                                     Right v ->
+                                       parseJSONSpec
+                                         (fmap (fmap print) . wrapper)
+                                         jsonFormat
+                                         v
         case res of
           Left e  -> return $ Left $ cannotOpenInputFile fp e
           Right x -> return $ Right $ Just x
@@ -435,6 +442,23 @@ exprPair _ =
     (SMV.boolSpec2Copilot)
     (SMV.boolSpecNames)
     (SMV.BoolSpecSignal (SMV.Ident "undefined"))
+
+-- | Parse a property using an auxiliary program to first translate it, if
+-- available.
+--
+-- If a program is given, it is first called on the property, and then the
+-- result is parsed with the parser passed as an argument. If a program is not
+-- given, then the parser is applied to the given string.
+wrapVia :: Maybe String                -- ^ Auxiliary program to translate the
+                                       -- property.
+        -> (String -> Either String a) -- ^ Parser used on the result.
+        -> String                      -- ^ Property to parse.
+        -> IO (Either String a)
+wrapVia Nothing  parse s = return (parse s)
+wrapVia (Just f) parse s =
+  E.handle (\(e :: E.IOException) -> return $ Left $ show e) $ do
+    out <- readProcess f [] s
+    return $ parse out
 
 -- * ROS apps content
 
