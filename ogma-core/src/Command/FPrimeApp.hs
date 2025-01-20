@@ -73,7 +73,7 @@ import Paths_ogma_core ( getDataDir )
 fprimeApp :: FilePath       -- ^ Target directory where the component
                             --   should be created.
           -> Maybe FilePath -- ^ Directory where the template is to be found.
-          -> Maybe FilePath -- ^ FRET Component specification file.
+          -> Maybe FilePath -- ^ Input specification file.
           -> Maybe FilePath -- ^ File containing a list of variables to make
                             --   available to Copilot.
           -> Maybe FilePath -- ^ File containing a list of known variables
@@ -83,17 +83,17 @@ fprimeApp :: FilePath       -- ^ Target directory where the component
                             --   Copilot specification. The handlers are assumed
                             --   to receive no arguments.
           -> IO (Result ErrorCode)
-fprimeApp targetDir mTemplateDir fretCSFile varNameFile varDBFile handlersFile =
+fprimeApp targetDir mTemplateDir fp varNameFile varDBFile handlersFile =
   processResult $ do
-    cs    <- parseOptionalFRETCS fretCSFile
+    spec  <- parseOptionalInputFile fp
     vs    <- parseOptionalVariablesFile varNameFile
     rs    <- parseOptionalRequirementsListFile handlersFile
     varDB <- parseOptionalVarDBFile varDBFile
 
-    liftEither $ checkArguments cs vs rs
+    liftEither $ checkArguments spec vs rs
 
-    let varNames = fromMaybe (fretCSExtractExternalVariables cs) vs
-        monitors = fromMaybe (fretCSExtractHandlers cs) rs
+    let varNames = fromMaybe (specExtractExternalVariables spec) vs
+        monitors = fromMaybe (specExtractHandlers spec) rs
 
     e <- liftIO $ fprimeApp' targetDir mTemplateDir varNames varDB monitors
     liftEither e
@@ -159,23 +159,23 @@ fprimeApp' targetDir mTemplateDir varNames varDB monitors =
 
 -- ** Argument processing
 
--- | Process FRET component spec, if available, and return its abstract
+-- | Process input specification, if available, and return its abstract
 -- representation.
-parseOptionalFRETCS :: Maybe FilePath
-                    -> ExceptT ErrorTriplet IO (Maybe (Spec String))
-parseOptionalFRETCS Nothing   = return Nothing
-parseOptionalFRETCS (Just fp) = do
+parseOptionalInputFile :: Maybe FilePath
+                       -> ExceptT ErrorTriplet IO (Maybe (Spec String))
+parseOptionalInputFile Nothing   = return Nothing
+parseOptionalInputFile (Just fp) = do
   -- Throws an exception if the file cannot be read.
   content <- liftIO $ B.safeReadFile fp
 
-  fretCS <- case eitherDecode =<< content of
-              Left e  -> ExceptT $ return $ Left $ cannotOpenFRETFile fp e
-              Right v -> ExceptT $ do
-                           p <- parseJSONSpec (return . return) fretFormat v
-                           case p of
-                             Left e  -> return $ Left $ cannotOpenFRETFile fp e
-                             Right r -> return $ Right r
-  return $ Just fretCS
+  res <- case eitherDecode =<< content of
+           Left e  -> ExceptT $ return $ Left $ cannotOpenInputFile fp e
+           Right v -> ExceptT $ do
+                        p <- parseJSONSpec (return . return) fretFormat v
+                        case p of
+                          Left e  -> return $ Left $ cannotOpenInputFile fp e
+                          Right r -> return $ Right r
+  return $ Just res
 
 -- | Process a variable selection file, if available, and return the variable
 -- names.
@@ -224,11 +224,11 @@ parseOptionalVarDBFile (Just fp) = do
 -- The FPrime backend provides several modes of operation, which are selected
 -- by providing different arguments to the `ros` command.
 --
--- When a FRET component specification file is provided, the variables and
--- requirements defined in it are used unless variables or handlers files are
--- provided, in which case the latter take priority.
+-- When an input specification file is provided, the variables and requirements
+-- defined in it are used unless variables or handlers files are provided, in
+-- which case the latter take priority.
 --
--- If a FRET file is not provided, then the user must provide BOTH a variable
+-- If an input file is not provided, then the user must provide BOTH a variable
 -- list, and a list of handlers.
 checkArguments :: Maybe (Spec a)
                -> Maybe [String]
@@ -241,21 +241,21 @@ checkArguments _       (Just []) _         = Left wrongArguments
 checkArguments _       _         (Just []) = Left wrongArguments
 checkArguments _       _         _         = Right ()
 
--- | Extract the variables from a FRET component specification, and sanitize
--- them to be used in FPrime.
-fretCSExtractExternalVariables :: Maybe (Spec a) -> [String]
-fretCSExtractExternalVariables Nothing   = []
-fretCSExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
-                                         $ map externalVariableName
-                                         $ externalVariables cs
+-- | Extract the variables from a specification, and sanitize them to be used
+-- in FPrime.
+specExtractExternalVariables :: Maybe (Spec a) -> [String]
+specExtractExternalVariables Nothing   = []
+specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
+                                       $ map externalVariableName
+                                       $ externalVariables cs
 
--- | Extract the requirements from a FRET component specification, and sanitize
--- them to match the names of the handlers used by Copilot.
-fretCSExtractHandlers :: Maybe (Spec a) -> [String]
-fretCSExtractHandlers Nothing   = []
-fretCSExtractHandlers (Just cs) = map handlerNameF
-                                $ map requirementName
-                                $ requirements cs
+-- | Extract the requirements from a specification, and sanitize them to match
+-- the names of the handlers used by Copilot.
+specExtractHandlers :: Maybe (Spec a) -> [String]
+specExtractHandlers Nothing   = []
+specExtractHandlers (Just cs) = map handlerNameF
+                              $ map requirementName
+                              $ requirements cs
   where
     handlerNameF = ("handler" ++) . sanitizeUCIdentifier
 
@@ -440,18 +440,17 @@ wrongArguments =
     ErrorTriplet ecWrongArguments msg LocationNothing
   where
     msg =
-      "the arguments provided are insufficient: you must provide a FRET "
-      ++ "component specification file, or both a variables and a handlers "
-      ++ "file."
+      "the arguments provided are insufficient: you must provide an input "
+      ++ "specification, or both a variables and a handlers file."
 
--- | Exception handler to deal with the case in which the FRET CS cannot be
+-- | Exception handler to deal with the case in which the input file cannot be
 -- opened.
-cannotOpenFRETFile :: FilePath -> String -> ErrorTriplet
-cannotOpenFRETFile file _e =
-    ErrorTriplet ecCannotOpenFRETFile msg (LocationFile file)
+cannotOpenInputFile :: FilePath -> String -> ErrorTriplet
+cannotOpenInputFile file _e =
+    ErrorTriplet ecCannotOpenInputFile msg (LocationFile file)
   where
     msg =
-      "cannot open FRET component specification file " ++ file
+      "cannot open input specification file " ++ file
 
 -- | Exception handler to deal with the case in which the variable DB cannot be
 -- opened.
@@ -516,10 +515,9 @@ type ErrorCode = Int
 ecWrongArguments :: ErrorCode
 ecWrongArguments = 1
 
--- | Error: the FRET component specification provided by the user cannot be
--- opened.
-ecCannotOpenFRETFile :: ErrorCode
-ecCannotOpenFRETFile = 1
+-- | Error: the input specification provided by the user cannot be opened.
+ecCannotOpenInputFile :: ErrorCode
+ecCannotOpenInputFile = 1
 
 -- | Error: the variable DB provided by the user cannot be opened.
 ecCannotOpenDBUser :: ErrorCode
