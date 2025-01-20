@@ -36,6 +36,7 @@
 module Command.FPrimeApp
     ( fprimeApp
     , ErrorCode
+    , FPrimeAppOptions(..)
     )
   where
 
@@ -70,33 +71,29 @@ import Paths_ogma_core ( getDataDir )
 -- * FPrime component generation
 
 -- | Generate a new FPrime component connected to Copilot.
-fprimeApp :: FilePath       -- ^ Target directory where the component
-                            --   should be created.
-          -> Maybe FilePath -- ^ Directory where the template is to be found.
-          -> Maybe FilePath -- ^ Input specification file.
-          -> Maybe FilePath -- ^ File containing a list of variables to make
-                            --   available to Copilot.
-          -> Maybe FilePath -- ^ File containing a list of known variables
-                            --   with their types and the message IDs they
-                            --   can be obtained from.
-          -> Maybe FilePath -- ^ File containing a list of handlers used in the
-                            --   Copilot specification. The handlers are assumed
-                            --   to receive no arguments.
+fprimeApp :: Maybe FilePath   -- ^ Input specification file.
+          -> FPrimeAppOptions -- ^ Options to the ROS backend.
           -> IO (Result ErrorCode)
-fprimeApp targetDir mTemplateDir fp varNameFile varDBFile handlersFile =
-  processResult $ do
-    spec  <- parseOptionalInputFile fp
-    vs    <- parseOptionalVariablesFile varNameFile
-    rs    <- parseOptionalRequirementsListFile handlersFile
-    varDB <- parseOptionalVarDBFile varDBFile
+fprimeApp fp options =
+    processResult $ do
+      spec  <- parseOptionalInputFile fp
+      vs    <- parseOptionalVariablesFile varNameFile
+      rs    <- parseOptionalRequirementsListFile handlersFile
+      varDB <- parseOptionalVarDBFile varDBFile
 
-    liftEither $ checkArguments spec vs rs
+      liftEither $ checkArguments spec vs rs
 
-    let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = fromMaybe (specExtractHandlers spec) rs
+      let varNames = fromMaybe (specExtractExternalVariables spec) vs
+          monitors = fromMaybe (specExtractHandlers spec) rs
 
-    e <- liftIO $ fprimeApp' targetDir mTemplateDir varNames varDB monitors
-    liftEither e
+      e <- liftIO $ fprimeApp' targetDir mTemplateDir varNames varDB monitors
+      liftEither e
+  where
+    targetDir    = fprimeAppTargetDir options
+    mTemplateDir = fprimeAppTemplateDir options
+    varNameFile  = fprimeAppVarNames options
+    varDBFile    = fprimeAppVariableDB options
+    handlersFile = fprimeAppHandlers options
 
 -- | Generate a new FPrime component connected to Copilot, by copying the
 -- template and filling additional necessary files.
@@ -158,6 +155,26 @@ fprimeApp' targetDir mTemplateDir varNames varDB monitors =
     return $ Right ()
 
 -- ** Argument processing
+
+-- | Options used to customize the conversion of specifications to F'
+-- applications.
+data FPrimeAppOptions = FPrimeAppOptions
+  { fprimeAppTargetDir   :: FilePath       -- ^ Target directory where the
+                                           -- component should be created.
+  , fprimeAppTemplateDir :: Maybe FilePath -- ^ Directory where the template is
+                                           -- to be found.
+  , fprimeAppVarNames    :: Maybe FilePath -- ^ File containing a list of
+                                           -- variables to make available to
+                                           -- Copilot.
+  , fprimeAppVariableDB  :: Maybe FilePath -- ^ File containing a list of known
+                                           -- variables with their types and
+                                           -- the message IDs they can be
+                                           -- obtained from.
+  , fprimeAppHandlers    :: Maybe FilePath -- ^ File containing a list of
+                                           -- handlers used in the Copilot
+                                           -- specification. The handlers are
+                                           -- assumed to receive no arguments.
+  }
 
 -- | Process input specification, if available, and return its abstract
 -- representation.
