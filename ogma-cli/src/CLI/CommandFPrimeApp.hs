@@ -65,6 +65,7 @@ data CommandOpts = CommandOpts
   , fprimeAppHandlers    :: Maybe String
   , fprimeAppFormat      :: String
   , fprimeAppPropFormat  :: String
+  , fprimeAppPropVia     :: Maybe String
   }
 
 -- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
@@ -84,6 +85,7 @@ command c = fprimeApp (fprimeAppInputFile c) options
         , Command.FPrimeApp.fprimeAppHandlers    = fprimeAppHandlers c
         , Command.FPrimeApp.fprimeAppFormat      = fprimeAppFormat c
         , Command.FPrimeApp.fprimeAppPropFormat  = fprimeAppPropFormat c
+        , Command.FPrimeApp.fprimeAppPropVia     = fprimeAppPropVia c
         }
 
 -- * CLI
@@ -154,6 +156,13 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "smv"
         )
+  <*> optional
+        ( strOption
+            (  long "parse-prop-via"
+            <> metavar "COMMAND"
+            <> help strFPrimeAppPropViaDesc
+            )
+        )
 
 -- | Argument target directory to FPrime component generation command
 strFPrimeAppDirArgDesc :: String
@@ -191,3 +200,8 @@ strFPrimeAppFormatDesc = "Format of the input file"
 -- | Property format flag description.
 strFPrimeAppPropFormatDesc :: String
 strFPrimeAppPropFormatDesc = "Format of temporal or boolean properties"
+
+-- | External command to pre-process individual properties.
+strFPrimeAppPropViaDesc :: String
+strFPrimeAppPropViaDesc =
+  "Command to pre-process individual properties"
