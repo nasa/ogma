@@ -42,28 +42,28 @@ tests =
   , testCase "cli-cmd-cfs-fail" (runErrorCode ["cfs", "--incorrect-argument"] False)
     -- Should fail due to arguments being incorrect
 
-  , testCase "cli-cmd-fret-component-spec" (runErrorCode ["standalone", "--help" ] True)
+  , testCase "cli-cmd-standalone" (runErrorCode ["standalone", "--help" ] True)
     -- Should pass
 
-  , testCase "cli-cmd-fret-component-spec-fail" (runErrorCode ["standalone", "--incorrect-argument"] False)
+  , testCase "cli-cmd-standalone-fail" (runErrorCode ["standalone", "--incorrect-argument"] False)
     -- Should fail due to arguments being incorrect
 
-  , testCase "fret-cmd-fret-parse-ok" (parseFretCopilot "examples/fret.json" True)
+  , testCase "cli-cmd-standalone-fcs" (parseStandaloneFCS "examples/fcs-2.json" True)
     -- Should pass
 
-  , testCase "fret-cmd-fret-file-not-found" (parseFretCopilot "tests/file-invalid.json" False)
+  , testCase "cli-cmd-standalone-file-not-found" (parseStandaloneFCS "tests/file-invalid.json" False)
     -- Should fail because the file does not exist
 
-  , testCase "fret-cmd-fret-parse-fail-1" (parseFretCopilot "tests/commands-fret-error-parsing-failed-1.json" False)
+  , testCase "cli-cmd-standalone-parse-fail-1" (parseStandaloneFCS "tests/commands-fcs-error-parsing-failed-1.json" False)
     -- Should fail because the opening bracket is [ and not {
 
-  , testCase "fret-cmd-fret-parse-fail-2" (parseFretCopilot "tests/commands-fret-error-parsing-failed-2.json" False)
+  , testCase "cli-cmd-standalone-parse-fail-2" (parseStandaloneFCS "tests/commands-fcs-error-parsing-failed-2.json" False)
     -- Should fail because a field is missing in an external variable
 
-  , testCase "fret-cmd-fret-parse-fail-3" (parseFretCopilot "tests/commands-fret-error-parsing-failed-3.json" False)
+  , testCase "cli-cmd-standalone-parse-fail-3" (parseStandaloneFCS "tests/commands-fcs-error-parsing-failed-3.json" False)
     -- Should fail because a field is missing in an internal variable
 
-  , testCase "fret-test2" (parseFretCoCoSpec "tests/fret-example1.json")
+  , testCase "cli-cmd-standalone-fdb" (parseStandaloneFDB "tests/fdb-example1.json")
     -- Should pass
 
   , testCase "structs-parse-ok" (testCStructs2Copilot "tests/reduced_geofence_msgs.h" True)
@@ -102,10 +102,10 @@ testCStructs2Copilot file success = do
     args     = ["structs", "--header-file-name", file]
     errorMsg = "Result of processing file " ++ file ++ " failed"
 
--- | Test FRET parser for a particular file.
+-- | Test standalone backend for a FCS format and SVM.
 --
--- This test uses the Copilot backend for FRET files, so it generates a Copilot
--- file. It may be convenient to run this action in a temporary directory.
+-- This test uses the standalone backend, so it generates a Copilot file. It
+-- may be convenient to run this action in a temporary directory.
 --
 -- This IO action fails if any of the following are true:
 --   * Ogma cannot be found in the current PATH.
@@ -115,10 +115,10 @@ testCStructs2Copilot file success = do
 --   * Ogma fails due to an internal error or bug.
 --   * The output file cannot be created due to lack of space or permissions.
 --
-parseFretCopilot :: FilePath  -- ^ Path to a FRET/JSON requirements file
-                 -> Bool
-                 -> IO ()
-parseFretCopilot file success = do
+parseStandaloneFCS :: FilePath  -- ^ Path to an input file
+                   -> Bool
+                   -> IO ()
+parseStandaloneFCS file success = do
     (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
 
     -- True if success is expected and detected, or niether expected nor
@@ -130,10 +130,10 @@ parseFretCopilot file success = do
     args     = ["standalone", "--file-name", file]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
--- | Test FRET CoCoSpec-based parser for a particular file.
+-- | Test standalone backend for FDB format and CoCoSpec.
 --
--- This test uses the Copilot backend for FRET files, so it generates a Copilot
--- file. It may be convenient to run this action in a temporary directory.
+-- This test uses the standalone backend, so it generates a Copilot file. It
+-- may be convenient to run this action in a temporary directory.
 --
 -- This IO action fails if any of the following are true:
 --   * Ogma cannot be found in the current PATH.
@@ -143,9 +143,9 @@ parseFretCopilot file success = do
 --   * Ogma fails due to an internal error or bug.
 --   * The output file cannot be created due to lack of space or permissions.
 --
-parseFretCoCoSpec :: FilePath  -- ^ Path to a FRET/JSON requirements file
-                  -> IO ()
-parseFretCoCoSpec file = do
+parseStandaloneFDB :: FilePath  -- ^ Path to an input file
+                   -> IO ()
+parseStandaloneFDB file = do
     (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
     assertBool errorMsg (ec == ExitSuccess)
   where

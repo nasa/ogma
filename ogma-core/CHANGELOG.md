@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-01-19
+## [1.X.Y] - 2025-01-20
 
 * Replace queueSize with QUEUE_SIZE in FPP file (#186).
 * Use template expansion system to generate F' monitoring component (#185).
@@ -11,6 +11,7 @@
 * Extend standalone command to use external process to parse properties (#197).
 * Enable using user-provided file as format definition spec (#200).
 * Add support for XML files to standalone backend (#202).
+* Extend support for file, property formats across backends (#204).
 
 ## [1.5.0] - 2024-11-21
 

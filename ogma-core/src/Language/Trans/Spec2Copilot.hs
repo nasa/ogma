@@ -163,7 +163,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                      ++ externalVariableMap
                      ++ requirementNameMap
 
-    -- Variable/requirement names used in the component spec.
+    -- Variable/requirement names used in the input spec.
     internalVariableNames = map internalVariableName
                           $ internalVariables spec
 
@@ -216,7 +216,7 @@ specAnalyze spec
     requirementNameMap =
       map (\x -> (x, "prop" ++ sanitizeUCIdentifier x)) requirementNames
 
-    -- Variable/requirement names used in the component spec.
+    -- Variable/requirement names used in the input spec.
     internalVariableNames = map internalVariableName
                           $ internalVariables spec
 
