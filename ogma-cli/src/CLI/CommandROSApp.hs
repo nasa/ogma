@@ -43,8 +43,8 @@ module CLI.CommandROSApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
-                             strOption, value )
+import Options.Applicative ( Parser, help, long, metavar, optional, short,
+                             showDefault, strOption, value )
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -63,6 +63,7 @@ data CommandOpts = CommandOpts
   , rosAppVarNames    :: Maybe String
   , rosAppVarDB       :: Maybe String
   , rosAppHandlers    :: Maybe String
+  , rosAppPropFormat  :: String
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -79,6 +80,7 @@ command c = rosApp (rosAppInputFile c) options
                 , Command.ROSApp.rosAppVariables   = rosAppVarNames c
                 , Command.ROSApp.rosAppVariableDB  = rosAppVarDB c
                 , Command.ROSApp.rosAppHandlers    = rosAppHandlers c
+                , Command.ROSApp.rosAppPropFormat  = rosAppPropFormat c
                 }
 
 -- * CLI
@@ -133,6 +135,14 @@ commandOptsParser = CommandOpts
             <> help strROSAppHandlerListArgDesc
             )
         )
+  <*> strOption
+        (  long "prop-format"
+        <> short 'p'
+        <> metavar "FORMAT_NAME"
+        <> help strROSAppPropFormatDesc
+        <> showDefault
+        <> value "smv"
+        )
 
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
@@ -162,3 +172,7 @@ strROSAppVarDBArgDesc =
 strROSAppHandlerListArgDesc :: String
 strROSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Property format flag description.
+strROSAppPropFormatDesc :: String
+strROSAppPropFormatDesc = "Format of temporal or boolean properties"
