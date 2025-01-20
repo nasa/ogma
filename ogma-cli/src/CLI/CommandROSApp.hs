@@ -58,7 +58,7 @@ import Command.ROSApp ( ErrorCode, rosApp )
 data CommandOpts = CommandOpts
   { rosAppTarget      :: String
   , rosAppTemplateDir :: Maybe String
-  , rosAppFRETFile    :: Maybe String
+  , rosAppInputFile   :: Maybe String
   , rosAppVarNames    :: Maybe String
   , rosAppVarDB       :: Maybe String
   , rosAppHandlers    :: Maybe String
@@ -74,7 +74,7 @@ command c =
   rosApp
     (rosAppTarget c)
     (rosAppTemplateDir c)
-    (rosAppFRETFile c)
+    (rosAppInputFile c)
     (rosAppVarNames c)
     (rosAppVarDB c)
     (rosAppHandlers c)
@@ -105,9 +105,9 @@ commandOptsParser = CommandOpts
         )
   <*> optional
         ( strOption
-            (  long "fret-file-name"
+            (  long "input-file"
             <> metavar "FILENAME"
-            <> help strROSAppFRETFileNameArgDesc
+            <> help strROSAppFileNameArgDesc
             )
         )
   <*> optional
@@ -141,10 +141,10 @@ strROSAppTemplateDirArgDesc :: String
 strROSAppTemplateDirArgDesc =
   "Directory holding ROS application source template"
 
--- | Argument FRET CS to ROS app generation command
-strROSAppFRETFileNameArgDesc :: String
-strROSAppFRETFileNameArgDesc =
-  "File containing FRET Component Specification"
+-- | Argument input file to ROS app generation command
+strROSAppFileNameArgDesc :: String
+strROSAppFileNameArgDesc =
+  "File containing input specification"
 
 -- | Argument variable list to ROS app generation command
 strROSAppVarListArgDesc :: String
