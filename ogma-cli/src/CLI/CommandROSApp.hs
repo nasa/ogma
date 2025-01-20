@@ -63,6 +63,7 @@ data CommandOpts = CommandOpts
   , rosAppVarNames    :: Maybe String
   , rosAppVarDB       :: Maybe String
   , rosAppHandlers    :: Maybe String
+  , rosAppFormat      :: String
   , rosAppPropFormat  :: String
   }
 
@@ -80,6 +81,7 @@ command c = rosApp (rosAppInputFile c) options
                 , Command.ROSApp.rosAppVariables   = rosAppVarNames c
                 , Command.ROSApp.rosAppVariableDB  = rosAppVarDB c
                 , Command.ROSApp.rosAppHandlers    = rosAppHandlers c
+                , Command.ROSApp.rosAppFormat      = rosAppFormat c
                 , Command.ROSApp.rosAppPropFormat  = rosAppPropFormat c
                 }
 
@@ -136,6 +138,14 @@ commandOptsParser = CommandOpts
             )
         )
   <*> strOption
+        (  long "input-format"
+        <> short 'f'
+        <> metavar "FORMAT_NAME"
+        <> help strROSAppFormatDesc
+        <> showDefault
+        <> value "fcs"
+        )
+  <*> strOption
         (  long "prop-format"
         <> short 'p'
         <> metavar "FORMAT_NAME"
@@ -172,6 +182,10 @@ strROSAppVarDBArgDesc =
 strROSAppHandlerListArgDesc :: String
 strROSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Format flag description.
+strROSAppFormatDesc :: String
+strROSAppFormatDesc = "Format of the input file"
 
 -- | Property format flag description.
 strROSAppPropFormatDesc :: String
