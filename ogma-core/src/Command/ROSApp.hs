@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE OverloadedStrings         #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -68,6 +69,20 @@ import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
 import Command.Result                 (Result (..))
 import Data.Location                  (Location (..))
 
+-- Internal imports: language ASTs, transformers
+import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
+import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
+                                                             pBoolSpec )
+
+import qualified Language.SMV.AbsSMV       as SMV
+import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
+import           Language.SMV.Substitution (substituteBoolExpr)
+
+import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot,
+                                                              boolSpecNames)
+import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
+                                                         boolSpecNames)
+
 -- Internal imports
 import Paths_ogma_core ( getDataDir )
 
@@ -79,7 +94,7 @@ rosApp :: Maybe FilePath -- ^ Input specification file.
        -> IO (Result ErrorCode)
 rosApp fp options =
     processResult $ do
-      spec  <- parseOptionalInputFile fp
+      spec  <- parseOptionalInputFile fp functions
       vs    <- parseOptionalVariablesFile varNameFile
       rs    <- parseOptionalRequirementsListFile handlersFile
       varDB <- parseOptionalVarDBFile varDBFile
@@ -89,7 +104,8 @@ rosApp fp options =
       let varNames = fromMaybe (specExtractExternalVariables spec) vs
           monitors = fromMaybe (specExtractHandlers spec) rs
 
-      e <- liftIO $ rosApp' targetDir mTemplateDir varNames varDB monitors
+      e <- liftIO $
+             rosApp' targetDir mTemplateDir varNames varDB monitors
       liftEither e
   where
     targetDir    = rosAppTargetDir options
@@ -97,6 +113,7 @@ rosApp fp options =
     varNameFile  = rosAppVariables options
     varDBFile    = rosAppVariableDB options
     handlersFile = rosAppHandlers options
+    functions    = exprPair (rosAppPropFormat options)
 
 -- | Generate a new ROS application connected to Copilot, by copying the
 -- template and filling additional necessary files.
@@ -183,21 +200,26 @@ data ROSAppOptions = ROSAppOptions
                                         -- handlers used in the Copilot
                                         -- specification. The handlers are
                                         -- assumed to receive no arguments.
+  , rosAppPropFormat  :: String         -- ^ Format used for input properties.
   }
 
 -- | Process input specification, if available, and return its abstract
 -- representation.
 parseOptionalInputFile :: Maybe FilePath
+                       -> ExprPair
                        -> ExceptT ErrorTriplet IO (Maybe (Spec String))
-parseOptionalInputFile Nothing   = return Nothing
-parseOptionalInputFile (Just fp) = do
+parseOptionalInputFile Nothing _ = return Nothing
+parseOptionalInputFile (Just fp) (ExprPair parse replace print ids def) = do
   -- Throws an exception if the file cannot be read.
   content <- liftIO $ B.safeReadFile fp
 
   res <- case eitherDecode =<< content of
            Left e  -> ExceptT $ return $ Left $ cannotOpenInputFile fp e
            Right v -> ExceptT $ do
-                        p <- parseJSONSpec (return . return) fretFormat v
+                        p <- parseJSONSpec
+                               (return . fmap print . parse)
+                               fretFormat
+                               v
                         case p of
                           Left e  -> return $ Left $ cannotOpenInputFile fp e
                           Right r -> return $ Right r
@@ -330,6 +352,47 @@ data MsgData = MsgData
   , msgDataVarName :: String
   , msgDataVarType :: String
   }
+
+-- * Handler for boolean expressions
+
+-- | Handler for boolean expressions that knows how to parse them, replace
+-- variables in them, and convert them to Copilot.
+--
+-- It also contains a default value to be used whenever an expression cannot be
+-- found in the input file.
+data ExprPair = forall a . ExprPair
+  { exprParse   :: String -> Either String a
+  , exprReplace :: [(String, String)] -> a -> a
+  , exprPrint   :: a -> String
+  , exprIdents  :: a -> [String]
+  , exprUnknown :: a
+  }
+
+-- | Return a handler depending on whether it should be for CoCoSpec boolean
+-- expressions or for SMV boolean expressions. We default to SMV if not format
+-- is given.
+exprPair :: String -> ExprPair
+exprPair "cocospec" =
+  ExprPair
+    (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
+    (\_ -> id)
+    (CoCoSpec.boolSpec2Copilot)
+    (CoCoSpec.boolSpecNames)
+    (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
+exprPair "literal" =
+  ExprPair
+    Right
+    (\_ -> id)
+    id
+    (const [])
+    "undefined"
+exprPair _ =
+  ExprPair
+    (SMV.pBoolSpec . SMV.myLexer)
+    (substituteBoolExpr)
+    (SMV.boolSpec2Copilot)
+    (SMV.boolSpecNames)
+    (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- * ROS apps content
 
