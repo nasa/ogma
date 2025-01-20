@@ -63,6 +63,7 @@ data CommandOpts = CommandOpts
   , fprimeAppVarNames    :: Maybe String
   , fprimeAppVarDB       :: Maybe String
   , fprimeAppHandlers    :: Maybe String
+  , fprimeAppFormat      :: String
   , fprimeAppPropFormat  :: String
   }
 
@@ -81,6 +82,7 @@ command c = fprimeApp (fprimeAppInputFile c) options
         , Command.FPrimeApp.fprimeAppVarNames    = fprimeAppVarNames c
         , Command.FPrimeApp.fprimeAppVariableDB  = fprimeAppVarDB c
         , Command.FPrimeApp.fprimeAppHandlers    = fprimeAppHandlers c
+        , Command.FPrimeApp.fprimeAppFormat      = fprimeAppFormat c
         , Command.FPrimeApp.fprimeAppPropFormat  = fprimeAppPropFormat c
         }
 
@@ -137,6 +139,14 @@ commandOptsParser = CommandOpts
             )
         )
   <*> strOption
+        (  long "input-format"
+        <> short 'f'
+        <> metavar "FORMAT_NAME"
+        <> help strFPrimeAppFormatDesc
+        <> showDefault
+        <> value "fcs"
+        )
+  <*> strOption
         (  long "prop-format"
         <> short 'p'
         <> metavar "FORMAT_NAME"
@@ -173,6 +183,10 @@ strFPrimeAppVarDBArgDesc =
 strFPrimeAppHandlerListArgDesc :: String
 strFPrimeAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Format flag description.
+strFPrimeAppFormatDesc :: String
+strFPrimeAppFormatDesc = "Format of the input file"
 
 -- | Property format flag description.
 strFPrimeAppPropFormatDesc :: String
