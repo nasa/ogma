@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -50,9 +51,10 @@ import qualified Control.Exception    as E
 import           Control.Monad.Except (ExceptT(..), liftEither, liftIO,
                                        runExceptT, throwError)
 import           Data.Aeson           (eitherDecode, object, (.=))
-import           Data.List            (find, intersperse)
+import           Data.List            (isInfixOf, isPrefixOf, find, intersperse)
 import           Data.Maybe           (fromMaybe)
 import           Data.Text.Lazy       (pack)
+import           System.Directory     (doesFileExist)
 import           System.FilePath      ((</>))
 
 -- External imports: auxiliary
@@ -64,6 +66,7 @@ import System.Directory.Extra (copyTemplate)
 import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
                                  requirementName, requirements)
 import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
+import Language.XMLSpec.Parser  (parseXMLSpec)
 
 -- Internal imports: auxiliary
 import Command.Result                 (Result (..))
@@ -94,7 +97,10 @@ rosApp :: Maybe FilePath -- ^ Input specification file.
        -> IO (Result ErrorCode)
 rosApp fp options =
     processResult $ do
-      spec  <- parseOptionalInputFile fp functions
+      spec  <- parseOptionalInputFile
+                 fp
+                 options
+                 (exprPair (rosAppPropFormat options))
       vs    <- parseOptionalVariablesFile varNameFile
       rs    <- parseOptionalRequirementsListFile handlersFile
       varDB <- parseOptionalVarDBFile varDBFile
@@ -113,7 +119,6 @@ rosApp fp options =
     varNameFile  = rosAppVariables options
     varDBFile    = rosAppVariableDB options
     handlersFile = rosAppHandlers options
-    functions    = exprPair (rosAppPropFormat options)
 
 -- | Generate a new ROS application connected to Copilot, by copying the
 -- template and filling additional necessary files.
@@ -200,30 +205,67 @@ data ROSAppOptions = ROSAppOptions
                                         -- handlers used in the Copilot
                                         -- specification. The handlers are
                                         -- assumed to receive no arguments.
+  , rosAppFormat      :: String         -- ^ Format of the input file.
   , rosAppPropFormat  :: String         -- ^ Format used for input properties.
   }
 
 -- | Process input specification, if available, and return its abstract
 -- representation.
 parseOptionalInputFile :: Maybe FilePath
+                       -> ROSAppOptions
                        -> ExprPair
                        -> ExceptT ErrorTriplet IO (Maybe (Spec String))
-parseOptionalInputFile Nothing _ = return Nothing
-parseOptionalInputFile (Just fp) (ExprPair parse replace print ids def) = do
-  -- Throws an exception if the file cannot be read.
-  content <- liftIO $ B.safeReadFile fp
+parseOptionalInputFile Nothing   _    _ =
+  return Nothing
+parseOptionalInputFile (Just fp) opts (ExprPair parse replace print ids def) =
+  ExceptT $ do
+    -- Obtain format file.
+    --
+    -- A format name that exists as a file in the disk always takes preference
+    -- over a file format included with Ogma. A file format with a forward
+    -- slash in the name is always assumed to be a user-provided filename.
+    -- Regardless of whether the file is user-provided or known to Ogma, we
+    -- check (again) whether the file exists, and print an error message if
+    -- not.
+    let formatName = rosAppFormat opts
+    exists  <- doesFileExist formatName
+    dataDir <- getDataDir
+    let formatFile
+          | isInfixOf "/" formatName || exists
+          = formatName
+          | otherwise
+          = dataDir </> "data" </> "formats" </>
+               (formatName ++ "_" ++ rosAppPropFormat opts)
+    formatMissing <- not <$> doesFileExist formatFile
 
-  res <- case eitherDecode =<< content of
-           Left e  -> ExceptT $ return $ Left $ cannotOpenInputFile fp e
-           Right v -> ExceptT $ do
-                        p <- parseJSONSpec
-                               (return . fmap print . parse)
-                               fretFormat
-                               v
-                        case p of
-                          Left e  -> return $ Left $ cannotOpenInputFile fp e
-                          Right r -> return $ Right r
-  return $ Just res
+    if formatMissing
+      then return $ Left $ rosAppIncorrectFormatSpec formatFile
+      else do
+        res <- do
+          format <- readFile formatFile
+
+          -- All of the following operations use Either to return error
+          -- messages.  The use of the monadic bind to pass arguments from one
+          -- function to the next will cause the program to stop at the
+          -- earliest error.
+          if | isPrefixOf "XMLFormat" format
+             -> do let xmlFormat = read format
+                   content <- readFile fp
+                   parseXMLSpec
+                     (return . fmap print . parse) (print def) xmlFormat content
+             | otherwise
+             -> do let jsonFormat = read format
+                   content <- B.safeReadFile fp
+                   case content of
+                     Left e  -> return $ Left e
+                     Right b -> do case eitherDecode b of
+                                     Left e  -> return $ Left e
+                                     Right v -> parseJSONSpec
+                                                  (return . fmap print . parse)
+                                                  jsonFormat v
+        case res of
+          Left e  -> return $ Left $ cannotOpenInputFile fp e
+          Right x -> return $ Right $ Just x
 
 -- | Process a variable selection file, if available, and return the variable
 -- names.
@@ -681,6 +723,15 @@ cannotCopyTemplate e =
       ++ " permissions to write in the destination directory."
       ++ show e
 
+-- | Error messages associated to the format file not being found.
+rosAppIncorrectFormatSpec :: String -> ErrorTriplet
+rosAppIncorrectFormatSpec formatFile =
+    ErrorTriplet ecIncorrectFormatFile msg LocationNothing
+  where
+    msg =
+      "The format specification " ++ formatFile ++ " does not exist or is not "
+      ++ "readable"
+
 -- | A triplet containing error information.
 data ErrorTriplet = ErrorTriplet ErrorCode String Location
 
@@ -726,18 +777,6 @@ ecCannotOpenHandlersFile = 1
 ecCannotCopyTemplate :: ErrorCode
 ecCannotCopyTemplate = 1
 
--- | JSONPath selectors for a FRET file
-fretFormat :: JSONFormat
-fretFormat = JSONFormat
-  { specInternalVars    = Just "..Internal_variables[*]"
-  , specInternalVarId   = ".name"
-  , specInternalVarExpr = ".assignmentCopilot"
-  , specInternalVarType = Just ".type"
-  , specExternalVars    = Just "..Other_variables[*]"
-  , specExternalVarId   = ".name"
-  , specExternalVarType = Just ".type"
-  , specRequirements    = "..Requirements[*]"
-  , specRequirementId   = ".name"
-  , specRequirementDesc = Just ".fretish"
-  , specRequirementExpr = ".ptLTL"
-  }
+-- | Error: the format file cannot be opened.
+ecIncorrectFormatFile :: ErrorCode
+ecIncorrectFormatFile = 1
