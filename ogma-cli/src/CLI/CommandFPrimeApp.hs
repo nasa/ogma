@@ -58,7 +58,7 @@ import Command.FPrimeApp ( ErrorCode, fprimeApp )
 data CommandOpts = CommandOpts
   { fprimeAppTarget      :: String
   , fprimeAppTemplateDir :: Maybe String
-  , fprimeAppFRETFile    :: Maybe String
+  , fprimeAppInputFile   :: Maybe String
   , fprimeAppVarNames    :: Maybe String
   , fprimeAppVarDB       :: Maybe String
   , fprimeAppHandlers    :: Maybe String
@@ -74,7 +74,7 @@ command c =
   fprimeApp
     (fprimeAppTarget c)
     (fprimeAppTemplateDir c)
-    (fprimeAppFRETFile c)
+    (fprimeAppInputFile c)
     (fprimeAppVarNames c)
     (fprimeAppVarDB c)
     (fprimeAppHandlers c)
@@ -105,9 +105,9 @@ commandOptsParser = CommandOpts
         )
   <*> optional
         ( strOption
-            (  long "fret-file-name"
+            (  long "input-file"
             <> metavar "FILENAME"
-            <> help strFPrimeAppFRETFileNameArgDesc
+            <> help strFPrimeAppFileNameArgDesc
             )
         )
   <*> optional
@@ -141,10 +141,10 @@ strFPrimeAppTemplateDirArgDesc :: String
 strFPrimeAppTemplateDirArgDesc =
   "Directory holding F' component source template"
 
--- | Argument FRET CS to FPrime component generation command
-strFPrimeAppFRETFileNameArgDesc :: String
-strFPrimeAppFRETFileNameArgDesc =
-  "File containing FRET Component Specification"
+-- | Argument input file to FPrime component generation command
+strFPrimeAppFileNameArgDesc :: String
+strFPrimeAppFileNameArgDesc =
+  "File containing input specification"
 
 -- | Argument variable list to FPrime component generation command
 strFPrimeAppVarListArgDesc :: String
