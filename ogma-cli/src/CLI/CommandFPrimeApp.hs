@@ -50,15 +50,16 @@ import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import Command.FPrimeApp ( ErrorCode, fprimeApp )
+import           Command.FPrimeApp (ErrorCode, fprimeApp)
+import qualified Command.FPrimeApp
 
 -- * Command
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppTarget      :: String
+  { fprimeAppInputFile   :: Maybe String
+  , fprimeAppTarget      :: String
   , fprimeAppTemplateDir :: Maybe String
-  , fprimeAppInputFile   :: Maybe String
   , fprimeAppVarNames    :: Maybe String
   , fprimeAppVarDB       :: Maybe String
   , fprimeAppHandlers    :: Maybe String
@@ -68,16 +69,18 @@ data CommandOpts = CommandOpts
 -- to obtain necessary data from the bus and call Copilot when new data
 -- arrives.
 --
--- This is just an uncurried version of "Command.fprimeApp".
+-- This is just a wrapper around "Command.fprimeApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c =
-  fprimeApp
-    (fprimeAppTarget c)
-    (fprimeAppTemplateDir c)
-    (fprimeAppInputFile c)
-    (fprimeAppVarNames c)
-    (fprimeAppVarDB c)
-    (fprimeAppHandlers c)
+command c = fprimeApp (fprimeAppInputFile c) options
+  where
+    options =
+      Command.FPrimeApp.FPrimeAppOptions
+        { Command.FPrimeApp.fprimeAppTargetDir   = fprimeAppTarget c
+        , Command.FPrimeApp.fprimeAppTemplateDir = fprimeAppTemplateDir c
+        , Command.FPrimeApp.fprimeAppVarNames    = fprimeAppVarNames c
+        , Command.FPrimeApp.fprimeAppVariableDB  = fprimeAppVarDB c
+        , Command.FPrimeApp.fprimeAppHandlers    = fprimeAppHandlers c
+        }
 
 -- * CLI
 
@@ -89,7 +92,14 @@ commandDesc = "Generate a complete F' monitoring component"
 -- connected to Copilot monitors.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
-  <$> strOption
+  <$> optional
+        ( strOption
+            (  long "input-file"
+            <> metavar "FILENAME"
+            <> help strFPrimeAppFileNameArgDesc
+            )
+        )
+  <*> strOption
         (  long "app-target-dir"
         <> metavar "DIR"
         <> showDefault
@@ -101,13 +111,6 @@ commandOptsParser = CommandOpts
             (  long "app-template-dir"
             <> metavar "DIR"
             <> help strFPrimeAppTemplateDirArgDesc
-            )
-        )
-  <*> optional
-        ( strOption
-            (  long "input-file"
-            <> metavar "FILENAME"
-            <> help strFPrimeAppFileNameArgDesc
             )
         )
   <*> optional
