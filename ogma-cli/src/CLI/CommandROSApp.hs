@@ -65,6 +65,7 @@ data CommandOpts = CommandOpts
   , rosAppHandlers    :: Maybe String
   , rosAppFormat      :: String
   , rosAppPropFormat  :: String
+  , rosAppPropVia     :: Maybe String
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -83,6 +84,7 @@ command c = rosApp (rosAppInputFile c) options
                 , Command.ROSApp.rosAppHandlers    = rosAppHandlers c
                 , Command.ROSApp.rosAppFormat      = rosAppFormat c
                 , Command.ROSApp.rosAppPropFormat  = rosAppPropFormat c
+                , Command.ROSApp.rosAppPropVia     = rosAppPropVia c
                 }
 
 -- * CLI
@@ -153,6 +155,13 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "smv"
         )
+  <*> optional
+        ( strOption
+            (  long "parse-prop-via"
+            <> metavar "COMMAND"
+            <> help strROSAppPropViaDesc
+            )
+        )
 
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
@@ -190,3 +199,8 @@ strROSAppFormatDesc = "Format of the input file"
 -- | Property format flag description.
 strROSAppPropFormatDesc :: String
 strROSAppPropFormatDesc = "Format of temporal or boolean properties"
+
+-- | External command to pre-process individual properties.
+strROSAppPropViaDesc :: String
+strROSAppPropViaDesc =
+  "Command to pre-process individual properties"
