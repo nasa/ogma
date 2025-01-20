@@ -50,15 +50,16 @@ import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import Command.ROSApp ( ErrorCode, rosApp )
+import           Command.ROSApp (ErrorCode, rosApp)
+import qualified Command.ROSApp
 
 -- * Command
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppTarget      :: String
+  { rosAppInputFile   :: Maybe String
+  , rosAppTarget      :: String
   , rosAppTemplateDir :: Maybe String
-  , rosAppInputFile   :: Maybe String
   , rosAppVarNames    :: Maybe String
   , rosAppVarDB       :: Maybe String
   , rosAppHandlers    :: Maybe String
@@ -68,16 +69,17 @@ data CommandOpts = CommandOpts
 -- that subscribe to obtain necessary data from topics and call Copilot when
 -- new data arrives.
 --
--- This is just an uncurried version of "Command.ROSApp".
+-- This is just a wrapper around "Command.ROSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c =
-  rosApp
-    (rosAppTarget c)
-    (rosAppTemplateDir c)
-    (rosAppInputFile c)
-    (rosAppVarNames c)
-    (rosAppVarDB c)
-    (rosAppHandlers c)
+command c = rosApp (rosAppInputFile c) options
+  where
+    options = Command.ROSApp.ROSAppOptions
+                { Command.ROSApp.rosAppTargetDir   = rosAppTarget c
+                , Command.ROSApp.rosAppTemplateDir = rosAppTemplateDir c
+                , Command.ROSApp.rosAppVariables   = rosAppVarNames c
+                , Command.ROSApp.rosAppVariableDB  = rosAppVarDB c
+                , Command.ROSApp.rosAppHandlers    = rosAppHandlers c
+                }
 
 -- * CLI
 
@@ -89,7 +91,14 @@ commandDesc = "Generate a ROS 2 monitoring package"
 -- application connected to Copilot monitors.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
-  <$> strOption
+  <$> optional
+        ( strOption
+            (  long "input-file"
+            <> metavar "FILENAME"
+            <> help strROSAppFileNameArgDesc
+            )
+        )
+  <*> strOption
         (  long "app-target-dir"
         <> metavar "DIR"
         <> showDefault
@@ -101,13 +110,6 @@ commandOptsParser = CommandOpts
             (  long "app-template-dir"
             <> metavar "DIR"
             <> help strROSAppTemplateDirArgDesc
-            )
-        )
-  <*> optional
-        ( strOption
-            (  long "input-file"
-            <> metavar "FILENAME"
-            <> help strROSAppFileNameArgDesc
             )
         )
   <*> optional
