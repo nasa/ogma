@@ -43,8 +43,8 @@ module CLI.CommandFPrimeApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
-                             strOption, value )
+import Options.Applicative ( Parser, help, long, metavar, optional, short,
+                             showDefault, strOption, value )
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -63,6 +63,7 @@ data CommandOpts = CommandOpts
   , fprimeAppVarNames    :: Maybe String
   , fprimeAppVarDB       :: Maybe String
   , fprimeAppHandlers    :: Maybe String
+  , fprimeAppPropFormat  :: String
   }
 
 -- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
@@ -80,6 +81,7 @@ command c = fprimeApp (fprimeAppInputFile c) options
         , Command.FPrimeApp.fprimeAppVarNames    = fprimeAppVarNames c
         , Command.FPrimeApp.fprimeAppVariableDB  = fprimeAppVarDB c
         , Command.FPrimeApp.fprimeAppHandlers    = fprimeAppHandlers c
+        , Command.FPrimeApp.fprimeAppPropFormat  = fprimeAppPropFormat c
         }
 
 -- * CLI
@@ -134,6 +136,14 @@ commandOptsParser = CommandOpts
             <> help strFPrimeAppHandlerListArgDesc
             )
         )
+  <*> strOption
+        (  long "prop-format"
+        <> short 'p'
+        <> metavar "FORMAT_NAME"
+        <> help strFPrimeAppPropFormatDesc
+        <> showDefault
+        <> value "smv"
+        )
 
 -- | Argument target directory to FPrime component generation command
 strFPrimeAppDirArgDesc :: String
@@ -163,3 +173,7 @@ strFPrimeAppVarDBArgDesc =
 strFPrimeAppHandlerListArgDesc :: String
 strFPrimeAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Property format flag description.
+strFPrimeAppPropFormatDesc :: String
+strFPrimeAppPropFormatDesc = "Format of temporal or boolean properties"
