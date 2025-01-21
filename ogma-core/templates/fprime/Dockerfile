@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install FPrime dependencies and clone fprime from the repo.
 RUN apt-get update
-RUN apt-get install -y git cmake gcc python3 pip
+RUN apt-get install -y git cmake gcc python3 pip default-jre
 
 RUN git clone https://github.com/nasa/fprime
 RUN pip install -r fprime/requirements.txt
