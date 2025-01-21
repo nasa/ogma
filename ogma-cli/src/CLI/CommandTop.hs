@@ -91,6 +91,7 @@ import qualified CLI.CommandCStructs2Copilot
 import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandDiagram
 import qualified CLI.CommandFPrimeApp
+import qualified CLI.CommandOverview
 import qualified CLI.CommandROSApp
 import qualified CLI.CommandStandalone
 
@@ -107,6 +108,7 @@ data CommandOpts =
   | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
   | CommandOptsDiagram                   CLI.CommandDiagram.CommandOpts
   | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
+  | CommandOptsOverview                  CLI.CommandOverview.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
   | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
 
@@ -120,7 +122,8 @@ commandDesc =
 -- | Subparser for multiple subcommands.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = subparser
-  (  subcommandCStructs
+  (  subcommandOverview
+  <> subcommandCStructs
   <> subcommandMsgHandlers
   <> subcommandCFSApp
   <> subcommandFPrimeApp
@@ -128,6 +131,15 @@ commandOptsParser = subparser
   <> subcommandStandalone
   <> subcommandDiagram
   )
+
+-- | Modifier for the overview subcommand, linking the subcommand options and
+-- description to the command @overview@ at top level.
+subcommandOverview :: Mod CommandFields CommandOpts
+subcommandOverview =
+  subcommand
+    "overview"
+    (CommandOptsOverview <$> CLI.CommandOverview.commandOptsParser)
+    CLI.CommandOverview.commandDesc
 
 -- | Modifier for the CStruct to Copilot Struct generation subcommand, linking
 -- the subcommand options and description to the command @structs@ at top
@@ -225,6 +237,8 @@ command (CommandOptsCStructs2MsgHandlers c) =
   id <$> CLI.CommandCStructs2MsgHandlers.command c
 command (CommandOptsFPrimeApp c) =
   id <$> CLI.CommandFPrimeApp.command c
+command (CommandOptsOverview c) =
+  id <$> CLI.CommandOverview.command c
 command (CommandOptsROSApp c) =
   id <$> CLI.CommandROSApp.command c
 command (CommandOptsStandalone c) =
