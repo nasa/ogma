@@ -43,39 +43,50 @@ module CLI.CommandFPrimeApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
-                             strOption, value )
+import Options.Applicative ( Parser, help, long, metavar, optional, short,
+                             showDefault, strOption, value )
 
 -- External imports: command results
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import Command.FPrimeApp ( ErrorCode, fprimeApp )
+import           Command.FPrimeApp (ErrorCode, fprimeApp)
+import qualified Command.FPrimeApp
 
 -- * Command
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppTarget   :: String
-  , fprimeAppFRETFile :: Maybe String
-  , fprimeAppVarNames :: Maybe String
-  , fprimeAppVarDB    :: Maybe String
-  , fprimeAppHandlers :: Maybe String
+  { fprimeAppInputFile   :: Maybe String
+  , fprimeAppTarget      :: String
+  , fprimeAppTemplateDir :: Maybe String
+  , fprimeAppVarNames    :: Maybe String
+  , fprimeAppVarDB       :: Maybe String
+  , fprimeAppHandlers    :: Maybe String
+  , fprimeAppFormat      :: String
+  , fprimeAppPropFormat  :: String
+  , fprimeAppPropVia     :: Maybe String
   }
 
 -- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
 -- to obtain necessary data from the bus and call Copilot when new data
 -- arrives.
 --
--- This is just an uncurried version of "Command.fprimeApp".
+-- This is just a wrapper around "Command.fprimeApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c =
-  fprimeApp
-    (fprimeAppTarget c)
-    (fprimeAppFRETFile c)
-    (fprimeAppVarNames c)
-    (fprimeAppVarDB c)
-    (fprimeAppHandlers c)
+command c = fprimeApp (fprimeAppInputFile c) options
+  where
+    options =
+      Command.FPrimeApp.FPrimeAppOptions
+        { Command.FPrimeApp.fprimeAppTargetDir   = fprimeAppTarget c
+        , Command.FPrimeApp.fprimeAppTemplateDir = fprimeAppTemplateDir c
+        , Command.FPrimeApp.fprimeAppVarNames    = fprimeAppVarNames c
+        , Command.FPrimeApp.fprimeAppVariableDB  = fprimeAppVarDB c
+        , Command.FPrimeApp.fprimeAppHandlers    = fprimeAppHandlers c
+        , Command.FPrimeApp.fprimeAppFormat      = fprimeAppFormat c
+        , Command.FPrimeApp.fprimeAppPropFormat  = fprimeAppPropFormat c
+        , Command.FPrimeApp.fprimeAppPropVia     = fprimeAppPropVia c
+        }
 
 -- * CLI
 
@@ -87,7 +98,14 @@ commandDesc = "Generate a complete F' monitoring component"
 -- connected to Copilot monitors.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
-  <$> strOption
+  <$> optional
+        ( strOption
+            (  long "input-file"
+            <> metavar "FILENAME"
+            <> help strFPrimeAppFileNameArgDesc
+            )
+        )
+  <*> strOption
         (  long "app-target-dir"
         <> metavar "DIR"
         <> showDefault
@@ -96,9 +114,9 @@ commandOptsParser = CommandOpts
         )
   <*> optional
         ( strOption
-            (  long "fret-file-name"
-            <> metavar "FILENAME"
-            <> help strFPrimeAppFRETFileNameArgDesc
+            (  long "app-template-dir"
+            <> metavar "DIR"
+            <> help strFPrimeAppTemplateDirArgDesc
             )
         )
   <*> optional
@@ -122,15 +140,43 @@ commandOptsParser = CommandOpts
             <> help strFPrimeAppHandlerListArgDesc
             )
         )
+  <*> strOption
+        (  long "input-format"
+        <> short 'f'
+        <> metavar "FORMAT_NAME"
+        <> help strFPrimeAppFormatDesc
+        <> showDefault
+        <> value "fcs"
+        )
+  <*> strOption
+        (  long "prop-format"
+        <> short 'p'
+        <> metavar "FORMAT_NAME"
+        <> help strFPrimeAppPropFormatDesc
+        <> showDefault
+        <> value "smv"
+        )
+  <*> optional
+        ( strOption
+            (  long "parse-prop-via"
+            <> metavar "COMMAND"
+            <> help strFPrimeAppPropViaDesc
+            )
+        )
 
 -- | Argument target directory to FPrime component generation command
 strFPrimeAppDirArgDesc :: String
 strFPrimeAppDirArgDesc = "Target directory"
 
--- | Argument FRET CS to FPrime component generation command
-strFPrimeAppFRETFileNameArgDesc :: String
-strFPrimeAppFRETFileNameArgDesc =
-  "File containing FRET Component Specification"
+-- | Argument template directory to FPrime component generation command
+strFPrimeAppTemplateDirArgDesc :: String
+strFPrimeAppTemplateDirArgDesc =
+  "Directory holding F' component source template"
+
+-- | Argument input file to FPrime component generation command
+strFPrimeAppFileNameArgDesc :: String
+strFPrimeAppFileNameArgDesc =
+  "File containing input specification"
 
 -- | Argument variable list to FPrime component generation command
 strFPrimeAppVarListArgDesc :: String
@@ -146,3 +192,16 @@ strFPrimeAppVarDBArgDesc =
 strFPrimeAppHandlerListArgDesc :: String
 strFPrimeAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Format flag description.
+strFPrimeAppFormatDesc :: String
+strFPrimeAppFormatDesc = "Format of the input file"
+
+-- | Property format flag description.
+strFPrimeAppPropFormatDesc :: String
+strFPrimeAppPropFormatDesc = "Format of temporal or boolean properties"
+
+-- | External command to pre-process individual properties.
+strFPrimeAppPropViaDesc :: String
+strFPrimeAppPropViaDesc =
+  "Command to pre-process individual properties"

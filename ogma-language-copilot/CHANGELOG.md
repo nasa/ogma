@@ -1,5 +1,10 @@
 # Revision history for ogma-language-copilot
 
+## [1.6.0] - 2025-01-21
+
+* Version bump 1.6.0 (#208).
+* Add repository information to cabal package (#148).
+
 ## [1.5.0] - 2024-11-21
 
 * Version bump 1.5.0 (#178).

@@ -43,41 +43,49 @@ module CLI.CommandROSApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
-                             strOption, value )
+import Options.Applicative ( Parser, help, long, metavar, optional, short,
+                             showDefault, strOption, value )
 
 -- External imports: command results
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import Command.ROSApp ( ErrorCode, rosApp )
+import           Command.ROSApp (ErrorCode, rosApp)
+import qualified Command.ROSApp
 
 -- * Command
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppTarget      :: String
+  { rosAppInputFile   :: Maybe String
+  , rosAppTarget      :: String
   , rosAppTemplateDir :: Maybe String
-  , rosAppFRETFile    :: Maybe String
   , rosAppVarNames    :: Maybe String
   , rosAppVarDB       :: Maybe String
   , rosAppHandlers    :: Maybe String
+  , rosAppFormat      :: String
+  , rosAppPropFormat  :: String
+  , rosAppPropVia     :: Maybe String
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
 -- that subscribe to obtain necessary data from topics and call Copilot when
 -- new data arrives.
 --
--- This is just an uncurried version of "Command.ROSApp".
+-- This is just a wrapper around "Command.ROSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c =
-  rosApp
-    (rosAppTarget c)
-    (rosAppTemplateDir c)
-    (rosAppFRETFile c)
-    (rosAppVarNames c)
-    (rosAppVarDB c)
-    (rosAppHandlers c)
+command c = rosApp (rosAppInputFile c) options
+  where
+    options = Command.ROSApp.ROSAppOptions
+                { Command.ROSApp.rosAppTargetDir   = rosAppTarget c
+                , Command.ROSApp.rosAppTemplateDir = rosAppTemplateDir c
+                , Command.ROSApp.rosAppVariables   = rosAppVarNames c
+                , Command.ROSApp.rosAppVariableDB  = rosAppVarDB c
+                , Command.ROSApp.rosAppHandlers    = rosAppHandlers c
+                , Command.ROSApp.rosAppFormat      = rosAppFormat c
+                , Command.ROSApp.rosAppPropFormat  = rosAppPropFormat c
+                , Command.ROSApp.rosAppPropVia     = rosAppPropVia c
+                }
 
 -- * CLI
 
@@ -89,7 +97,14 @@ commandDesc = "Generate a ROS 2 monitoring package"
 -- application connected to Copilot monitors.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
-  <$> strOption
+  <$> optional
+        ( strOption
+            (  long "input-file"
+            <> metavar "FILENAME"
+            <> help strROSAppFileNameArgDesc
+            )
+        )
+  <*> strOption
         (  long "app-target-dir"
         <> metavar "DIR"
         <> showDefault
@@ -101,13 +116,6 @@ commandOptsParser = CommandOpts
             (  long "app-template-dir"
             <> metavar "DIR"
             <> help strROSAppTemplateDirArgDesc
-            )
-        )
-  <*> optional
-        ( strOption
-            (  long "fret-file-name"
-            <> metavar "FILENAME"
-            <> help strROSAppFRETFileNameArgDesc
             )
         )
   <*> optional
@@ -131,6 +139,29 @@ commandOptsParser = CommandOpts
             <> help strROSAppHandlerListArgDesc
             )
         )
+  <*> strOption
+        (  long "input-format"
+        <> short 'f'
+        <> metavar "FORMAT_NAME"
+        <> help strROSAppFormatDesc
+        <> showDefault
+        <> value "fcs"
+        )
+  <*> strOption
+        (  long "prop-format"
+        <> short 'p'
+        <> metavar "FORMAT_NAME"
+        <> help strROSAppPropFormatDesc
+        <> showDefault
+        <> value "smv"
+        )
+  <*> optional
+        ( strOption
+            (  long "parse-prop-via"
+            <> metavar "COMMAND"
+            <> help strROSAppPropViaDesc
+            )
+        )
 
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
@@ -141,10 +172,10 @@ strROSAppTemplateDirArgDesc :: String
 strROSAppTemplateDirArgDesc =
   "Directory holding ROS application source template"
 
--- | Argument FRET CS to ROS app generation command
-strROSAppFRETFileNameArgDesc :: String
-strROSAppFRETFileNameArgDesc =
-  "File containing FRET Component Specification"
+-- | Argument input file to ROS app generation command
+strROSAppFileNameArgDesc :: String
+strROSAppFileNameArgDesc =
+  "File containing input specification"
 
 -- | Argument variable list to ROS app generation command
 strROSAppVarListArgDesc :: String
@@ -160,3 +191,16 @@ strROSAppVarDBArgDesc =
 strROSAppHandlerListArgDesc :: String
 strROSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Format flag description.
+strROSAppFormatDesc :: String
+strROSAppFormatDesc = "Format of the input file"
+
+-- | Property format flag description.
+strROSAppPropFormatDesc :: String
+strROSAppPropFormatDesc = "Format of temporal or boolean properties"
+
+-- | External command to pre-process individual properties.
+strROSAppPropViaDesc :: String
+strROSAppPropViaDesc =
+  "Command to pre-process individual properties"

@@ -32,8 +32,9 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-extra
-version:             1.5.0
+version:             1.6.0
 homepage:            https://github.com/nasa/ogma
+bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
@@ -59,6 +60,11 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
 -- exactly what we publish, unmodified by anyone external to our project.
 x-curation: uncurated
 
+source-repository head
+  type:     git
+  location: git@github.com:nasa/ogma.git
+  subdir:   ogma-extra
+
 library
 
   exposed-modules:
@@ -70,10 +76,10 @@ library
   build-depends:
       base        >= 4.11.0.0 && < 5
     , aeson       >= 2.0.0.0  && < 2.2
-    , bytestring
-    , Cabal
-    , directory
-    , filepath
+    , bytestring  >= 0.10.8.2 && < 0.13
+    , Cabal       >= 2.2.0.0  && < 3.9
+    , directory   >= 1.3.1.5  && < 1.4
+    , filepath    >= 1.4.2    && < 1.6
     , microstache >= 1.0      && < 1.1
     , text        >= 1.2.3.1  && < 2.1
 
@@ -94,10 +100,10 @@ test-suite unit-tests
     Main.hs
 
   build-depends:
-      base
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
+      base                       >= 4.11.0.0 && < 5
+    , QuickCheck                 >= 2.8.2    && < 2.16
+    , test-framework             >= 0.8.2    && < 0.9
+    , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4
 
     , ogma-extra
 

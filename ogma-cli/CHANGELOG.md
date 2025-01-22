@@ -1,5 +1,17 @@
 # Revision history for ogma-cli
 
+## [1.6.0] - 2025-01-21
+
+* Version bump 1.6.0 (#208).
+* Update contribution guidelines (#161).
+* Provide ability to customize template in fprime command (#185).
+* Provide ability to customize template in standalone command (#189).
+* Add repository information to cabal package (#148).
+* Add version bounds to all dependencies (#119).
+* Introduce new diagram command (#194).
+* Provide ability to preprocess properties via external command (#197).
+* Extend support for file, property formats across backends (#204).
+
 ## [1.5.0] - 2024-11-21
 
 * Version bump 1.5.0 (#178).

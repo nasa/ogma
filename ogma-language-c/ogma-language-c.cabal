@@ -32,8 +32,9 @@ cabal-version:       2.0
 build-type:          Custom
 
 name:                ogma-language-c
-version:             1.5.0
+version:             1.6.0
 homepage:            https://github.com/nasa/ogma
+bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
@@ -61,12 +62,17 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
 -- exactly what we publish, unmodified by anyone external to our project.
 x-curation: uncurated
 
+source-repository head
+  type:     git
+  location: git@github.com:nasa/ogma.git
+  subdir:   ogma-language-c
+
 custom-setup
   setup-depends:
       base    >= 4.11.0.0 && < 5
     , Cabal   >= 2.0 && < 3.9
-    , process
-    , BNFC    >= 2.9.1
+    , process >= 1.6      && < 1.7
+    , BNFC    >= 2.9.1    && < 2.10
 
 library
 
@@ -85,7 +91,7 @@ library
 
   build-depends:
       base  >= 4.11.0.0 && < 5
-    , array >= 0.5.2.0
+    , array >= 0.5.2.0  && < 0.6
 
   hs-source-dirs:
     src
@@ -102,9 +108,9 @@ test-suite unit-tests
 
   build-depends:
       base                       >= 4.11.0.0 && < 5
-    , QuickCheck
-    , test-framework
-    , test-framework-quickcheck2
+    , QuickCheck                 >= 2.8.2    && < 2.16
+    , test-framework             >= 0.8.2    && < 0.9
+    , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4
 
     , ogma-language-c
 

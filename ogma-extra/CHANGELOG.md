@@ -1,5 +1,12 @@
 # Revision history for ogma-extra
 
+## [1.6.0] - 2025-01-21
+
+* Version bump 1.6.0 (#208).
+* Deprecate unnecessary functions (#185).
+* Add repository information to cabal package (#148).
+* Add version bounds to all dependencies (#119).
+
 ## [1.5.0] - 2024-11-21
 
 * Version bump 1.5.0 (#178).

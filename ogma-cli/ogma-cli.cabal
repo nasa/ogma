@@ -32,8 +32,9 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.5.0
+version:             1.6.0
 homepage:            https://github.com/nasa/ogma
+bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
@@ -74,6 +75,9 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                        <https://github.com/nasa/fprime F'>
                        components that use Copilot for monitoring.
                      .
+                     - Generating monitors from state diagrams specified using
+                       a graphical notation.
+                     .
                      The main invocation with @--help@ lists sub-commands available.
                      .
                      >$ ogma --help
@@ -92,6 +96,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  fprime                   Generate a complete F' monitoring component
                      >  ros                      Generate a ROS 2 monitoring application
                      >  standalone               Generate a Copilot file from an input specification
+                     >  diagram                  Generate a monitor from a state machine diagram
                      .
                      For further information, see:
                      .
@@ -116,6 +121,11 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
 -- exactly what we publish, unmodified by anyone external to our project.
 x-curation: uncurated
 
+source-repository head
+  type:     git
+  location: git@github.com:nasa/ogma.git
+  subdir:   ogma-cli
+
 executable ogma
 
   main-is:
@@ -125,6 +135,7 @@ executable ogma
     CLI.CommandCFSApp
     CLI.CommandCStructs2Copilot
     CLI.CommandCStructs2MsgHandlers
+    CLI.CommandDiagram
     CLI.CommandFPrimeApp
     CLI.CommandROSApp
     CLI.CommandStandalone
@@ -133,8 +144,8 @@ executable ogma
 
   build-depends:
       base                 >= 4.11.0.0 && < 5
-    , optparse-applicative
-    , ogma-core            >= 1.5.0 && < 1.6
+    , optparse-applicative >= 0.14     && < 0.19
+    , ogma-core            >= 1.6.0 && < 1.7
 
   hs-source-dirs:
     src
@@ -154,11 +165,11 @@ test-suite test-ogma
 
   build-depends:
       base                 >= 4.11.0.0 && < 5
-    , HUnit
-    , process
-    , test-framework
-    , test-framework-hunit
-    , unix
+    , HUnit                >= 1.2.0.0  && < 1.7
+    , process              >= 1.6      && < 1.7
+    , test-framework       >= 0.8.2    && < 0.9
+    , test-framework-hunit >= 0.2.0    && < 0.4
+    , unix                 >= 2.7.2.2  && < 2.9
 
   hs-source-dirs:
     tests

@@ -1,4 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE MultiWayIf                #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -40,18 +43,21 @@
 module Command.ROSApp
     ( rosApp
     , ErrorCode
+    , ROSAppOptions(..)
     )
   where
 
 -- External imports
 import qualified Control.Exception    as E
-import           Control.Monad.Except (ExceptT, liftEither, liftIO, runExceptT,
-                                       throwError)
+import           Control.Monad.Except (ExceptT(..), liftEither, liftIO,
+                                       runExceptT, throwError)
 import           Data.Aeson           (eitherDecode, object, (.=))
-import           Data.List            (find, intersperse)
+import           Data.List            (isInfixOf, isPrefixOf, find, intersperse)
 import           Data.Maybe           (fromMaybe)
 import           Data.Text.Lazy       (pack)
+import           System.Directory     (doesFileExist)
 import           System.FilePath      ((</>))
+import           System.Process       (readProcess)
 
 -- External imports: auxiliary
 import Data.ByteString.Extra  as B (safeReadFile)
@@ -62,10 +68,25 @@ import System.Directory.Extra (copyTemplate)
 import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
                                  requirementName, requirements)
 import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
+import Language.XMLSpec.Parser  (parseXMLSpec)
 
 -- Internal imports: auxiliary
 import Command.Result                 (Result (..))
 import Data.Location                  (Location (..))
+
+-- Internal imports: language ASTs, transformers
+import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
+import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
+                                                             pBoolSpec )
+
+import qualified Language.SMV.AbsSMV       as SMV
+import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
+import           Language.SMV.Substitution (substituteBoolExpr)
+
+import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot,
+                                                              boolSpecNames)
+import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
+                                                         boolSpecNames)
 
 -- Internal imports
 import Paths_ogma_core ( getDataDir )
@@ -73,33 +94,33 @@ import Paths_ogma_core ( getDataDir )
 -- * ROS app generation
 
 -- | Generate a new ROS application connected to Copilot.
-rosApp :: FilePath       -- ^ Target directory where the application
-                         --   should be created.
-       -> Maybe FilePath -- ^ Directory where the template is to be found.
-       -> Maybe FilePath -- ^ FRET Component specification file.
-       -> Maybe FilePath -- ^ File containing a list of variables to make
-                         --   available to Copilot.
-       -> Maybe FilePath -- ^ File containing a list of known variables
-                         --   with their types and the message IDs they
-                         --   can be obtained from.
-       -> Maybe FilePath -- ^ File containing a list of handlers used in the
-                         --   Copilot specification. The handlers are assumed
-                         --   to receive no arguments.
+rosApp :: Maybe FilePath -- ^ Input specification file.
+       -> ROSAppOptions  -- ^ Options to the ROS backend.
        -> IO (Result ErrorCode)
-rosApp targetDir mTemplateDir fretCSFile varNameFile varDBFile handlersFile =
-  processResult $ do
-    cs    <- parseOptionalFRETCS fretCSFile
-    vs    <- parseOptionalVariablesFile varNameFile
-    rs    <- parseOptionalRequirementsListFile handlersFile
-    varDB <- parseOptionalVarDBFile varDBFile
+rosApp fp options =
+    processResult $ do
+      spec  <- parseOptionalInputFile
+                 fp
+                 options
+                 (exprPair (rosAppPropFormat options))
+      vs    <- parseOptionalVariablesFile varNameFile
+      rs    <- parseOptionalRequirementsListFile handlersFile
+      varDB <- parseOptionalVarDBFile varDBFile
 
-    liftEither $ checkArguments cs vs rs
+      liftEither $ checkArguments spec vs rs
 
-    let varNames = fromMaybe (fretCSExtractExternalVariables cs) vs
-        monitors = fromMaybe (fretCSExtractHandlers cs) rs
+      let varNames = fromMaybe (specExtractExternalVariables spec) vs
+          monitors = fromMaybe (specExtractHandlers spec) rs
 
-    e <- liftIO $ rosApp' targetDir mTemplateDir varNames varDB monitors
-    liftEither e
+      e <- liftIO $
+             rosApp' targetDir mTemplateDir varNames varDB monitors
+      liftEither e
+  where
+    targetDir    = rosAppTargetDir options
+    mTemplateDir = rosAppTemplateDir options
+    varNameFile  = rosAppVariables options
+    varDBFile    = rosAppVariableDB options
+    handlersFile = rosAppHandlers options
 
 -- | Generate a new ROS application connected to Copilot, by copying the
 -- template and filling additional necessary files.
@@ -168,20 +189,90 @@ rosApp' targetDir mTemplateDir varNames varDB monitors =
 
 -- ** Argument processing
 
--- | Process FRET component spec, if available, and return its abstract
--- representation.
-parseOptionalFRETCS :: Maybe FilePath
-                    -> ExceptT ErrorTriplet IO (Maybe (Spec String))
-parseOptionalFRETCS Nothing   = return Nothing
-parseOptionalFRETCS (Just fp) = do
-  -- Throws an exception if the file cannot be read.
-  content <- liftIO $ B.safeReadFile fp
-  let fretCS :: Either String (Spec String)
-      fretCS = parseJSONSpec return fretFormat =<< eitherDecode =<< content
+-- | Options used to customize the conversion of specifications to ROS
+-- applications.
+data ROSAppOptions = ROSAppOptions
+  { rosAppTargetDir   :: FilePath       -- ^ Target directory where the
+                                        -- application should be created.
+  , rosAppTemplateDir :: Maybe FilePath -- ^ Directory where the template is
+                                        -- to be found.
+  , rosAppVariables   :: Maybe FilePath -- ^ File containing a list of
+                                        -- variables to make available to
+                                        -- Copilot.
+  , rosAppVariableDB  :: Maybe FilePath -- ^ File containing a list of known
+                                        -- variables with their types and the
+                                        -- message IDs they can be obtained
+                                        -- from.
+  , rosAppHandlers    :: Maybe FilePath -- ^ File containing a list of
+                                        -- handlers used in the Copilot
+                                        -- specification. The handlers are
+                                        -- assumed to receive no arguments.
+  , rosAppFormat      :: String         -- ^ Format of the input file.
+  , rosAppPropFormat  :: String         -- ^ Format used for input properties.
+  , rosAppPropVia     :: Maybe String   -- ^ Use external command to
+                                        -- pre-process system properties.
+  }
 
-  case fretCS of
-    Left e   -> throwError $ cannotOpenFRETFile fp e
-    Right cs -> return $ Just cs
+-- | Process input specification, if available, and return its abstract
+-- representation.
+parseOptionalInputFile :: Maybe FilePath
+                       -> ROSAppOptions
+                       -> ExprPair
+                       -> ExceptT ErrorTriplet IO (Maybe (Spec String))
+parseOptionalInputFile Nothing   _    _ =
+  return Nothing
+parseOptionalInputFile (Just fp) opts (ExprPair parse replace print ids def) =
+  ExceptT $ do
+    let wrapper = wrapVia (rosAppPropVia opts) parse
+    -- Obtain format file.
+    --
+    -- A format name that exists as a file in the disk always takes preference
+    -- over a file format included with Ogma. A file format with a forward
+    -- slash in the name is always assumed to be a user-provided filename.
+    -- Regardless of whether the file is user-provided or known to Ogma, we
+    -- check (again) whether the file exists, and print an error message if
+    -- not.
+    let formatName = rosAppFormat opts
+    exists  <- doesFileExist formatName
+    dataDir <- getDataDir
+    let formatFile
+          | isInfixOf "/" formatName || exists
+          = formatName
+          | otherwise
+          = dataDir </> "data" </> "formats" </>
+               (formatName ++ "_" ++ rosAppPropFormat opts)
+    formatMissing <- not <$> doesFileExist formatFile
+
+    if formatMissing
+      then return $ Left $ rosAppIncorrectFormatSpec formatFile
+      else do
+        res <- do
+          format <- readFile formatFile
+
+          -- All of the following operations use Either to return error
+          -- messages.  The use of the monadic bind to pass arguments from one
+          -- function to the next will cause the program to stop at the
+          -- earliest error.
+          if | isPrefixOf "XMLFormat" format
+             -> do let xmlFormat = read format
+                   content <- readFile fp
+                   parseXMLSpec
+                     (fmap (fmap print) . wrapper) (print def) xmlFormat content
+             | otherwise
+             -> do let jsonFormat = read format
+                   content <- B.safeReadFile fp
+                   case content of
+                     Left e  -> return $ Left e
+                     Right b -> do case eitherDecode b of
+                                     Left e  -> return $ Left e
+                                     Right v ->
+                                       parseJSONSpec
+                                         (fmap (fmap print) . wrapper)
+                                         jsonFormat
+                                         v
+        case res of
+          Left e  -> return $ Left $ cannotOpenInputFile fp e
+          Right x -> return $ Right $ Just x
 
 -- | Process a variable selection file, if available, and return the variable
 -- names.
@@ -230,11 +321,11 @@ parseOptionalVarDBFile (Just fp) = do
 -- The ROS backend provides several modes of operation, which are selected
 -- by providing different arguments to the `ros` command.
 --
--- When a FRET component specification file is provided, the variables and
--- requirements defined in it are used unless variables or handlers files are
--- provided, in which case the latter take priority.
+-- When an input specification file is provided, the variables and requirements
+-- defined in it are used unless variables or handlers files are provided, in
+-- which case the latter take priority.
 --
--- If a FRET file is not provided, then the user must provide BOTH a variable
+-- If an input file is not provided, then the user must provide BOTH a variable
 -- list, and a list of handlers.
 checkArguments :: Maybe (Spec String)
                -> Maybe [String]
@@ -247,21 +338,21 @@ checkArguments _       (Just []) _         = Left wrongArguments
 checkArguments _       _         (Just []) = Left wrongArguments
 checkArguments _       _         _         = Right ()
 
--- | Extract the variables from a FRET component specification, and sanitize
--- them to be used in ROS.
-fretCSExtractExternalVariables :: Maybe (Spec String) -> [String]
-fretCSExtractExternalVariables Nothing   = []
-fretCSExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
-                                         $ map externalVariableName
-                                         $ externalVariables cs
+-- | Extract the variables from a specification, and sanitize them to be used
+-- in ROS.
+specExtractExternalVariables :: Maybe (Spec String) -> [String]
+specExtractExternalVariables Nothing   = []
+specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
+                                       $ map externalVariableName
+                                       $ externalVariables cs
 
--- | Extract the requirements from a FRET component specification, and sanitize
--- them to match the names of the handlers used by Copilot.
-fretCSExtractHandlers :: Maybe (Spec String) -> [String]
-fretCSExtractHandlers Nothing   = []
-fretCSExtractHandlers (Just cs) = map handlerNameF
-                                $ map requirementName
-                                $ requirements cs
+-- | Extract the requirements from a specification, and sanitize them to match
+-- the names of the handlers used by Copilot.
+specExtractHandlers :: Maybe (Spec String) -> [String]
+specExtractHandlers Nothing   = []
+specExtractHandlers (Just cs) = map handlerNameF
+                              $ map requirementName
+                              $ requirements cs
   where
     handlerNameF = ("handler" ++) . sanitizeUCIdentifier
 
@@ -310,6 +401,64 @@ data MsgData = MsgData
   , msgDataVarName :: String
   , msgDataVarType :: String
   }
+
+-- * Handler for boolean expressions
+
+-- | Handler for boolean expressions that knows how to parse them, replace
+-- variables in them, and convert them to Copilot.
+--
+-- It also contains a default value to be used whenever an expression cannot be
+-- found in the input file.
+data ExprPair = forall a . ExprPair
+  { exprParse   :: String -> Either String a
+  , exprReplace :: [(String, String)] -> a -> a
+  , exprPrint   :: a -> String
+  , exprIdents  :: a -> [String]
+  , exprUnknown :: a
+  }
+
+-- | Return a handler depending on whether it should be for CoCoSpec boolean
+-- expressions or for SMV boolean expressions. We default to SMV if not format
+-- is given.
+exprPair :: String -> ExprPair
+exprPair "cocospec" =
+  ExprPair
+    (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
+    (\_ -> id)
+    (CoCoSpec.boolSpec2Copilot)
+    (CoCoSpec.boolSpecNames)
+    (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
+exprPair "literal" =
+  ExprPair
+    Right
+    (\_ -> id)
+    id
+    (const [])
+    "undefined"
+exprPair _ =
+  ExprPair
+    (SMV.pBoolSpec . SMV.myLexer)
+    (substituteBoolExpr)
+    (SMV.boolSpec2Copilot)
+    (SMV.boolSpecNames)
+    (SMV.BoolSpecSignal (SMV.Ident "undefined"))
+
+-- | Parse a property using an auxiliary program to first translate it, if
+-- available.
+--
+-- If a program is given, it is first called on the property, and then the
+-- result is parsed with the parser passed as an argument. If a program is not
+-- given, then the parser is applied to the given string.
+wrapVia :: Maybe String                -- ^ Auxiliary program to translate the
+                                       -- property.
+        -> (String -> Either String a) -- ^ Parser used on the result.
+        -> String                      -- ^ Property to parse.
+        -> IO (Either String a)
+wrapVia Nothing  parse s = return (parse s)
+wrapVia (Just f) parse s =
+  E.handle (\(e :: E.IOException) -> return $ Left $ show e) $ do
+    out <- readProcess f [] s
+    return $ parse out
 
 -- * ROS apps content
 
@@ -547,18 +696,17 @@ wrongArguments =
     ErrorTriplet ecWrongArguments msg LocationNothing
   where
     msg =
-      "the arguments provided are insufficient: you must provide a FRET "
-      ++ "component specification file, or both a variables and a handlers "
-      ++ "file."
+      "the arguments provided are insufficient: you must provide an input "
+      ++ "specification, or both a variables and a handlers file."
 
--- | Exception handler to deal with the case in which the FRET CS cannot be
+-- | Exception handler to deal with the case in which the input file cannot be
 -- opened.
-cannotOpenFRETFile :: FilePath -> String -> ErrorTriplet
-cannotOpenFRETFile file _e =
-    ErrorTriplet ecCannotOpenFRETFile msg (LocationFile file)
+cannotOpenInputFile :: FilePath -> String -> ErrorTriplet
+cannotOpenInputFile file _e =
+    ErrorTriplet ecCannotOpenInputFile msg (LocationFile file)
   where
     msg =
-      "cannot open FRET component specification file " ++ file
+      "cannot open input specification file " ++ file
 
 -- | Exception handler to deal with the case in which the variable DB cannot be
 -- opened.
@@ -599,6 +747,15 @@ cannotCopyTemplate e =
       ++ " permissions to write in the destination directory."
       ++ show e
 
+-- | Error messages associated to the format file not being found.
+rosAppIncorrectFormatSpec :: String -> ErrorTriplet
+rosAppIncorrectFormatSpec formatFile =
+    ErrorTriplet ecIncorrectFormatFile msg LocationNothing
+  where
+    msg =
+      "The format specification " ++ formatFile ++ " does not exist or is not "
+      ++ "readable"
+
 -- | A triplet containing error information.
 data ErrorTriplet = ErrorTriplet ErrorCode String Location
 
@@ -623,10 +780,9 @@ type ErrorCode = Int
 ecWrongArguments :: ErrorCode
 ecWrongArguments = 1
 
--- | Error: the FRET component specification provided by the user cannot be
--- opened.
-ecCannotOpenFRETFile :: ErrorCode
-ecCannotOpenFRETFile = 1
+-- | Error: the input specification provided by the user cannot be opened.
+ecCannotOpenInputFile :: ErrorCode
+ecCannotOpenInputFile = 1
 
 -- | Error: the variable DB provided by the user cannot be opened.
 ecCannotOpenDBUser :: ErrorCode
@@ -645,18 +801,6 @@ ecCannotOpenHandlersFile = 1
 ecCannotCopyTemplate :: ErrorCode
 ecCannotCopyTemplate = 1
 
--- | JSONPath selectors for a FRET file
-fretFormat :: JSONFormat
-fretFormat = JSONFormat
-  { specInternalVars    = Just "..Internal_variables[*]"
-  , specInternalVarId   = ".name"
-  , specInternalVarExpr = ".assignmentCopilot"
-  , specInternalVarType = Just ".type"
-  , specExternalVars    = Just "..Other_variables[*]"
-  , specExternalVarId   = ".name"
-  , specExternalVarType = Just ".type"
-  , specRequirements    = "..Requirements[*]"
-  , specRequirementId   = ".name"
-  , specRequirementDesc = Just ".fretish"
-  , specRequirementExpr = ".ptLTL"
-  }
+-- | Error: the format file cannot be opened.
+ecIncorrectFormatFile :: ErrorCode
+ecIncorrectFormatFile = 1

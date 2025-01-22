@@ -5,6 +5,7 @@ import Data.Monoid                    ( mempty )
 import Test.Framework                 ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.HUnit ( testCase )
 import Test.HUnit                     ( assertBool )
+import System.Directory               ( getTemporaryDirectory )
 
 -- Internal imports
 import Command.CStructs2Copilot (cstructs2Copilot)
@@ -20,37 +21,37 @@ main =
 tests :: [Test.Framework.Test]
 tests =
   [
-    testCase "fret-cmd-fret-cs-ok"
-      (testFretComponentSpec2Copilot "tests/fret_good.json" True)
+    testCase "standalone-cmd-fcs-ok"
+      (testStandaloneFCS "tests/fcs_good.json" True)
     -- Should pass
 
-  , testCase "fret-cmd-fret-file-not-found"
-      (testFretComponentSpec2Copilot "tests/file-invalid.json" False)
+  , testCase "standalone-cmd-fsc-file-not-found"
+      (testStandaloneFCS "tests/file-invalid.json" False)
     -- Should fail because the file does not exist
 
-  , testCase "fret-cmd-fret-parse-fail-1"
-      (testFretComponentSpec2Copilot
-         "tests/commands-fret-error-parsing-failed-1.json"
+  , testCase "standalone-cmd-fcs-parse-fail-1"
+      (testStandaloneFCS
+         "tests/commands-fcs-error-parsing-failed-1.json"
          False
       )
     -- Should fail because the opening bracket is [ and not {
 
-  , testCase "fret-cmd-fret-parse-fail-2"
-      (testFretComponentSpec2Copilot
-         "tests/commands-fret-error-parsing-failed-2.json"
+  , testCase "standalone-cmd-fcs-parse-fail-2"
+      (testStandaloneFCS
+         "tests/commands-fcs-error-parsing-failed-2.json"
          False
       )
     -- Should fail because a field is missing in an external variable
 
-  , testCase "fret-cmd-fret-parse-fail-3"
-      (testFretComponentSpec2Copilot
-         "tests/commands-fret-error-parsing-failed-3.json"
+  , testCase "standalone-cmd-fcs-parse-fail-3"
+      (testStandaloneFCS
+         "tests/commands-fcs-error-parsing-failed-3.json"
          False
       )
     -- Should fail because a field is missing in an internal variable
 
-  , testCase "fret-reqs-db-cocospec"
-      (testFretReqsDBCoCoSpec2Copilot "tests/fret-example1.json" True)
+  , testCase "standalone-reqs-db-cocospec"
+      (testStandaloneFDB "tests/fdb-example1.json" True)
     -- Should pass
 
   , testCase "structs-parse-ok"
@@ -88,24 +89,27 @@ testCStructs2Copilot file success = do
     errorMsg = "The result of the transformation of the C header file "
                ++ file ++ " to Copilot struct declarations was unexpected."
 
--- | Test FRET Component Spec 2 Copilot transformation.
+-- | Test standalone backend.
 --
--- This test uses the Copilot backend for FRET files, so it generates a Copilot
--- file.
+-- This test uses the standalone, so it generates a Copilot file.
 --
 -- This IO action fails if any of the following are true:
 --   * The given file is not found or accessible.
 --   * The format in the given file is incorrect.
 --   * Ogma fails due to an internal error or bug.
-testFretComponentSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON requirements file
-                              -> Bool
-                              -> IO ()
-testFretComponentSpec2Copilot file success = do
+testStandaloneFCS :: FilePath  -- ^ Path to a input file
+                  -> Bool
+                  -> IO ()
+testStandaloneFCS file success = do
+    targetDir <- getTemporaryDirectory
     let opts = StandaloneOptions
                  { standaloneFormat      = "fcs"
                  , standalonePropFormat  = "smv"
                  , standaloneTypeMapping = [("int", "Int64"), ("real", "Float")]
-                 , standaloneFilename    = "fret"
+                 , standaloneFilename    = "monitor"
+                 , standaloneTargetDir   = targetDir
+                 , standaloneTemplateDir = Nothing
+                 , standalonePropVia     = Nothing
                  }
     result <- standalone file opts
 
@@ -115,29 +119,32 @@ testFretComponentSpec2Copilot file success = do
 
     assertBool errorMsg testPass
   where
-    errorMsg = "The result of the transformation of FRET CS file "
+    errorMsg = "The result of the transformation of input file "
                ++ file ++ " to Copilot was unexpected."
 
--- | Test FRET Component Spec 2 Copilot transformation.
+-- | Test standalone backend with FDB format.
 --
--- This test uses the Copilot backend for FRET files with the CoCoSpec
--- frontend.
+-- This test uses the standalone backend with the FDB format and the CoCoSpec
+-- property format.
 --
 -- This IO action fails if any of the following are true:
 --   * The given file is not found or accessible.
 --   * The format in the given file is incorrect.
 --   * Ogma fails due to an internal error or bug.
 --
-testFretReqsDBCoCoSpec2Copilot :: FilePath  -- ^ Path to a FRET/JSON
-                                            --   requirements file
-                               -> Bool
-                               -> IO ()
-testFretReqsDBCoCoSpec2Copilot file success = do
+testStandaloneFDB :: FilePath  -- ^ Path to input file
+                  -> Bool
+                  -> IO ()
+testStandaloneFDB file success = do
+    targetDir <- getTemporaryDirectory
     let opts = StandaloneOptions
                  { standaloneFormat      = "fdb"
                  , standalonePropFormat  = "cocospec"
                  , standaloneTypeMapping = []
-                 , standaloneFilename    = "fret"
+                 , standaloneFilename    = "monitor"
+                 , standaloneTargetDir   = targetDir
+                 , standaloneTemplateDir = Nothing
+                 , standalonePropVia     = Nothing
                  }
     result <- standalone file opts
 
@@ -147,5 +154,5 @@ testFretReqsDBCoCoSpec2Copilot file success = do
 
     assertBool errorMsg testPass
   where
-    errorMsg = "The result of the transformation of FRET CS file "
+    errorMsg = "The result of the transformation of input file "
                ++ file ++ " to Copilot was unexpected."

@@ -1,4 +1,5 @@
 -- Copyright 2024 United States Government as represented by the Administrator
+-- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -36,7 +37,7 @@
 module Language.Trans.Spec2Copilot where
 
 -- External imports
-import Data.List  ( intersect, lookup, union )
+import Data.List  ( intercalate, intersect, lookup, union )
 import Data.Maybe ( fromMaybe )
 
 -- External imports: auxiliary
@@ -56,46 +57,17 @@ spec2Copilot :: String                         -- Spec / target file name
              -> ([(String, String)] -> a -> a) -- Expr subsitution function
              -> (a -> String)                  -- Expr show function
              -> Spec a                         -- Specification
-             -> Either String String
+             -> Either String (String, String, String, String, String)
 spec2Copilot specName typeMaps exprTransform showExpr spec =
-    pure $ unlines $ concat
-      [ imports
-      , externs
-      , internals
-      , reqs
-      , clock
-      , ftp
-      , pre
-      , tpre
-      , notPreviousNot
-      , copilotSpec
-      , main'
-      ]
+    pure (externs, internals, reqs, triggers, specName)
 
   where
 
-    -- Import header block
-    imports :: [String]
-    imports =
-      [ "import           Copilot.Compile.C99"
-      , "import           Copilot.Language          hiding (prop)"
-      , "import           Copilot.Language.Prelude"
-      , "import           Copilot.Library.LTL       (next)"
-      , "import           Copilot.Library.MTL       hiding (since,"
-        ++ " alwaysBeen, trigger)"
-      , "import           Copilot.Library.PTLTL     (since, previous,"
-        ++ " alwaysBeen)"
-      , "import qualified Copilot.Library.PTLTL     as PTLTL"
-      , "import qualified Copilot.Library.MTL       as MTL"
-      , "import           Language.Copilot          (reify)"
-      , "import           Prelude                   hiding ((&&), (||), (++),"
-        ++ " (<=), (>=), (<), (>), (==), (/=), not)"
-      , ""
-      ]
-
     -- Extern streams
-    externs = concatMap externVarToDecl
-                        (externalVariables spec)
+    externs = unlines'
+            $ intercalate [""]
+            $ map externVarToDecl
+                  (externalVariables spec)
       where
         externVarToDecl i = [ propName
                                 ++ " :: Stream "
@@ -110,14 +82,15 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                                 ++ show (externalVariableName i)
                                 ++ " "
                                 ++ "Nothing"
-                            , ""
                             ]
           where
             propName = safeMap nameSubstitutions (externalVariableName i)
 
     -- Internal stream definitions
-    internals = concatMap internalVarToDecl
-                      (internalVariables spec)
+    internals = unlines'
+              $ intercalate [""]
+              $ map internalVarToDecl
+                    (internalVariables spec)
       where
         internalVarToDecl i = (\implem ->
                                 [ propName
@@ -129,20 +102,19 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                                 , propName
                                     ++ " = "
                                     ++ implem
-
-                                , ""
                                 ]) implementation
           where
             propName = safeMap nameSubstitutions (internalVariableName i)
             implementation = (internalVariableExpr i)
 
     -- Encoding of requirements as boolean streams
-    reqs :: [String]
-    reqs = concatMap reqToDecl (requirements spec)
+    reqs :: String
+    reqs = unlines'
+         $ intercalate [""]
+         $ map reqToDecl (requirements spec)
       where
         reqToDecl i = [ reqComment, reqSignature
                       , reqBody nameSubstitutions
-                      , ""
                       ]
           where
             reqName = safeMap nameSubstitutions (requirementName i)
@@ -165,72 +137,16 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                              (showExpr (exprTransform subs (requirementExpr i)))
 
 
-    -- Auxiliary streams: clock
-    clock :: [String]
-    clock = [ ""
-            , "-- | Clock that increases in one-unit steps."
-            , "clock :: Stream Int64"
-            , "clock = [0] ++ (clock + 1)"
-            , ""
-            ]
-
-    -- Auxiliary streams: first time point
-    ftp :: [String]
-    ftp = [ ""
-          , "-- | First Time Point"
-          , "ftp :: Stream Bool"
-          , "ftp = [True] ++ false"
-          , ""
-          ]
-
-    -- Auxiliary streams: pre
-    pre = [ ""
-          , "pre :: Stream Bool -> Stream Bool"
-          , "pre = ([False] ++)"
-          ]
-
-    -- Auxiliary streams: tpre
-    tpre = [ ""
-           , "tpre :: Stream Bool -> Stream Bool"
-           , "tpre = ([True] ++)"
-           ]
-
-    -- Auxiliary streams: notPreviousNot
-    notPreviousNot :: [String]
-    notPreviousNot = [ ""
-                     , "notPreviousNot :: Stream Bool -> Stream Bool"
-                     , "notPreviousNot = not . PTLTL.previous . not"
-                     ]
-
-    -- Main specification
-    copilotSpec :: [String]
-    copilotSpec = [ ""
-                  , "-- | Complete specification. Calls C handler functions"
-                    ++ " when"
-                  , "-- properties are violated."
-                  , "spec :: Spec"
-                  , "spec = do"
-                  ]
-                  ++ triggers
-                  ++ [ "" ]
+    -- Main specification triggers
+    triggers :: String
+    triggers = unlines' $ fmap reqTrigger (requirements spec)
       where
-        triggers :: [String]
-        triggers = fmap reqTrigger (requirements spec)
-
         reqTrigger :: Requirement a -> String
         reqTrigger r = "  trigger " ++ show handlerName ++ " (not "
                        ++ propName ++ ") " ++ "[]"
           where
             handlerName = "handler" ++ sanitizeUCIdentifier (requirementName r)
             propName    = safeMap nameSubstitutions (requirementName r)
-
-    -- Main program that compiles specification to C in two files (code and
-    -- header).
-    main' :: [String]
-    main' = [ ""
-            , "main :: IO ()"
-            , "main = reify spec >>= compile \"" ++ specName ++ "\""
-            ]
 
     -- Map from a variable name to its desired identifier in the code
     -- generated.
@@ -247,7 +163,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                      ++ externalVariableMap
                      ++ requirementNameMap
 
-    -- Variable/requirement names used in the component spec.
+    -- Variable/requirement names used in the input spec.
     internalVariableNames = map internalVariableName
                           $ internalVariables spec
 
@@ -300,7 +216,7 @@ specAnalyze spec
     requirementNameMap =
       map (\x -> (x, "prop" ++ sanitizeUCIdentifier x)) requirementNames
 
-    -- Variable/requirement names used in the component spec.
+    -- Variable/requirement names used in the input spec.
     internalVariableNames = map internalVariableName
                           $ internalVariables spec
 
@@ -318,3 +234,9 @@ specAnalyze spec
 -- substitution table.
 safeMap :: [(String, String)] -> String -> String
 safeMap ls k = fromMaybe k $ lookup k ls
+
+-- | Create a string from a list of strings, inserting new line characters
+-- between them. Unlike 'Prelude.unlines', this function does not insert
+-- an end of line character at the end of the last string.
+unlines' :: [String] -> String
+unlines' = intercalate "\n"

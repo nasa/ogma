@@ -43,7 +43,7 @@ module CLI.CommandStandalone
   where
 
 -- External imports
-import Options.Applicative (Parser, help, long, metavar, many, short,
+import Options.Applicative (Parser, help, long, many, metavar, optional, short,
                             showDefault, strOption, switch, value)
 
 -- External imports: command results
@@ -58,11 +58,14 @@ import qualified Command.Standalone
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { standaloneFileName   :: FilePath
-  , standaloneFormat     :: String
-  , standalonePropFormat :: String
-  , standaloneTypes      :: [String]
-  , standaloneTarget     :: String
+  { standaloneTargetDir   :: FilePath
+  , standaloneTemplateDir :: Maybe FilePath
+  , standaloneFileName    :: FilePath
+  , standaloneFormat      :: String
+  , standalonePropFormat  :: String
+  , standaloneTypes       :: [String]
+  , standaloneTarget      :: String
+  , standalonePropVia     :: Maybe String
   }
 
 -- | Transform an input specification into a Copilot specification.
@@ -71,10 +74,13 @@ command c = standalone (standaloneFileName c) internalCommandOpts
   where
     internalCommandOpts :: Command.Standalone.StandaloneOptions
     internalCommandOpts = Command.Standalone.StandaloneOptions
-      { Command.Standalone.standaloneFormat      = standaloneFormat c
+      { Command.Standalone.standaloneTargetDir   = standaloneTargetDir c
+      , Command.Standalone.standaloneTemplateDir = standaloneTemplateDir c
+      , Command.Standalone.standaloneFormat      = standaloneFormat c
       , Command.Standalone.standalonePropFormat  = standalonePropFormat c
       , Command.Standalone.standaloneTypeMapping = types
       , Command.Standalone.standaloneFilename    = standaloneTarget c
+      , Command.Standalone.standalonePropVia     = standalonePropVia c
       }
 
     types :: [(String, String)]
@@ -98,6 +104,20 @@ commandDesc =
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> strOption
+        (  long "target-dir"
+        <> metavar "DIR"
+        <> showDefault
+        <> value "copilot"
+        <> help strStandaloneTargetDirDesc
+        )
+  <*> optional
+        ( strOption
+            (  long "template-dir"
+            <> metavar "DIR"
+            <> help strStandaloneTemplateDirArgDesc
+            )
+        )
+  <*> strOption
         (  long "file-name"
         <> metavar "FILENAME"
         <> help strStandaloneFilenameDesc
@@ -132,6 +152,21 @@ commandOptsParser = CommandOpts
         <> showDefault
         <> value "monitor"
         )
+  <*> optional
+        ( strOption
+            (  long "parse-prop-via"
+            <> metavar "COMMAND"
+            <> help strStandalonePropViaDesc
+            )
+        )
+
+-- | Target dir flag description.
+strStandaloneTargetDirDesc :: String
+strStandaloneTargetDirDesc = "Target directory"
+
+-- | Template dir flag description.
+strStandaloneTemplateDirArgDesc :: String
+strStandaloneTemplateDirArgDesc = "Directory holding standalone source template"
 
 -- | Filename flag description.
 strStandaloneFilenameDesc :: String
@@ -153,6 +188,11 @@ strStandaloneMapTypeDesc = "Map a type to another type"
 strStandaloneTargetDesc :: String
 strStandaloneTargetDesc =
   "Filename prefix for monitoring files in target language"
+
+-- | External command to pre-process individual properties.
+strStandalonePropViaDesc :: String
+strStandalonePropViaDesc =
+  "Command to pre-process individual properties"
 
 -- * Error codes
 
