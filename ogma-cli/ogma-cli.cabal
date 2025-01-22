@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.5.0
+version:             1.6.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
@@ -145,7 +145,7 @@ executable ogma
   build-depends:
       base                 >= 4.11.0.0 && < 5
     , optparse-applicative >= 0.14     && < 0.19
-    , ogma-core            >= 1.5.0 && < 1.6
+    , ogma-core            >= 1.6.0 && < 1.7
 
   hs-source-dirs:
     src
