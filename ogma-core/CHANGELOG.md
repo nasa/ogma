@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-01-20
+## [1.6.0] - 2025-01-21
 
+* Version bump 1.6.0 (#208).
 * Replace queueSize with QUEUE_SIZE in FPP file (#186).
 * Use template expansion system to generate F' monitoring component (#185).
 * Use template expansion system to generate standalone Copilot monitor (#189).

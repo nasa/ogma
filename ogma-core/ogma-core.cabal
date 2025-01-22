@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.5.0
+version:             1.6.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
@@ -135,14 +135,14 @@ library
     , process                 >= 1.6      && < 1.7
     , text                    >= 1.2.3.1  && < 2.1
 
-    , ogma-extra              >= 1.5.0 && < 1.6
-    , ogma-language-c         >= 1.5.0 && < 1.6
-    , ogma-language-cocospec  >= 1.5.0 && < 1.6
-    , ogma-language-copilot   >= 1.5.0 && < 1.6
-    , ogma-language-jsonspec  >= 1.5.0 && < 1.6
-    , ogma-language-smv       >= 1.5.0 && < 1.6
-    , ogma-language-xmlspec   >= 1.5.0 && < 1.6
-    , ogma-spec               >= 1.5.0 && < 1.6
+    , ogma-extra              >= 1.6.0 && < 1.7
+    , ogma-language-c         >= 1.6.0 && < 1.7
+    , ogma-language-cocospec  >= 1.6.0 && < 1.7
+    , ogma-language-copilot   >= 1.6.0 && < 1.7
+    , ogma-language-jsonspec  >= 1.6.0 && < 1.7
+    , ogma-language-smv       >= 1.6.0 && < 1.7
+    , ogma-language-xmlspec   >= 1.6.0 && < 1.7
+    , ogma-spec               >= 1.6.0 && < 1.7
 
   hs-source-dirs:
     src
