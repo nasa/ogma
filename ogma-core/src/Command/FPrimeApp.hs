@@ -44,18 +44,19 @@ module Command.FPrimeApp
   where
 
 -- External imports
-import qualified Control.Exception    as E
-import           Control.Monad.Except ( ExceptT(..), liftEither, liftIO,
-                                        runExceptT, throwError )
-import           Data.Aeson           ( eitherDecode, object, (.=) )
-import           Data.Char            ( toUpper )
-import           Data.List            ( isInfixOf, isPrefixOf, find,
-                                        intercalate, nub, sort )
-import           Data.Maybe           ( fromMaybe )
-import           Data.Text.Lazy       ( pack )
-import           System.Directory     ( doesFileExist )
-import           System.FilePath      ( (</>) )
-import           System.Process       ( readProcess )
+import qualified Control.Exception      as E
+import           Control.Monad.Except   ( ExceptT(..), liftEither, runExceptT,
+                                          throwError )
+import           Control.Monad.IO.Class ( liftIO )
+import           Data.Aeson             ( eitherDecode, object, (.=) )
+import           Data.Char              ( toUpper )
+import           Data.List              ( isInfixOf, isPrefixOf, find,
+                                          intercalate, nub, sort )
+import           Data.Maybe             ( fromMaybe )
+import           Data.Text.Lazy         ( pack )
+import           System.Directory       ( doesFileExist )
+import           System.FilePath        ( (</>) )
+import           System.Process         ( readProcess )
 
 -- External imports: auxiliary
 import Data.ByteString.Extra  as B ( safeReadFile )
