@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2025-01-25
+
+* Add all auxiliary test files to distributable Cabal package (#216).
+
 ## [1.6.0] - 2025-01-21
 
 * Version bump 1.6.0 (#208).

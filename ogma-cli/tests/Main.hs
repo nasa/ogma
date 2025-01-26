@@ -48,7 +48,7 @@ tests =
   , testCase "cli-cmd-standalone-fail" (runErrorCode ["standalone", "--incorrect-argument"] False)
     -- Should fail due to arguments being incorrect
 
-  , testCase "cli-cmd-standalone-fcs" (parseStandaloneFCS "examples/fcs-2.json" True)
+  , testCase "cli-cmd-standalone-fcs" (parseStandaloneFCS "tests/fcs-example1.json" True)
     -- Should pass
 
   , testCase "cli-cmd-standalone-file-not-found" (parseStandaloneFCS "tests/file-invalid.json" False)
