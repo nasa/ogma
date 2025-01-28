@@ -28,11 +28,9 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 
--- This is a simplified grammar of SMV temporal logic expressions, extended
--- with the tags that FRET uses around names.
---
--- The format of FRET files itself uses JSON, so this grammar applies
--- only to specific fields in those files.
+-- This is a simplified grammar of SMV temporal logic expressions. This grammar
+-- allows for the presence of tags around some expressions, which some tools
+-- that produce SMV include in expressions.
 
 entrypoints BoolSpec;
 
