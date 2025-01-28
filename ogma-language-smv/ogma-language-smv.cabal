@@ -53,8 +53,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     This library contains a frontend to read SMV Boolean expressions, used by
-                     the tool FRET to capture requirement specifications.
+                     This library contains a frontend to read SMV Boolean expressions.
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.

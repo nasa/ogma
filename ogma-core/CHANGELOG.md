@@ -1,8 +1,9 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-01-26
+## [1.X.Y] - 2025-01-27
 
 * Import liftIO from Control.Monad.IO.Class (#215).
+* Remove references to old design of Ogma from hlint files (#220).
 
 ## [1.6.0] - 2025-01-21
 
