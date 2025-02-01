@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-01-25
+## [1.X.Y] - 2025-02-01
 
 * Add all auxiliary test files to distributable Cabal package (#216).
+* Remove extraneous EOL character (#224).
 
 ## [1.6.0] - 2025-01-21
 
