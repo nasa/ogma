@@ -1,7 +1,8 @@
 # Revision history for ogma-extra
 
-## [1.X.Y] - 2025-01-30
+## [1.X.Y] - 2025-02-01
 * Bump upper version constraint on Cabal (#213).
+* Bump upper version constraint on aeson, text (#225).
 
 ## [1.6.0] - 2025-01-21
 
