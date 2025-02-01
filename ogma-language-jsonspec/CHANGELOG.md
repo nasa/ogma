@@ -1,5 +1,9 @@
 # Revision history for ogma-language-jsonspec
 
+## [1.X.Y] - 2025-02-01
+
+* Bump upper version constraint on aeson, text (#225).
+
 ## [1.6.0] - 2025-01-21
 
 * Version bump 1.6.0 (#208).
