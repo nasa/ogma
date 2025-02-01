@@ -1,5 +1,8 @@
 # Revision history for ogma-language-c
 
+## [1.X.Y] - 2025-01-30
+* Bump upper version constraint on Cabal (#213).
+
 ## [1.6.0] - 2025-01-21
 
 * Version bump 1.6.0 (#208).
