@@ -5,6 +5,7 @@
 * Import liftIO from Control.Monad.IO.Class (#215).
 * Remove references to old design of Ogma from hlint files (#220).
 * Bump upper version constraint on aeson, text (#225).
+* Remove extraneous EOL character (#224).
 
 ## [1.6.0] - 2025-01-21
 

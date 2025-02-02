@@ -1,9 +1,10 @@
 # Revision history for ogma-language-cocospec
 
-## [1.X.Y] - 2025-01-30
+## [1.X.Y] - 2025-02-01
 
 * Remove references to old design of Ogma from documentation (#220).
 * Bump upper version constraint on Cabal (#213).
+* Remove extraneous EOL character (#224).
 
 ## [1.6.0] - 2025-01-21
 
