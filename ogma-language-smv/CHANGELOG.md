@@ -5,6 +5,7 @@
 * Remove references to old design of Ogma from documentation (#220).
 * Bump upper version constraint on Cabal (#213).
 * Remove extraneous EOL character (#224).
+* Specify tools needed using build-tool-depends (#149).
 
 ## [1.6.0] - 2025-01-21
 
