@@ -4,6 +4,7 @@
 
 * Add all auxiliary test files to distributable Cabal package (#216).
 * Remove extraneous EOL character (#224).
+* Update installation instructions to use cabal install (#149).
 
 ## [1.6.0] - 2025-01-21
 
