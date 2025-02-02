@@ -19,7 +19,10 @@
 #include "Icarous_msgids.h"
 #include "Icarous_msg.h"
 
-{{variablesS}}
+{{#variables}}
+{{varDeclType}} {{varDeclName}};
+{{/variables}}
+
 void split(void);
 void step(void);
 
@@ -98,7 +101,10 @@ void COPILOT_AppInit(void)
     **  messages
     */
     CFE_SB_CreatePipe(&COPILOT_CommandPipe, COPILOT_PIPE_DEPTH,"COPILOT_CMD_PIPE");
-{{msgSubscriptionsS}}
+    {{#msgIds}}
+    CFE_SB_Subscribe({{.}}, COPILOT_CommandPipe);
+    {{/msgIds}}
+
 
     CFE_EVS_SendEvent (COPILOT_STARTUP_INF_EID, CFE_EVS_INFORMATION,
                "COPILOT App Initialized. Version %d.%d.%d.%d",
@@ -125,7 +131,13 @@ void COPILOT_ProcessCommandPacket(void)
 
     switch (MsgId)
     {
-{{ msgCasesS }}
+        {{#msgCases}}
+        case {{msgInfoId}}:
+            COPILOT_Process{{msgInfoDesc}}();
+            break;
+
+        {{/msgCases}}
+
         default:
             COPILOT_HkTelemetryPkt.copilot_command_error_count++;
             CFE_EVS_SendEvent(COPILOT_COMMAND_ERR_EID,CFE_EVS_ERROR,
@@ -137,7 +149,22 @@ void COPILOT_ProcessCommandPacket(void)
 
 } /* End COPILOT_ProcessCommandPacket */
 
-{{msgHandlerS}}
+{{#msgHandlers}}
+/**
+* Make ICAROUS data available to Copilot and run monitors.
+*/
+void COPILOT_Process{{msgDataDesc}}(void)
+{
+    {{msgDataVarType}}* msg;
+    msg = ({{msgDataVarType}}*) COPILOTMsgPtr;
+    {{msgDataVarName}} = *msg;
+
+    // Run all copilot monitors.
+    step();
+}
+
+{{/msgHandlers}}
+
 
 /**
  * Report copilot property violations.
