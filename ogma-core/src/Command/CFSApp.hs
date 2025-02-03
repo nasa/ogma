@@ -46,13 +46,15 @@ module Command.CFSApp
   where
 
 -- External imports
-import qualified Control.Exception         as E
-import           Data.Aeson                (ToJSON (..), decode)
-import           Data.List                 (find)
-import           Data.Text                 (Text)
-import           Data.Text.Lazy            (unpack)
-import           GHC.Generics              (Generic)
-import           System.FilePath           ( (</>) )
+import qualified Control.Exception    as E
+import           Control.Monad.Except ( ExceptT (..), liftEither, runExceptT,
+                                        throwError )
+import           Data.Aeson           ( ToJSON (..), decode )
+import           Data.List            ( find )
+import           Data.Text            ( Text )
+import           Data.Text.Lazy       ( unpack )
+import           GHC.Generics         ( Generic )
+import           System.FilePath      ( (</>) )
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
@@ -71,8 +73,11 @@ cFSApp :: FilePath       -- ^ Target directory where the application
        -> Maybe FilePath -- ^ File containing a list of known variables
                          --   with their types and the message IDs they
                          --   can be obtained from.
+       -> Maybe FilePath -- ^ File containing a list of handlers used in the
+			 --   Copilot specification. The handlers are assumed
+                         --   to receive no arguments.
        -> IO (Result ErrorCode)
-cFSApp targetDir mTemplateDir varNameFile varDBFile = do
+cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile = do
 
   -- We first try to open the two files we need to fill in details in the CFS
   -- app template.
@@ -85,9 +90,12 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile = do
                   Nothing -> return knownVars
                   Just fn -> fmap read <$> lines <$> readFile fn
 
-  case varDBE of
-    Left  e     -> return $ cannotOpenDB varDBFile e
-    Right varDB -> do
+  handlersE <- parseOptionalRequirementsListFile handlersFile
+
+  case (varDBE, handlersE) of
+    (Left  e, _)                  -> return $ cannotOpenDB varDBFile e
+    (_,       Left e)             -> return $ cannotOpenHandlers handlersFile e
+    (Right varDB, Right handlers) -> do
 
       -- The variable list is mandatory. This check fails if the filename
       -- provided does not exist or if the file cannot be opened. The condition
@@ -118,7 +126,7 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile = do
             -- This is a Data.List.unzip4
             let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
 
-            let subst = toJSON $ appComponents vars ids infos datas
+            let subst = toJSON $ appComponents vars ids infos datas handlers
 
             -- Expand template
             copyTemplate templateDir subst targetDir
@@ -185,20 +193,36 @@ data MsgData = MsgData
 
 instance ToJSON MsgData
 
+-- | The message ID to subscribe to.
+type Trigger = String
+
 -- | Data that may be relevant to generate a cFS monitoring application.
 data AppData = AppData
   { variables   :: [VarDecl]
   , msgIds      :: [MsgInfoId]
   , msgCases    :: [MsgInfo]
   , msgHandlers :: [MsgData]
+  , triggers    :: [Trigger]
   }
   deriving (Generic)
 
 instance ToJSON AppData
 
 -- | Return the components that are customized in a cFS application.
-appComponents :: [VarDecl] -> [MsgInfoId] -> [MsgInfo] -> [MsgData] -> AppData
+appComponents :: [VarDecl]
+              -> [MsgInfoId]
+              -> [MsgInfo]
+              -> [MsgData]
+              -> [Trigger]
+              -> AppData
 appComponents = AppData
+
+-- | Process a requirements / handlers list file, if available, and return the
+-- handler names.
+parseOptionalRequirementsListFile :: Maybe FilePath
+                                  -> IO (Either E.SomeException [String])
+parseOptionalRequirementsListFile Nothing   = return $ Right []
+parseOptionalRequirementsListFile (Just fp) = E.try $ lines <$> readFile fp
 
 -- * Exception handlers
 
@@ -245,6 +269,20 @@ cannotCopyTemplate _e =
       ++ " there's free space in the disk and that you have the necessary"
       ++ " permissions to write in the destination directory."
 
+-- | Exception handler to deal with the case in which the handlers file cannot
+-- be opened.
+cannotOpenHandlers :: Maybe FilePath -> E.SomeException -> Result ErrorCode
+cannotOpenHandlers Nothing _e =
+    Error ecCannotOpenHandlersCritical msg LocationNothing
+  where
+    msg =
+      "cannotOpenDB: this is a bug. Please notify the developers"
+cannotOpenHandlers (Just file) _e =
+    Error ecCannotOpenHandlersUser msg (LocationFile file)
+  where
+    msg =
+      "cannot open handlers file " ++ file
+
 -- * Error codes
 
 -- | Encoding of reasons why the command can fail.
@@ -259,6 +297,14 @@ ecCannotOpenDBCritical = 2
 -- | Error: the variable DB provided by the user cannot be opened.
 ecCannotOpenDBUser :: ErrorCode
 ecCannotOpenDBUser = 1
+
+-- | Internal error: handlers file cannot be opened.
+ecCannotOpenHandlersCritical :: ErrorCode
+ecCannotOpenHandlersCritical = 2
+
+-- | Error: the handlers file provided by the user cannot be opened.
+ecCannotOpenHandlersUser :: ErrorCode
+ecCannotOpenHandlersUser = 1
 
 -- | Error: the variable file provided by the user cannot be opened.
 ecCannotOpenVarFile :: ErrorCode
