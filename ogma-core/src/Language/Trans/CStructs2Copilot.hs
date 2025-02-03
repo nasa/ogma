@@ -151,9 +151,9 @@ structInstance cstruct =
     instanceHead = "Struct" ++ " " ++ instanceName
     instanceName = cStructName2Haskell $ cStructName cstruct
 
-    instanceBody = [ instanceTypename, instanceToValues ]
+    instanceBody = [ instanceTypeName, instanceToValues ]
 
-    instanceTypename = "typename" ++ " " ++ "_" ++ " = " ++ show (cStructName cstruct)
+    instanceTypeName = "typeName" ++ " " ++ "_" ++ " = " ++ show (cStructName cstruct)
 
     instanceToValues =
       "toValues" ++ " " ++ "v" ++ " = " ++ "[ " ++ intercalate ", " valueDecls ++ " ]"
