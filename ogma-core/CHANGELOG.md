@@ -9,6 +9,7 @@
 * Make structured data available to cFS template (#229).
 * Update Copilot struct code generator to use new function names (#231).
 * Simplify Copilot struct definitions by using generics (#199).
+* Update cFS backend to process a handlers file (#234).
 
 ## [1.6.0] - 2025-01-21
 

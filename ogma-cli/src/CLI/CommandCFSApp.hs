@@ -60,6 +60,7 @@ data CommandOpts = CommandOpts
   , cFSAppTemplateDir :: Maybe String
   , cFSAppVarNames    :: String
   , cFSAppVarDB       :: Maybe String
+  , cFSAppHandlers    :: Maybe String
   }
 
 -- | Create <https://cfs.gsfc.nasa.gov/ NASA core Flight System> (cFS)
@@ -74,6 +75,7 @@ command c =
     (cFSAppTemplateDir c)
     (cFSAppVarNames c)
     (cFSAppVarDB c)
+    (cFSAppHandlers c)
 
 -- * CLI
 
@@ -113,6 +115,13 @@ commandOptsParser = CommandOpts
             <> help strCFSAppVarDBArgDesc
             )
         )
+  <*> optional
+        ( strOption
+            (  long "handlers-file"
+            <> metavar "FILENAME"
+            <> help strCFSAppHandlerListArgDesc
+            )
+        )
 
 -- | Argument target directory to cFS app generation command
 strCFSAppDirArgDesc :: String
@@ -132,3 +141,8 @@ strCFSAppVarListArgDesc =
 strCFSAppVarDBArgDesc :: String
 strCFSAppVarDBArgDesc =
   "File containing a DB of known cFS/ICAROUS variables"
+
+-- | Argument handler list to cFS app generation command
+strCFSAppHandlerListArgDesc :: String
+strCFSAppHandlerListArgDesc =
+  "File containing list of Copilot handlers used in the specification"
