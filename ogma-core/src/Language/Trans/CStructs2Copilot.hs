@@ -83,14 +83,14 @@ cstruct2CopilotDecls cstruct = [ cStructToCopilotStruct cstruct
 --
 -- @
 -- data AStruct = AStruct
---   { aSF1 :: Word8 }
+--     { aSF1 :: Word8 }
+--   deriving Generic
 -- @
 cStructToCopilotStruct :: CStruct -> String
-cStructToCopilotStruct cstruct =
-    "data "
-    ++ datatype
-    ++ " = "
-    ++ constructor
+cStructToCopilotStruct cstruct = unlines
+    [ "data " ++ datatype ++ " = " ++ constructor
+    , "   deriving Generic"
+    ]
   where
 
     -- The name of the type (e.g., @AStruct@).
@@ -140,37 +140,17 @@ cStructToCopilotStruct cstruct =
 --
 -- @
 --   instance Struct AStruct where
---     typename _ = "a_struct_t"
---     toValues v = [Value Word8 (aSF1 v)]
+--     typeName = typeNameDefault
+--     toValues = toValuesDefault
 -- @
 structInstance :: CStruct -> String
-structInstance cstruct =
-    "instance " ++ instanceHead ++ " where\n" ++
-    unlines (map ("  " ++ ) instanceBody)
+structInstance cstruct = unlines
+    [ "instance Struct " ++ instanceName ++ " where"
+    , "  typeName = typeNameDefault"
+    , "  toValues = toValuesDefault"
+    ]
   where
-    instanceHead = "Struct" ++ " " ++ instanceName
     instanceName = cStructName2Haskell $ cStructName cstruct
-
-    instanceBody = [ instanceTypeName, instanceToValues ]
-
-    instanceTypeName = "typeName" ++ " " ++ "_" ++ " = " ++ show (cStructName cstruct)
-
-    instanceToValues =
-      "toValues" ++ " " ++ "v" ++ " = " ++ "[ " ++ intercalate ", " valueDecls ++ " ]"
-
-    valueDecls = map (toValueDecl cstruct) (cStructFields cstruct)
-
-    toValueDecl :: CStruct -> CField -> String
-    toValueDecl c (CPlain t n) =
-      "Value" ++ " " ++ cTypeName2HaskellType t
-              ++ " (" ++ fieldName c n
-              ++ " " ++ "v" ++ ")"
-
-    toValueDecl c (CArray t n _len) =
-      "Value" ++ " (" ++ "Array"
-              ++ " " ++ cTypeName2HaskellType t ++ ")"
-              ++ " " ++ "(" ++ fieldName c n
-              ++ " " ++ "v" ++ ")"
 
 -- | Convert a 'CStruct' definition to Copilot @Typed@ instance declaration.
 -- For example, for the struct:
@@ -185,25 +165,15 @@ structInstance cstruct =
 --
 -- @
 --   instance Typed AStruct where
---     typeOf = Struct (Field 0)
+--     typeOf = typeOfDefault
 -- @
 typedInstance :: CStruct -> String
-typedInstance cstruct =
-    "instance " ++ instanceHead ++ " where\n" ++
-    unlines (map ("  " ++ ) instanceBody)
+typedInstance cstruct = unlines
+    [ "instance Typed " ++ instanceName ++ " where"
+    , "  typeOf = typeOfDefault"
+    ]
   where
-    instanceHead = "Typed" ++ " " ++ instanceName
     instanceName = cStructName2Haskell $ cStructName cstruct
-
-    instanceBody   = [ instanceTypeOf ]
-
-    instanceTypeOf = "typeOf" ++ " = " ++ "Struct" ++ " "
-                  ++ "(" ++ dataConstructorName ++ " " ++ unwords vs ++ ")"
-
-    dataConstructorName = cStructName2Haskell $ cStructName cstruct
-
-    vs = map ((\x -> "(" ++ "Field" ++ " " ++ x ++ ")") . defaultValue)
-             (cStructFields cstruct)
 
 -- * Auxiliary functions
 
@@ -246,22 +216,3 @@ cTypeName2HaskellType "int32_t"  = "Int32"
 cTypeName2HaskellType "int64_t"  = "Int64"
 cTypeName2HaskellType "bool"     = "Bool"
 cTypeName2HaskellType t          = camelCaseTypeName t
-
--- | Create a default value in Copilot for a field of a given type.
-defaultValue :: CField -> String
-defaultValue CArray {}    = "(array [])"
-defaultValue (CPlain t _) = defaultValueOfType t
-  where
-    defaultValueOfType "float"    = "0"
-    defaultValueOfType "double"   = "0"
-    defaultValueOfType "int"      = "0"
-    defaultValueOfType "uint8_t"  = "0"
-    defaultValueOfType "uint16_t" = "0"
-    defaultValueOfType "uint32_t" = "0"
-    defaultValueOfType "uint64_t" = "0"
-    defaultValueOfType "int8_t"   = "0"
-    defaultValueOfType "int16_t"  = "0"
-    defaultValueOfType "int32_t"  = "0"
-    defaultValueOfType "int64_t"  = "0"
-    defaultValueOfType "bool"     = "True"
-    defaultValueOfType _t         = "0"
