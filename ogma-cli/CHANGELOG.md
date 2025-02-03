@@ -1,11 +1,12 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-02-02
+## [1.X.Y] - 2025-02-03
 
 * Add all auxiliary test files to distributable Cabal package (#216).
 * Remove extraneous EOL character (#224).
 * Update installation instructions to use cabal install (#149).
 * Update README with new cFS template variables (#229).
+* Expose handlers-file argument to cFS backend (#234).
 
 ## [1.6.0] - 2025-01-21
 
