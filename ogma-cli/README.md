@@ -217,21 +217,23 @@ $ ogma cfs --app-template-dir my_template/ --variable-db examples/cfs-variable-d
 Ogma will copy the files in that directory to the target path, filling in
 several holes with specific information:
 
-- `{{variablesS}}`: this will be replaced by a list of variable declarations,
-  one for each global variable that holds information read from the cFS
-software bus that must be made accessible to the monitoring code.
+- `{{variables}}`: list of variable declarations, one for each global variable
+  that holds information read from the cFS software bus that must be made
+accessible to the monitoring code. For each variable, a `{{varDeclName}}` and a
+`{{varDeclType}}` are defined.
 
-- `{{msgSubscriptionsS}}`: this will be replaced by a list of calls to
-  `CFE_SB_Subscribe`, subscribing to the necessary information coming in the
-software bus.
+- `{{msgIds}}`: list of message IDs containing information relevant for the
+  application, which presumably will be passed to `CFE_SB_Subscribe`, to
+subscribe to those messages in the software bus.
 
-- `{{msgCasesS}}`: this will be replaced by a switch case statements that match
-  the ID of an incoming message, to handle information being received that must
-be updated and would trigger a re-evaluation of the monitors.
+- `{{msgCases}}`: list of message IDs, together with the kind of information
+  they contain. For each item, a `{{msgInfoId}}` and a `{{msgInfoDesc}}` are
+available. This allows the cFS app to process incoming messages and delegate
+the processing to an auxiliary function.
 
-- `{{msgHandlerS}}`: this will be replaced by function definitions of the
-  functions that will be called to actually update the variables with
-information coming from the software bus, and re-evaluate the monitors.
+- `{{msgHandler}}`: list of messages received, together with the kind of data
+  they carry, and their names. For each item, a `{{msgDataDesc}}`,
+`{{msgDataVarName}}` and a `{{msgDataVarType}}` are defined.
 
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss

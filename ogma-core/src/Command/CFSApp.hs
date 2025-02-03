@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -47,10 +47,11 @@ module Command.CFSApp
 
 -- External imports
 import qualified Control.Exception         as E
-import           Data.Aeson                (decode, object, (.=))
+import           Data.Aeson                (ToJSON (..), decode)
 import           Data.List                 (find)
 import           Data.Text                 (Text)
-import           Data.Text.Lazy            (pack, unpack)
+import           Data.Text.Lazy            (unpack)
+import           GHC.Generics              (Generic)
 import           System.FilePath           ( (</>) )
 
 -- Internal imports: auxiliary
@@ -117,14 +118,7 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile = do
             -- This is a Data.List.unzip4
             let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
 
-            let (variablesS, msgSubscriptionS, msgCasesS, msgHandlerS) =
-                  appComponents vars ids infos datas
-                subst = object $
-                          [ "variablesS"        .= pack variablesS
-                          , "msgSubscriptionsS" .= pack msgSubscriptionS
-                          , "msgCasesS"         .= pack msgCasesS
-                          , "msgHandlerS"       .= pack msgHandlerS
-                          ]
+            let subst = toJSON $ appComponents vars ids infos datas
 
             -- Expand template
             copyTemplate templateDir subst targetDir
@@ -160,9 +154,12 @@ variableMap varDB varName =
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
-  { varDeclName :: String
-  , varDeclType :: String
-  }
+    { varDeclName :: String
+    , varDeclType :: String
+    }
+  deriving (Generic)
+
+instance ToJSON VarDecl
 
 -- | The message ID to subscribe to.
 type MsgInfoId = String
@@ -170,59 +167,38 @@ type MsgInfoId = String
 -- | A message ID to subscribe to and the name associated to it. The name is
 -- used to generate a suitable name for the message handler.
 data MsgInfo = MsgInfo
-  { msgInfoId   :: MsgInfoId
-  , msgInfoDesc :: String
-  }
+    { msgInfoId   :: MsgInfoId
+    , msgInfoDesc :: String
+    }
+  deriving (Generic)
+
+instance ToJSON MsgInfo
 
 -- | Information on the data provided by a message with a given description,
 -- and the type of the data it carries.
 data MsgData = MsgData
-  { msgDataDesc    :: String
-  , msgDataVarName :: String
-  , msgDataVarType :: String
+    { msgDataDesc    :: String
+    , msgDataVarName :: String
+    , msgDataVarType :: String
+    }
+  deriving (Generic)
+
+instance ToJSON MsgData
+
+-- | Data that may be relevant to generate a cFS monitoring application.
+data AppData = AppData
+  { variables   :: [VarDecl]
+  , msgIds      :: [MsgInfoId]
+  , msgCases    :: [MsgInfo]
+  , msgHandlers :: [MsgData]
   }
+  deriving (Generic)
+
+instance ToJSON AppData
 
 -- | Return the components that are customized in a cFS application.
-appComponents :: [VarDecl] -> [MsgInfoId] -> [MsgInfo] -> [MsgData]
-              -> (String, String, String, String)
-appComponents variables msgIds msgNames msgDatas = cfsFileContents
-  where
-    variablesS = unlines $ map toVarDecl variables
-    toVarDecl varDecl = varDeclType varDecl ++ " " ++ varDeclName varDecl ++ ";"
-
-    msgSubscriptionS     = unlines $ map toMsgSubscription msgIds
-    toMsgSubscription nm =
-      "    CFE_SB_Subscribe(" ++ nm ++ ", COPILOT_CommandPipe);"
-
-    msgCasesS = unlines $ map toMsgCase msgNames
-    toMsgCase msgInfo = unlines
-      [ "        case " ++ msgInfoId msgInfo ++ ":"
-      , "            COPILOT_Process" ++ msgInfoDesc msgInfo ++ "();"
-      , "            break;"
-      ]
-
-    msgHandlerS = unlines $ map toMsgHandler msgDatas
-    toMsgHandler msgData =
-      unlines [ "/**"
-              , "* Make ICAROUS data available to Copilot and run monitors."
-              , "*/"
-              , "void COPILOT_Process" ++ msgDataDesc msgData ++ "(void)"
-              , "{"
-              , "    " ++ msgDataVarType msgData ++ "* msg;"
-              , "    msg = (" ++ msgDataVarType msgData ++ "*) COPILOTMsgPtr;"
-              , "    " ++ msgDataVarName msgData ++ " = *msg;"
-              , ""
-              , "    // Run all copilot monitors."
-              , "    step();"
-              , "}"
-              ]
-
-    cfsFileContents =
-      ( variablesS
-      , msgSubscriptionS
-      , msgCasesS
-      , msgHandlerS
-      )
+appComponents :: [VarDecl] -> [MsgInfoId] -> [MsgInfo] -> [MsgData] -> AppData
+appComponents = AppData
 
 -- * Exception handlers
 
