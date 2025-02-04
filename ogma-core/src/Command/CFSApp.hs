@@ -49,7 +49,9 @@ module Command.CFSApp
 import qualified Control.Exception    as E
 import           Control.Monad.Except ( ExceptT (..), liftEither, runExceptT,
                                         throwError )
-import           Data.Aeson           ( ToJSON (..), decode )
+import           Data.Aeson           ( ToJSON (..), Value (Null, Object),
+                                        decode, eitherDecode, object )
+import           Data.Aeson.KeyMap    ( union )
 import           Data.List            ( find )
 import           Data.Text            ( Text )
 import           Data.Text.Lazy       ( unpack )
@@ -58,6 +60,7 @@ import           System.FilePath      ( (</>) )
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
+import Data.ByteString.Extra  as B ( safeReadFile )
 import Data.Location          ( Location (..) )
 import System.Directory.Extra ( copyTemplate )
 
@@ -76,8 +79,11 @@ cFSApp :: FilePath       -- ^ Target directory where the application
        -> Maybe FilePath -- ^ File containing a list of handlers used in the
 			 --   Copilot specification. The handlers are assumed
                          --   to receive no arguments.
+       -> Maybe FilePath -- ^ File containing additional variables to make
+                         --   available to the template.
        -> IO (Result ErrorCode)
-cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile = do
+cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile
+       templateVarsF = do
 
   -- We first try to open the two files we need to fill in details in the CFS
   -- app template.
@@ -92,10 +98,14 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile = do
 
   handlersE <- parseOptionalRequirementsListFile handlersFile
 
-  case (varDBE, handlersE) of
-    (Left  e, _)                  -> return $ cannotOpenDB varDBFile e
-    (_,       Left e)             -> return $ cannotOpenHandlers handlersFile e
-    (Right varDB, Right handlers) -> do
+  templateVarsE <- parseOptionalTemplateVarsFile templateVarsF
+
+  case (varDBE, handlersE, templateVarsE) of
+    (Left  e, _     , _)      -> return $ cannotOpenDB varDBFile e
+    (_,       Left e, _)      -> return $ cannotOpenHandlers handlersFile e
+    (_,       _,      Left e) -> return $ cannotOpenTemplateVars templateVarsF e
+
+    (Right varDB, Right handlers, Right templateVars) -> do
 
       -- The variable list is mandatory. This check fails if the filename
       -- provided does not exist or if the file cannot be opened. The condition
@@ -126,10 +136,11 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile = do
             -- This is a Data.List.unzip4
             let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
 
-            let subst = toJSON $ appComponents vars ids infos datas handlers
+            let subst  = toJSON $ appComponents vars ids infos datas handlers
+                subst' = mergeObjects subst templateVars
 
             -- Expand template
-            copyTemplate templateDir subst targetDir
+            copyTemplate templateDir subst' targetDir
 
             return Success
 
@@ -224,6 +235,22 @@ parseOptionalRequirementsListFile :: Maybe FilePath
 parseOptionalRequirementsListFile Nothing   = return $ Right []
 parseOptionalRequirementsListFile (Just fp) = E.try $ lines <$> readFile fp
 
+-- | Process a JSON file with additional template variables to make available
+-- during template expansion.
+parseOptionalTemplateVarsFile :: Maybe FilePath
+                              -> IO (Either String Value)
+parseOptionalTemplateVarsFile Nothing   = return $ Right $ object []
+parseOptionalTemplateVarsFile (Just fp) = do
+  content <- B.safeReadFile fp
+  let value = eitherDecode =<< content
+  case value of
+    Left  _          -> return value
+    Right (Object _) -> return value
+    Right Null       -> return value
+    Right _          -> return $
+      Left "The value passed in the JSON file is not an object."
+
+
 -- * Exception handlers
 
 -- | Exception handler to deal with the case in which the variable DB cannot be
@@ -283,6 +310,21 @@ cannotOpenHandlers (Just file) _e =
     msg =
       "cannot open handlers file " ++ file
 
+-- | Exception handler to deal with the case in which the template vars file
+-- cannot be opened.
+cannotOpenTemplateVars :: Maybe FilePath -> String -> Result ErrorCode
+cannotOpenTemplateVars Nothing _e =
+    Error ecCannotOpenTemplateVarsCritical msg LocationNothing
+  where
+    msg =
+      "cannotOpenTemplateVars: this is a bug. Please notify the developers"
+cannotOpenTemplateVars (Just file) e =
+    Error ecCannotOpenTemplateVarsUser msg (LocationFile file)
+  where
+    msg =
+      "Cannot open file with additional template variables: " ++ file ++
+      ": " ++ e
+
 -- * Error codes
 
 -- | Encoding of reasons why the command can fail.
@@ -306,6 +348,14 @@ ecCannotOpenHandlersCritical = 2
 ecCannotOpenHandlersUser :: ErrorCode
 ecCannotOpenHandlersUser = 1
 
+-- | Internal error: template vars file cannot be opened.
+ecCannotOpenTemplateVarsCritical :: ErrorCode
+ecCannotOpenTemplateVarsCritical = 2
+
+-- | Error: the template vars file provided by the user cannot be opened.
+ecCannotOpenTemplateVarsUser :: ErrorCode
+ecCannotOpenTemplateVarsUser = 1
+
 -- | Error: the variable file provided by the user cannot be opened.
 ecCannotOpenVarFile :: ErrorCode
 ecCannotOpenVarFile = 1
@@ -318,3 +368,14 @@ ecCannotEmptyVarList = 1
 -- permissions or some I/O error.
 ecCannotCopyTemplate :: ErrorCode
 ecCannotCopyTemplate = 1
+
+-- * Auxiliary Functions
+
+-- | Merge two JSON objects.
+--
+-- Fails if the values are not objects or null.
+mergeObjects :: Value -> Value -> Value
+mergeObjects (Object m1) (Object m2) = Object (union m1 m2)
+mergeObjects obj         Null        = obj
+mergeObjects Null        obj         = obj
+mergeObjects _           _           = error "The values passed are not objects"
