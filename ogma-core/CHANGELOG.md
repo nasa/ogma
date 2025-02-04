@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-02-03
+## [1.X.Y] - 2025-02-04
 
 * Import liftIO from Control.Monad.IO.Class (#215).
 * Remove references to old design of Ogma from hlint files (#220).
@@ -11,6 +11,7 @@
 * Simplify Copilot struct definitions by using generics (#199).
 * Update cFS backend to process a handlers file (#234).
 * Update cFS backend to process a template variables file (#106).
+* Remove dependency on ICAROUS from generated cFS applications (#237).
 
 ## [1.6.0] - 2025-01-21
 
