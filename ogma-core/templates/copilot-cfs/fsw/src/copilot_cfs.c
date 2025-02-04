@@ -152,7 +152,7 @@ void COPILOT_ProcessCommandPacket(void)
 
 {{#msgHandlers}}
 /**
-* Make ICAROUS data available to Copilot and run monitors.
+* Make received data available to Copilot and run monitors.
 */
 void COPILOT_Process{{msgDataDesc}}(void)
 {
