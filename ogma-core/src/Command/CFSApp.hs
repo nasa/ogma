@@ -93,7 +93,7 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile
   -- format).
   varDBE <- E.try $
                 case varDBFile of
-                  Nothing -> return knownVars
+                  Nothing -> return []
                   Just fn -> fmap read <$> lines <$> readFile fn
 
   handlersE <- parseOptionalRequirementsListFile handlersFile
@@ -143,11 +143,6 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile
             copyTemplate templateDir subst' targetDir
 
             return Success
-
--- | Predefined list of Icarous variables that are known to Ogma
-knownVars :: [(String, String, String, String)]
-knownVars =
-  [ ("position", "position_t", "ICAROUS_POSITION_MID", "IcarousPosition") ]
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
