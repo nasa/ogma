@@ -16,8 +16,9 @@
 #include "copilot_cfs_msg.h"
 #include "copilot_cfs_events.h"
 #include "copilot_cfs_version.h"
-#include "Icarous_msgids.h"
-#include "Icarous_msg.h"
+{{#impl_extra_header}}
+{{{.}}}
+{{/impl_extra_header}}
 
 {{#variables}}
 {{varDeclType}} {{varDeclName}};
