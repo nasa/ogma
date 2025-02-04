@@ -7,6 +7,7 @@
 * Update installation instructions to use cabal install (#149).
 * Update README with new cFS template variables (#229).
 * Expose handlers-file argument to cFS backend (#234).
+* Expose template-vars argument to cFS backend (#106).
 
 ## [1.6.0] - 2025-01-21
 

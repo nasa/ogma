@@ -135,6 +135,8 @@ be made available to the monitor.
 and the message they are included with.
 - `--handlers-file FILENAME`: a file containing a list of known fault handlers
   or triggers.
+- `--template-vars FILENAME`: a JSON file containing a list of additional
+  variables to expand in the template.
 
 The following execution generates an initial cFS application for runtime
 monitoring using Copilot:
@@ -234,6 +236,15 @@ the processing to an auxiliary function.
 - `{{triggers}}`: list of error handlers or fault triggers, which will be used
   by the monitoring application to notify of faults or updates from the
   monitoring system.
+
+Additionally, the `cfs` command accepts a file with a JSON object listing
+additional variables to be expanded in the template. To make use of this
+feature, we encourage users to modify the template to fit their needs, and pass
+the file as an argument via the flag `--template-vars`. Values passed to the
+template are also respected in file names; for example, if the JSON file
+contains an object key `"APP_NAME"` with the value `"Monitor"`, a file or
+directory in the template named `My_{{APP_NAME}}` will be expanded in the
+destination directory as `My_Monitor`.
 
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss

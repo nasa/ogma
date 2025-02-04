@@ -56,11 +56,12 @@ import Command.CFSApp ( ErrorCode, cFSApp )
 
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
-  { cFSAppTarget      :: String
-  , cFSAppTemplateDir :: Maybe String
-  , cFSAppVarNames    :: String
-  , cFSAppVarDB       :: Maybe String
-  , cFSAppHandlers    :: Maybe String
+  { cFSAppTarget       :: String
+  , cFSAppTemplateDir  :: Maybe String
+  , cFSAppVarNames     :: String
+  , cFSAppVarDB        :: Maybe String
+  , cFSAppHandlers     :: Maybe String
+  , cFSAppTemplateVars :: Maybe String
   }
 
 -- | Create <https://cfs.gsfc.nasa.gov/ NASA core Flight System> (cFS)
@@ -76,6 +77,7 @@ command c =
     (cFSAppVarNames c)
     (cFSAppVarDB c)
     (cFSAppHandlers c)
+    (cFSAppTemplateVars c)
 
 -- * CLI
 
@@ -122,6 +124,13 @@ commandOptsParser = CommandOpts
             <> help strCFSAppHandlerListArgDesc
             )
         )
+  <*> optional
+        ( strOption
+            (  long "template-vars"
+            <> metavar "FILENAME"
+            <> help strCFSAppTemplateVarsArgDesc
+            )
+        )
 
 -- | Argument target directory to cFS app generation command
 strCFSAppDirArgDesc :: String
@@ -146,3 +155,8 @@ strCFSAppVarDBArgDesc =
 strCFSAppHandlerListArgDesc :: String
 strCFSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Argument template variables to cFS app generation command
+strCFSAppTemplateVarsArgDesc :: String
+strCFSAppTemplateVarsArgDesc =
+  "JSON file containing additional variables to expand in template"
