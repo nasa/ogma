@@ -246,6 +246,19 @@ contains an object key `"APP_NAME"` with the value `"Monitor"`, a file or
 directory in the template named `My_{{APP_NAME}}` will be expanded in the
 destination directory as `My_Monitor`.
 
+Using this flag, you can expand two more variables in the default template:
+
+- `{{impl_extra_header}}`: contains a list of lines to add at the top of the
+  CFS application implementation, after the default includes. The value
+assigned to this JSON key must be an array or list (each element will be
+expanded in a separate line).
+
+- `{{included_libraries}}`: contains a list of additional libraries that must
+  be included as dependencies in the `CMakeLists.txt` file for the moniroting
+application in order to be able to compile it. The value assigned this JSON key
+must be an array or list of dependencies, relative to the directory of the
+monitoring app).
+
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss
 how we could make the template expansion system more versatile.
