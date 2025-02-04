@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 2.6.4)
 project(CFE_COPILOT_APP C)
 
 include_directories(../../Modules/Core/Interfaces)
-include_directories(../Icarouslib/fsw/platform_inc)
+{{#included_libraries}}
+include_directories({{{.}}})
+{{/included_libraries}}
 include_directories(../inc)
 include_directories(fsw/mission_inc)
 include_directories(fsw/platform_inc)
