@@ -514,41 +514,41 @@ Ogma will copy the files in that directory to the target path, filling in
 several holes with specific information. For the component interface, the
 variables are:
 
-- {{{ifaceTypePorts}}}: Contain the type declarations for the types used by the
-  ports.
+- `{{{ifaceTypePorts}}}`: Contain the type declarations for the types used by
+  the ports.
 
-- {{{ifaceInputPorts}}}: Contains the declarations of the `async input` port,
+- `{{{ifaceInputPorts}}}`: Contains the declarations of the `async input` port,
   to provide information needed by the monitors.
 
-- {{{ifaceViolationEvents}}}: Contains the output port declarations, used to
+- `{{{ifaceViolationEvents}}}`: Contains the output port declarations, used to
   emit property violations.
 
 For the monitor's header file, the variables are:
 
-- {{{hdrHandlers}}}: Contains the declarations of operations to execute when
+- `{{{hdrHandlers}}}`: Contains the declarations of operations to execute when
   new information is received in an input port, prior to re-evaluating the
   monitors.
 
 For the monitor's implementation, the variables are:
 
-- {{{implInputs}}}: Contains the declarations of the variables with inputs
+- `{{{implInputs}}}`: Contains the declarations of the variables with inputs
   needed by the monitor.
 
-- {{{implMonitorResults}}}: Contains the declarations of boolean variables,
+- `{{{implMonitorResults}}}`: Contains the declarations of boolean variables,
   each holding the result of the evaluation of one of the monitors.
 
-- {{{implInputHandlers}}}: Contains the implementations of operations to
+- `{{{implInputHandlers}}}`: Contains the implementations of operations to
   execute when new information is received in an input port, prior to
   re-evaluating the monitors.
 
-- {{{implTriggerResultReset}}}: Contains instructions that reset the status of
+- `{{{implTriggerResultReset}}}`: Contains instructions that reset the status of
   the monitors.
 
-- {{{implTriggerChecks}}}: Contains instructions that check whether any monitor
-  has resulted in a violation and, if so, sends an event via the corresponding
-  port.
+- `{{{implTriggerChecks}}}`: Contains instructions that check whether any
+  monitor has resulted in a violation and, if so, sends an event via the
+corresponding port.
 
-- {{{implTriggers}}}: Contains the implementations of the functions that set
+- `{{{implTriggers}}}`: Contains the implementations of the functions that set
   the result of a monitor evaluation to true when the Copilot implementation
   finds a violation.
 
