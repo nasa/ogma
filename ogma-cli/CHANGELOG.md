@@ -9,6 +9,7 @@
 * Expose handlers-file argument to cFS backend (#234).
 * Expose template-vars argument to cFS backend (#106).
 * Document new template variables in README (#237).
+* Fix formatting of template variables in README (#222).
 
 ## [1.6.0] - 2025-01-21
 
