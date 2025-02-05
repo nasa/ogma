@@ -46,17 +46,19 @@ module Command.CFSApp
   where
 
 -- External imports
-import qualified Control.Exception    as E
-import           Control.Monad.Except ( ExceptT (..), liftEither, runExceptT,
-                                        throwError )
-import           Data.Aeson           ( ToJSON (..), Value (Null, Object),
-                                        decode, eitherDecode, object )
-import           Data.Aeson.KeyMap    ( union )
-import           Data.List            ( find )
-import           Data.Text            ( Text )
-import           Data.Text.Lazy       ( unpack )
-import           GHC.Generics         ( Generic )
-import           System.FilePath      ( (</>) )
+import qualified Control.Exception      as E
+import           Control.Monad.Except   ( ExceptT (..), liftEither, runExceptT,
+                                          throwError )
+import           Control.Monad.IO.Class ( liftIO )
+import           Data.Aeson             ( ToJSON (..), Value (Null, Object),
+                                          decode, eitherDecode, object )
+import           Data.Aeson.KeyMap      ( union )
+import           Data.Functor           ( (<&>) )
+import           Data.List              ( find )
+import           Data.Text              ( Text )
+import           Data.Text.Lazy         ( unpack )
+import           GHC.Generics           ( Generic )
+import           System.FilePath        ( (</>) )
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
@@ -83,7 +85,7 @@ cFSApp :: FilePath       -- ^ Target directory where the application
                          --   available to the template.
        -> IO (Result ErrorCode)
 cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile
-       templateVarsF = do
+       templateVarsF = exceptToResult $ do
 
   -- We first try to open the two files we need to fill in details in the CFS
   -- app template.
@@ -91,58 +93,41 @@ cFSApp targetDir mTemplateDir varNameFile varDBFile handlersFile
   -- The variable DB is optional, so this check only fails if the filename
   -- provided does not exist or if the file cannot be opened or parsed (wrong
   -- format).
-  varDBE <- E.try $
-                case varDBFile of
-                  Nothing -> return []
-                  Just fn -> fmap read <$> lines <$> readFile fn
+  varDB <- parseVarDBFile varDBFile
 
-  handlersE <- parseOptionalRequirementsListFile handlersFile
+  handlers <- parseOptionalRequirementsListFile handlersFile
 
-  templateVarsE <- parseOptionalTemplateVarsFile templateVarsF
+  templateVars <- parseOptionalTemplateVarsFile templateVarsF
 
-  case (varDBE, handlersE, templateVarsE) of
-    (Left  e, _     , _)      -> return $ cannotOpenDB varDBFile e
-    (_,       Left e, _)      -> return $ cannotOpenHandlers handlersFile e
-    (_,       _,      Left e) -> return $ cannotOpenTemplateVars templateVarsF e
+  varNames <- parseVarNames varNameFile
 
-    (Right varDB, Right handlers, Right templateVars) -> do
+  templateDir <- locateTemplateDir mTemplateDir "copilot-cfs"
 
-      -- The variable list is mandatory. This check fails if the filename
-      -- provided does not exist or if the file cannot be opened. The condition
-      -- on the result also checks that the list of variables in the file is
-      -- not empty (otherwise, we do not know when to call Copilot).
-      varNamesE <- E.try $ lines <$> readFile varNameFile
+  let subst = cfsAppLogic varDB varNames templateVars handlers
 
-      case varNamesE of
-        Left e         -> return $ cannotOpenVarFile varNameFile e
-        Right []       -> return $ cannotEmptyVarList varNameFile
-        Right varNames -> do
+  -- Expand template
+  ExceptT $ fmap (makeLeftE CannotCopyTemplate) $ E.try $
+    copyTemplate templateDir subst targetDir
 
-          -- Obtain template dir
-          templateDir <- case mTemplateDir of
-                           Just x  -> return x
-                           Nothing -> do
-                             dataDir <- getDataDir
-                             return $ dataDir </> "templates" </> "copilot-cfs"
+-- | Generate a variable substitution map for a cFS application.
+cfsAppLogic :: [(String, String, String, String)]
+            -> [String]
+            -> Value
+            -> [Trigger]
+            -> Value
+cfsAppLogic varDB varNames templateVars handlers =
+    mergeObjects subst templateVars
+  where
+    subst = toJSON $ AppData vars ids infos datas handlers
 
-          E.handle (return . cannotCopyTemplate) $ do
+    -- This is a Data.List.unzip4
+    (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
 
-            let f n o@(oVars, oIds, oInfos, oDatas) =
-                  case variableMap varDB n of
-                    Nothing -> o
-                    Just (vars, ids, infos, datas) ->
-                      (vars : oVars, ids : oIds, infos : oInfos, datas : oDatas)
-
-            -- This is a Data.List.unzip4
-            let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
-
-            let subst  = toJSON $ appComponents vars ids infos datas handlers
-                subst' = mergeObjects subst templateVars
-
-            -- Expand template
-            copyTemplate templateDir subst' targetDir
-
-            return Success
+    f n o@(oVars, oIds, oInfos, oDatas) =
+      case variableMap varDB n of
+        Nothing -> o
+        Just (vars, ids, infos, datas) ->
+          (vars : oVars, ids : oIds, infos : oInfos, datas : oDatas)
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
@@ -214,49 +199,82 @@ data AppData = AppData
 
 instance ToJSON AppData
 
--- | Return the components that are customized in a cFS application.
-appComponents :: [VarDecl]
-              -> [MsgInfoId]
-              -> [MsgInfo]
-              -> [MsgData]
-              -> [Trigger]
-              -> AppData
-appComponents = AppData
+-- | Parse a file containing a list of cFS variables and how they associate to
+-- different cFS bus messages and types.
+parseVarDBFile :: Maybe FilePath
+               -> ExceptT ErrorReasons IO [(String, String, String, String)]
+parseVarDBFile Nothing   = pure []
+parseVarDBFile (Just fn) =
+  ExceptT $ makeLeftE (CannotOpenDB fn) <$>
+    (E.try $ fmap read <$> lines <$> readFile fn)
+
+-- | Parse the file containing the list of variables to monitor.
+--
+-- The variable list is mandatory. This check fails if the filename provided
+-- does not exist or if the file cannot be opened. The condition on the result
+-- also checks that the list of variables in the file is not empty (otherwise,
+-- we do not know when to call Copilot).
+parseVarNames :: FilePath
+              -> ExceptT ErrorReasons IO [String]
+parseVarNames varNameFile = ExceptT $ do
+  varNamesE <- E.try $ lines <$> readFile varNameFile
+  case (varNamesE :: Either E.SomeException [String]) of
+    Left _         -> return $ Left $ CannotOpenVarFile varNameFile
+    Right []       -> return $ Left $ CannotEmptyVarList varNameFile
+    Right varNames -> return $ Right varNames
 
 -- | Process a requirements / handlers list file, if available, and return the
 -- handler names.
 parseOptionalRequirementsListFile :: Maybe FilePath
-                                  -> IO (Either E.SomeException [String])
-parseOptionalRequirementsListFile Nothing   = return $ Right []
-parseOptionalRequirementsListFile (Just fp) = E.try $ lines <$> readFile fp
+                                  -> ExceptT ErrorReasons IO [String]
+parseOptionalRequirementsListFile Nothing   = return []
+parseOptionalRequirementsListFile (Just fp) =
+  ExceptT $ makeLeftE (CannotOpenHandlers fp) <$>
+    (E.try $ lines <$> readFile fp)
 
 -- | Process a JSON file with additional template variables to make available
 -- during template expansion.
 parseOptionalTemplateVarsFile :: Maybe FilePath
-                              -> IO (Either String Value)
-parseOptionalTemplateVarsFile Nothing   = return $ Right $ object []
+                              -> ExceptT ErrorReasons IO Value
+parseOptionalTemplateVarsFile Nothing   = return $ object []
 parseOptionalTemplateVarsFile (Just fp) = do
-  content <- B.safeReadFile fp
+  content <- liftIO $ B.safeReadFile fp
   let value = eitherDecode =<< content
   case value of
-    Left  _          -> return value
-    Right (Object _) -> return value
-    Right Null       -> return value
-    Right _          -> return $
-      Left "The value passed in the JSON file is not an object."
+    Right x@(Object _) -> return x
+    Right x@Null       -> return x
+    Right _            -> throwError (CannotReadObjectTemplateVars fp)
+    _                  -> throwError (CannotOpenTemplateVars fp)
 
+-- * Error handlers
 
--- * Exception handlers
+-- | List of reasons why generating a cFS application may fail.
+data ErrorReasons = CannotOpenDB FilePath
+                  | CannotOpenVarFile FilePath
+                  | CannotEmptyVarList FilePath
+                  | CannotOpenHandlers FilePath
+                  | CannotOpenTemplateVars FilePath
+                  | CannotReadObjectTemplateVars FilePath
+                  | CannotCopyTemplate
+
+-- | Map a result in an @ExceptT@ monad transformer into a top-level
+-- application result.
+exceptToResult :: ExceptT ErrorReasons IO () -> IO (Result ErrorCode)
+exceptToResult e = runExceptT e <&> \res ->
+  case res of
+    Right ()                               -> Success
+    Left (CannotOpenDB fp)                 -> cannotOpenDB fp
+    Left (CannotOpenVarFile fp)            -> cannotOpenVarFile fp
+    Left (CannotEmptyVarList fp)           -> cannotEmptyVarList fp
+    Left (CannotOpenHandlers fp)           -> cannotOpenHandlers fp
+    Left (CannotOpenTemplateVars fp)       -> cannotOpenTemplateVars fp
+    Left (CannotReadObjectTemplateVars fp) -> cannotReadObjectTemplateVars fp
+    Left CannotCopyTemplate                -> cannotCopyTemplate
 
 -- | Exception handler to deal with the case in which the variable DB cannot be
 -- opened.
-cannotOpenDB :: Maybe FilePath -> E.SomeException -> Result ErrorCode
-cannotOpenDB Nothing _e =
-    Error ecCannotOpenDBCritical msg LocationNothing
-  where
-    msg =
-      "cannotOpenDB: this is a bug. Please notify the developers"
-cannotOpenDB (Just file) _e =
+cannotOpenDB :: FilePath -> Result ErrorCode
+cannotOpenDB file =
     Error ecCannotOpenDBUser msg (LocationFile file)
   where
     msg =
@@ -264,8 +282,8 @@ cannotOpenDB (Just file) _e =
 
 -- | Exception handler to deal with the case in which the variable file
 -- provided by the user cannot be opened.
-cannotOpenVarFile :: FilePath -> E.SomeException -> Result ErrorCode
-cannotOpenVarFile file _e =
+cannotOpenVarFile :: FilePath -> Result ErrorCode
+cannotOpenVarFile file =
     Error ecCannotOpenVarFile  msg (LocationFile file)
   where
     msg =
@@ -280,26 +298,10 @@ cannotEmptyVarList file =
     msg =
       "variable list in file " ++ file ++ " is empty"
 
--- | Exception handler to deal with the case of files that cannot be
--- copied/generated due lack of space or permissions or some I/O error.
-cannotCopyTemplate :: E.SomeException -> Result ErrorCode
-cannotCopyTemplate _e =
-    Error ecCannotCopyTemplate msg LocationNothing
-  where
-    msg =
-      "CFS app generation failed during copy/write operation. Check that"
-      ++ " there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory."
-
 -- | Exception handler to deal with the case in which the handlers file cannot
 -- be opened.
-cannotOpenHandlers :: Maybe FilePath -> E.SomeException -> Result ErrorCode
-cannotOpenHandlers Nothing _e =
-    Error ecCannotOpenHandlersCritical msg LocationNothing
-  where
-    msg =
-      "cannotOpenDB: this is a bug. Please notify the developers"
-cannotOpenHandlers (Just file) _e =
+cannotOpenHandlers :: FilePath -> Result ErrorCode
+cannotOpenHandlers file =
     Error ecCannotOpenHandlersUser msg (LocationFile file)
   where
     msg =
@@ -307,18 +309,32 @@ cannotOpenHandlers (Just file) _e =
 
 -- | Exception handler to deal with the case in which the template vars file
 -- cannot be opened.
-cannotOpenTemplateVars :: Maybe FilePath -> String -> Result ErrorCode
-cannotOpenTemplateVars Nothing _e =
-    Error ecCannotOpenTemplateVarsCritical msg LocationNothing
-  where
-    msg =
-      "cannotOpenTemplateVars: this is a bug. Please notify the developers"
-cannotOpenTemplateVars (Just file) e =
+cannotOpenTemplateVars :: FilePath -> Result ErrorCode
+cannotOpenTemplateVars file =
     Error ecCannotOpenTemplateVarsUser msg (LocationFile file)
   where
     msg =
-      "Cannot open file with additional template variables: " ++ file ++
-      ": " ++ e
+      "Cannot open file with additional template variables: " ++ file
+
+-- | Exception handler to deal with the case in which the template vars file
+-- cannot be opened.
+cannotReadObjectTemplateVars :: FilePath -> Result ErrorCode
+cannotReadObjectTemplateVars file =
+    Error ecCannotReadObjectTemplateVarsUser msg (LocationFile file)
+  where
+    msg =
+      "Cannot open file with additional template variables: " ++ file
+
+-- | Exception handler to deal with the case of files that cannot be
+-- copied/generated due lack of space or permissions or some I/O error.
+cannotCopyTemplate :: Result ErrorCode
+cannotCopyTemplate =
+    Error ecCannotCopyTemplate msg LocationNothing
+  where
+    msg =
+      "CFS app generation failed during copy/write operation. Check that"
+      ++ " there's free space in the disk and that you have the necessary"
+      ++ " permissions to write in the destination directory."
 
 -- * Error codes
 
@@ -327,29 +343,9 @@ cannotOpenTemplateVars (Just file) e =
 -- The error codes used are 1 for user error, and 2 for internal bug.
 type ErrorCode = Int
 
--- | Internal error: Variable DB cannot be opened.
-ecCannotOpenDBCritical :: ErrorCode
-ecCannotOpenDBCritical = 2
-
 -- | Error: the variable DB provided by the user cannot be opened.
 ecCannotOpenDBUser :: ErrorCode
 ecCannotOpenDBUser = 1
-
--- | Internal error: handlers file cannot be opened.
-ecCannotOpenHandlersCritical :: ErrorCode
-ecCannotOpenHandlersCritical = 2
-
--- | Error: the handlers file provided by the user cannot be opened.
-ecCannotOpenHandlersUser :: ErrorCode
-ecCannotOpenHandlersUser = 1
-
--- | Internal error: template vars file cannot be opened.
-ecCannotOpenTemplateVarsCritical :: ErrorCode
-ecCannotOpenTemplateVarsCritical = 2
-
--- | Error: the template vars file provided by the user cannot be opened.
-ecCannotOpenTemplateVarsUser :: ErrorCode
-ecCannotOpenTemplateVarsUser = 1
 
 -- | Error: the variable file provided by the user cannot be opened.
 ecCannotOpenVarFile :: ErrorCode
@@ -359,12 +355,35 @@ ecCannotOpenVarFile = 1
 ecCannotEmptyVarList :: ErrorCode
 ecCannotEmptyVarList = 1
 
+-- | Error: the handlers file provided by the user cannot be opened.
+ecCannotOpenHandlersUser :: ErrorCode
+ecCannotOpenHandlersUser = 1
+
+-- | Error: the template vars file provided by the user cannot be opened.
+ecCannotOpenTemplateVarsUser :: ErrorCode
+ecCannotOpenTemplateVarsUser = 1
+
+-- | Error: the template variables file passed does not contain a JSON object.
+ecCannotReadObjectTemplateVarsUser :: ErrorCode
+ecCannotReadObjectTemplateVarsUser = 1
+
 -- | Error: the files cannot be copied/generated due lack of space or
 -- permissions or some I/O error.
 ecCannotCopyTemplate :: ErrorCode
 ecCannotCopyTemplate = 1
 
 -- * Auxiliary Functions
+
+-- | Return the path to the template directory.
+locateTemplateDir :: Maybe FilePath
+                  -> FilePath
+                  -> ExceptT ErrorReasons IO FilePath
+locateTemplateDir mTemplateDir name =
+  case mTemplateDir of
+    Just x  -> return x
+    Nothing -> liftIO $ do
+      dataDir <- getDataDir
+      return $ dataDir </> "templates" </> name
 
 -- | Merge two JSON objects.
 --
@@ -374,3 +393,8 @@ mergeObjects (Object m1) (Object m2) = Object (union m1 m2)
 mergeObjects obj         Null        = obj
 mergeObjects Null        obj         = obj
 mergeObjects _           _           = error "The values passed are not objects"
+
+-- | Replace the left Exception in an Either.
+makeLeftE :: c -> Either E.SomeException b -> Either c b
+makeLeftE c (Left _)   = Left c
+makeLeftE _ (Right x)  = Right x
