@@ -12,6 +12,7 @@
 * Update cFS backend to process a handlers file (#234).
 * Update cFS backend to process a template variables file (#106).
 * Remove dependency on ICAROUS from generated cFS applications (#237).
+* Remove incorrect function declaration from template (#240).
 
 ## [1.6.0] - 2025-01-21
 
