@@ -24,7 +24,6 @@
 {{varDeclType}} {{varDeclName}};
 {{/variables}}
 
-void split(void);
 void step(void);
 
 /*
