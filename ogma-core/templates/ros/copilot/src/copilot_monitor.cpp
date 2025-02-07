@@ -21,15 +21,34 @@
 
 using std::placeholders::_1;
 
-{{{variablesS}}}
+{{#variables}}
+{{varDeclType}} {{varDeclName}};
+{{/variables}}
+
 class CopilotRV : public rclcpp::Node {
   public:
     CopilotRV() : Node("copilotrv") {
-{{{msgSubscriptionS}}}
-{{{msgPublisherS}}}
+      {{#variables}}
+      {{varDeclName}}_subscription_ = this->create_subscription<{{varDeclMsgType}}>(
+        "{{varDeclId}}", 10,
+        std::bind(&CopilotRV::{{varDeclName}}_callback, this, _1));
+
+      {{/variables}}
+      {{#monitors}}
+      {{.}}_publisher_ = this->create_publisher<std_msgs::msg::Empty>(
+        "copilot/{{.}}", 10);
+
+      {{/monitors}}
     }
 
-{{{msgHandlerInClassS}}}
+{{#monitors}}
+    // Report (publish) monitor violations.
+    void {{.}}() {
+      auto output = std_msgs::msg::Empty();
+      {{.}}_publisher_->publish(output);
+    }
+
+{{/monitors}}
     // Needed so we can report messages to the log.
     static CopilotRV& getInstance() {
       static CopilotRV instance;
@@ -37,12 +56,31 @@ class CopilotRV : public rclcpp::Node {
     }
 
   private:
-{{{msgCallbacks}}}
-{{{msgSubscriptionDeclrs}}}
-{{{msgPublisherDeclrs}}}
+    {{#variables}}
+    void {{varDeclName}}_callback(const {{varDeclMsgType}}::SharedPtr msg) const {
+      {{varDeclName}} = msg->data;
+      step();
+    }
+
+    {{/variables}}
+    {{#variables}}
+    rclcpp::Subscription<{{varDeclMsgType}}>::SharedPtr {{varDeclName}}_subscription_;
+
+    {{/variables}}
+    {{#monitors}}
+    rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr {{.}}_publisher_;
+
+    {{/monitors}}
 };
 
-{{{msgHandlerGlobalS}}}
+{{#monitors}}
+// Pass monitor violations to the actual class, which has ways to
+// communicate with other applications.
+void {{.}}() {
+  CopilotRV::getInstance().{{.}}();
+}
+
+{{/monitors}}
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<CopilotRV>());
