@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
@@ -52,11 +53,10 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   (ExceptT (..), liftEither, runExceptT,
                                          throwError)
 import           Control.Monad.IO.Class (liftIO)
-import           Data.Aeson             (eitherDecode, object, (.=))
-import           Data.List              (isInfixOf, isPrefixOf, find,
-                                         intersperse)
-import           Data.Maybe             (fromMaybe)
-import           Data.Text.Lazy         (pack)
+import           Data.Aeson             (ToJSON(..), eitherDecode)
+import           Data.List              (isInfixOf, isPrefixOf, find)
+import           Data.Maybe             (fromMaybe, mapMaybe)
+import           GHC.Generics           (Generic)
 import           System.Directory       (doesFileExist)
 import           System.FilePath        ((</>))
 import           System.Process         (readProcess)
@@ -149,41 +149,9 @@ rosApp' targetDir mTemplateDir varNames varDB monitors =
                        dataDir <- getDataDir
                        return $ dataDir </> "templates" </> "ros"
 
-    let f n o@(oVars, oIds, oInfos, oDatas) =
-          case variableMap varDB n of
-            Nothing -> o
-            Just (vars, ids, infos, datas) ->
-              ( vars : oVars
-              , ids : oIds
-              , infos : oInfos
-              , datas : oDatas
-              )
-
-    -- This is a Data.List.unzip4
-    let (vars, ids, infos, datas) =
-          foldr f ([], [], [], []) varNames
-
-    let (variablesS,         msgSubscriptionS, msgPublisherS,
-         msgHandlerInClassS, msgCallbacks,     msgSubscriptionDeclrs,
-         msgPublisherDeclrs, msgHandlerGlobalS) =
-          rosMonitorComponents varNames vars ids infos datas monitors
-
-        (logMsgSubscriptionS, logMsgCallbacks, logMsgSubscriptionDeclrs) =
-            rosLoggerComponents varNames vars ids infos datas monitors
-
-        subst = object $
-                  [ "variablesS"               .= pack variablesS
-                  , "msgSubscriptionS"         .= pack msgSubscriptionS
-                  , "msgPublisherS"            .= pack msgPublisherS
-                  , "msgHandlerInClassS"       .= pack msgHandlerInClassS
-                  , "msgCallbacks"             .= pack msgCallbacks
-                  , "msgSubscriptionDeclrs"    .= pack msgSubscriptionDeclrs
-                  , "msgPublisherDeclrs"       .= pack msgPublisherDeclrs
-                  , "msgHandlerGlobalS"        .= pack msgHandlerGlobalS
-                  , "logMsgSubscriptionS"      .= pack logMsgSubscriptionS
-                  , "logMsgCallbacks"          .= pack logMsgCallbacks
-                  , "logMsgSubscriptionDeclrs" .= pack logMsgSubscriptionDeclrs
-                  ]
+    let subst     = toJSON appData
+        appData   = AppData variables monitors
+        variables = mapMaybe (variableMap varDB) varNames
 
     copyTemplate templateDir subst targetDir
 
@@ -360,9 +328,12 @@ specExtractHandlers (Just cs) = map handlerNameF
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
+--
+-- We map the types to the specific types needed for the variable declaration
+-- and the message subscription in ROS.
 variableMap :: [(String, String, String, String)]
             -> String
-            -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
+            -> Maybe VarDecl
 variableMap varDB varName =
     csvToVarMap <$> find (sameName varName) varDB
 
@@ -376,33 +347,58 @@ variableMap varDB varName =
 
     -- Convert a DB row into Variable info needed to generate the ROS file
     csvToVarMap :: (String, String, String, String)
-                -> (VarDecl, String, MsgInfo, MsgData)
-    csvToVarMap (nm, ty, mid, mn) =
-      (VarDecl nm ty, mid, MsgInfo mid mn, MsgData mn nm ty)
+                -> VarDecl
+    csvToVarMap (nm, ty, mid, mn) = VarDecl nm (typeVar ty) mid (typeMsg ty)
+
+    typeVar ty = case ty of
+      "uint8_t"  -> "std::uint8_t"
+      "uint16_t" -> "std::uint16_t"
+      "uint32_t" -> "std::uint32_t"
+      "uint64_t" -> "std::uint64_t"
+      "int8_t"   -> "std::int8_t"
+      "int16_t"  -> "std::int16_t"
+      "int32_t"  -> "std::int32_t"
+      "int64_t"  -> "std::int64_t"
+      "float"    -> "float"
+      "double"   -> "double"
+      def        -> def
+
+    typeMsg ty = case ty of
+      "bool"     -> "std_msgs::msg::Bool"
+      "uint8_t"  -> "std_msgs::msg::UInt8"
+      "uint16_t" -> "std_msgs::msg::UInt16"
+      "uint32_t" -> "std_msgs::msg::UInt32"
+      "uint64_t" -> "std_msgs::msg::UInt64"
+      "int8_t"   -> "std_msgs::msg::Int8"
+      "int16_t"  -> "std_msgs::msg::Int16"
+      "int32_t"  -> "std_msgs::msg::Int32"
+      "int64_t"  -> "std_msgs::msg::Int64"
+      "float"    -> "std_msgs::msg::Float32"
+      "double"   -> "std_msgs::msg::Float64"
+      def        -> def
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
-  { varDeclName :: String
-  , varDeclType :: String
-  }
+    { varDeclName    :: String
+    , varDeclType    :: String
+    , varDeclId      :: String
+    , varDeclMsgType :: String
+    }
+  deriving Generic
 
--- | The message ID to subscribe to.
-type MsgInfoId = String
+instance ToJSON VarDecl
 
--- | A message ID to subscribe to and the name associated to it. The name is
--- used to generate a suitable name for the message handler.
-data MsgInfo = MsgInfo
-  { msgInfoId   :: MsgInfoId
-  , msgInfoDesc :: String
-  }
+-- | The name of a handler associated to each condition.
+type Monitor = String
 
--- | Information on the data provided by a message with a given description,
--- and the type of the data it carries.
-data MsgData = MsgData
-  { msgDataDesc    :: String
-  , msgDataVarName :: String
-  , msgDataVarType :: String
+-- | Data that may be relevant to generate a ROS application.
+data AppData = AppData
+  { variables :: [VarDecl]
+  , monitors  :: [Monitor]
   }
+  deriving (Generic)
+
+instance ToJSON AppData
 
 -- * Handler for boolean expressions
 
@@ -461,233 +457,6 @@ wrapVia (Just f) parse s =
   E.handle (\(e :: E.IOException) -> return $ Left $ show e) $ do
     out <- readProcess f [] s
     return $ parse out
-
--- * ROS apps content
-
--- | Return the contents of the main ROS application.
-rosMonitorComponents
-  :: [String]     -- Variables
-  -> [VarDecl]
-  -> [MsgInfoId]
-  -> [MsgInfo]
-  -> [MsgData]
-  -> [String]     -- Monitors
-  -> (String, String, String, String, String, String, String, String)
-rosMonitorComponents varNames variables msgIds msgNames msgDatas monitors =
-    ( variablesS
-    , msgSubscriptionS
-    , msgPublisherS
-    , msgHandlerInClassS
-    , msgCallbacks
-    , msgSubscriptionDeclrs
-    , msgPublisherDeclrs
-    , msgHandlerGlobalS
-    )
-
-  where
-
-    msgHandlerInClassS = unlines
-                       $ concat
-                       $ intersperse [""]
-                       $ map msgHandlerInClass monitors
-    msgHandlerInClass monitor =
-        [ "    // Report (publish) monitor violations."
-        , "    void " ++ handlerName ++ "() {"
-        , "      auto output = " ++ ty ++ "();"
-        , "      " ++ publisher ++ "->publish(output);"
-        , "    }"
-        ]
-      where
-        handlerName :: String
-        handlerName = monitor
-
-        ty = "std_msgs::msg::Empty"
-
-        publisher = monitor ++ "_publisher_"
-
-    variablesS = unlines $ map toVarDecl variables
-    toVarDecl varDecl =
-        varDeclType' varDecl ++ " " ++ varDeclName varDecl ++ ";"
-      where
-        varDeclType' varDecl = case varDeclType varDecl of
-          "uint8_t"  -> "std::uint8_t"
-          "uint16_t" -> "std::uint16_t"
-          "uint32_t" -> "std::uint32_t"
-          "uint64_t" -> "std::uint64_t"
-          "int8_t"   -> "std::int8_t"
-          "int16_t"  -> "std::int16_t"
-          "int32_t"  -> "std::int32_t"
-          "int64_t"  -> "std::int64_t"
-          "float"    -> "float"
-          "double"   -> "double"
-          def        -> def
-
-    msgSubscriptionS     = unlines
-                         $ concat
-                         $ intersperse [""]
-                         $ map toMsgSubscription (zip variables msgIds)
-    toMsgSubscription (nm, msgId) =
-        [ "      " ++ subscription
-                   ++ " = this->create_subscription<" ++ ty ++ ">("
-        , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
-        , "        std::bind(&CopilotRV::" ++ callback ++ ", this, _1));"
-        ]
-      where
-        ty           = varDeclMsgType nm
-        topic        = msgId
-        subscription = varDeclName nm ++ "_subscription_"
-        callback     = varDeclName nm ++ "_callback"
-
-        unknownVar   :: Int
-        unknownVar   = 10
-
-    msgPublisherS = unlines
-                  $ concat
-                  $ intersperse [""]
-                  $ map toMsgPublisher monitors
-
-    toMsgPublisher nm =
-        [ "      " ++ publisher
-                   ++ " = this->create_publisher<" ++ ty ++ ">("
-        , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ");"
-        ]
-      where
-        ty        = "std_msgs::msg::Empty"
-        publisher = nm ++ "_publisher_"
-        topic     = "copilot/" ++ nm
-
-        unknownVar   :: Int
-        unknownVar   = 10
-
-    varDeclMsgType varDecl = case varDeclType varDecl of
-      "bool"     -> "std_msgs::msg::Bool"
-      "uint8_t"  -> "std_msgs::msg::UInt8"
-      "uint16_t" -> "std_msgs::msg::UInt16"
-      "uint32_t" -> "std_msgs::msg::UInt32"
-      "uint64_t" -> "std_msgs::msg::UInt64"
-      "int8_t"   -> "std_msgs::msg::Int8"
-      "int16_t"  -> "std_msgs::msg::Int16"
-      "int32_t"  -> "std_msgs::msg::Int32"
-      "int64_t"  -> "std_msgs::msg::Int64"
-      "float"    -> "std_msgs::msg::Float32"
-      "double"   -> "std_msgs::msg::Float64"
-      def        -> def
-
-    msgCallbacks = unlines
-                 $ concat
-                 $ intersperse [""]
-                 $ map toCallback variables
-    toCallback varDecl =
-        [ "    void " ++ callback
-                      ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
-        , "      " ++ variable ++ " = msg->data;"
-        , "      step();"
-        , "    }"
-        ]
-      where
-        ty = varDeclMsgType varDecl
-        variable = varDeclName varDecl
-        callback = variable ++ "_callback"
-
-    msgHandlerGlobalS = unlines
-                      $ concat
-                      $ intersperse [""]
-                      $ map msgHandlerGlobal monitors
-    msgHandlerGlobal monitor =
-        [ "// Pass monitor violations to the actual class, which has ways to"
-        , "// communicate with other applications."
-        , "void " ++ handlerName ++ "() {"
-        , "  CopilotRV::getInstance()." ++ handlerName ++ "();"
-        , "}"
-        ]
-      where
-        handlerName = monitor
-
-    msgSubscriptionDeclrs :: String
-    msgSubscriptionDeclrs = unlines
-                          $ concat
-                          $ intersperse [""]
-                          $ map toSubscriptionDecl variables
-    toSubscriptionDecl nm =
-        [ "    rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
-            ++ subscription ++ ";"
-        ]
-      where
-        ty           = varDeclMsgType nm
-        subscription = varDeclName nm ++ "_subscription_"
-
-    msgPublisherDeclrs :: String
-    msgPublisherDeclrs = unlines
-                       $ concat
-                       $ intersperse [""]
-                       $ map toPublisherDecl monitors
-    toPublisherDecl nm =
-        [ "    rclcpp::Publisher<" ++ ty ++ ">::SharedPtr "
-            ++ publisher ++ ";"
-        ]
-      where
-        ty        = "std_msgs::msg::Empty"
-        publisher = nm ++ "_publisher_"
-
--- | Return the contents of the logger ROS application.
-rosLoggerComponents :: [String]     -- Variables
-                    -> [VarDecl]
-                    -> [MsgInfoId]
-                    -> [MsgInfo]
-                    -> [MsgData]
-                    -> [String]     -- Monitors
-                    -> (String, String, String)
-rosLoggerComponents varNames variables msgIds msgNames msgDatas monitors =
-    (msgSubscriptionS, msgCallbacks, msgSubscriptionDeclrs)
-
-  where
-
-    msgSubscriptionS     = unlines
-                         $ concat
-                         $ intersperse [""]
-                         $ map toMsgSubscription monitors
-    toMsgSubscription nm =
-        [ "      " ++ subscription
-                   ++ " = this->create_subscription<" ++ ty ++ ">("
-        , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
-        , "        std::bind(&CopilotLogger::" ++ callback ++ ", this, _1));"
-        ]
-      where
-        ty           = "std_msgs::msg::Empty"
-        topic        = "copilot/" ++ nm
-        subscription = nm ++ "_subscription_"
-        callback     = nm ++ "_callback"
-
-        unknownVar   :: Int
-        unknownVar   = 10
-
-    msgCallbacks = unlines
-                 $ concat
-                 $ intersperse [""]
-                 $ map toCallback monitors
-    toCallback varDecl =
-        [ "    void " ++ callback
-                      ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
-        , "      RCLCPP_INFO(this->get_logger(), \"Copilot monitor violation: "
-             ++ varDecl ++ "\");"
-        , "    }"
-        ]
-      where
-        ty = "std_msgs::msg::Empty"
-        callback = varDecl ++ "_callback"
-
-    msgSubscriptionDeclrs :: String
-    msgSubscriptionDeclrs = unlines
-                          $ concat
-                          $ intersperse [""]
-                          $ map toSubscriptionDecl monitors
-    toSubscriptionDecl nm =
-        [ "    rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
-            ++ subscription ++ ";"
-        ]
-      where
-        ty           = "std_msgs::msg::Empty"
-        subscription = nm ++ "_subscription_"
 
 -- * Exception handlers
 
