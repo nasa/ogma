@@ -355,50 +355,17 @@ Ogma will copy the files in that directory to the target path, filling in
 several holes with specific information. For the monitoring node, the variables
 are:
 
-- `{{variablesS}}`: this will be replaced by a list of variable declarations,
-  one for each global variable that holds information read from the ROS
-software bus that must be made accessible to the monitoring code.
+- `{{variables}}`: list of variable declarations, one for each external data
+  source needed to be read from the ROS software bus and made accessible to the
+  monitoring code. For each variable declaration, the fields defined are:
+  - `{{varDeclName}}`: name of the variable.
+  - `{{varDeclType}}`: raw type of the variable.
+  - `{{varDeclId}}`: topic name from which this variable can be obtained.
+  - `{{varDeclMsgType}}`: type used to pack this variable in the software bus.
 
-- `{{msgSubscriptionsS}}`: this will be replaced by a list of calls to
-  `create_subscription`, subscribing to the necessary information coming in the
-software bus.
-
-- `{{msgPublisherS}}`: this will be replaced by a list of calls to
-  `create_publisher`, to create topics to report property violations on the
-software bus.
-
-- `{{msgHandlerInClassS}}`: this will be replaced by the functions that will be
-  called to report a property violation via one of the property violation
-topics (publishers).
-
-- `{{msgCallbacks}}`: this will be replaced by function definitions of the
-  functions that will be called to actually update the variables with
-information coming from the software bus, and re-evaluate the monitors.
-
-- `{{msgSubscriptionDeclrs}}`: this will be replaced by declarations of
-  subscriptions used in `{{msgSubscriptionsS}}`.
-
-- `{{msgPublisherDeclrs}}`: this will be replaced by declarations of publishers
-  used in `{{msgPublishersS}}`.
-
-- `{{msgHandlerGlobalS}}`: this will be replaced by top-level functions that
-  call the handlers from the single monitoring class instance (singleton).
-
-Ogma will also generate a logging node that can be used for debugging purposes,
-to print property violations to a log. This second node listens to the messages
-published by the monitoring node in the software bus. For that node, the
-variables used are:
-
-- `{{logMsgSubscriptionsS}}`: this will be replaced by a list of calls to
-  `create_subscription`, subscribing to the necessary information coming in the
-software bus.
-
-- `{{logMsgCallbacks}}`: this will be replaced by function definitions of the
-  functions called to report the violations in the log. These functions are
-used as handlers to incoming messages in the subscriptions.
-
-- `{{logMsgSubscriptionDeclrs}}`: this will be replaced by declarations of
-  subscriptions used in `{{logMsgSubscriptionsS}}`.
+- `{{monitors}}`: list of monitors or error handlers, which will be used by the
+  monitoring application to notify of faults or updates from the monitoring
+  system.
 
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss
