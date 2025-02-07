@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-02-06
+## [1.X.Y] - 2025-02-07
 
 * Import liftIO from Control.Monad.IO.Class (#215).
 * Remove references to old design of Ogma from hlint files (#220).
@@ -14,6 +14,7 @@
 * Remove dependency on ICAROUS from generated cFS applications (#237).
 * Remove incorrect function declaration from template (#240).
 * Re-structure cFS backend to avoid nested conditions (#242).
+* Make structured data available to ROS template (#244).
 
 ## [1.6.0] - 2025-01-21
 
