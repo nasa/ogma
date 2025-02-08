@@ -478,46 +478,21 @@ $ ogma fprime --app-template-dir my_template/ --handlers filename --variable-fil
 ```
 
 Ogma will copy the files in that directory to the target path, filling in
-several holes with specific information. For the component interface, the
-variables are:
+several holes with specific information from template variables. The template
+variables available are:
 
-- `{{{ifaceTypePorts}}}`: Contain the type declarations for the types used by
-  the ports.
+- `{{variables}}`: list of inputs to monitor, one for each external data source
+  needed to be read from an F' component port and made accessible to the
+  monitoring code. For each variable, the fields defined are:
+  - `{{varDeclName}}`: name of the variable or input.
+  - `{{varDeclType}}`: raw type of the variable or input.
+  - `{{varDeclFPrimeType}}`: type in F' for ports carrying data of this type.
 
-- `{{{ifaceInputPorts}}}`: Contains the declarations of the `async input` port,
-  to provide information needed by the monitors.
-
-- `{{{ifaceViolationEvents}}}`: Contains the output port declarations, used to
-  emit property violations.
-
-For the monitor's header file, the variables are:
-
-- `{{{hdrHandlers}}}`: Contains the declarations of operations to execute when
-  new information is received in an input port, prior to re-evaluating the
-  monitors.
-
-For the monitor's implementation, the variables are:
-
-- `{{{implInputs}}}`: Contains the declarations of the variables with inputs
-  needed by the monitor.
-
-- `{{{implMonitorResults}}}`: Contains the declarations of boolean variables,
-  each holding the result of the evaluation of one of the monitors.
-
-- `{{{implInputHandlers}}}`: Contains the implementations of operations to
-  execute when new information is received in an input port, prior to
-  re-evaluating the monitors.
-
-- `{{{implTriggerResultReset}}}`: Contains instructions that reset the status of
-  the monitors.
-
-- `{{{implTriggerChecks}}}`: Contains instructions that check whether any
-  monitor has resulted in a violation and, if so, sends an event via the
-corresponding port.
-
-- `{{{implTriggers}}}`: Contains the implementations of the functions that set
-  the result of a monitor evaluation to true when the Copilot implementation
-  finds a violation.
+- `{{monitors}}`: list of monitors or error handlers, which will be used by the
+  monitoring application to notify of faults or updates from the monitoring
+  system. For each monitor, the fields defined are:
+  - `{{monitorName}}`: name of the monitor.
+  - `{{monitorUC}}`: name of the monitor, in capital letters.
 
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss
