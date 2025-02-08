@@ -44,8 +44,15 @@ namespace Ref {
       // Handler implementations for user-defined typed input ports
       // ----------------------------------------------------------------------
 
-{{{hdrHandlers}}}
+{{#variables}}
+      //! Handler implementation for {{varDeclName}}In
+      //!
+      void {{varDeclName}}In_handler(
+            const NATIVE_INT_TYPE portNum, /*!< The port number*/
+            {{varDeclType}} value
+        );
 
+{{/variables}}
     PRIVATE:
 
       // ----------------------------------------------------------------------
