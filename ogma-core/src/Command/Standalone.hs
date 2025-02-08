@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
@@ -34,40 +35,36 @@
 --
 -- | Transform a specification into a standalone Copilot specification.
 module Command.Standalone
-    ( standalone
-    , StandaloneOptions(..)
+    ( command
+    , CommandOptions(..)
     , ErrorCode
     )
   where
 
 -- External imports
-import Control.Exception    as E
-import Data.Aeson           (decode, eitherDecode, object, (.=))
-import Data.ByteString.Lazy (fromStrict)
-import Data.Foldable        (for_)
-import Data.List            (isInfixOf, isPrefixOf, nub, (\\))
-import Data.Maybe           (fromMaybe)
-import System.Directory     (doesFileExist)
-import System.Process       (readProcess)
-import System.FilePath      ((</>))
-import Data.Text.Lazy       (pack)
+import Control.Exception      as E
+import Control.Monad.Except   (ExceptT (..), liftEither, runExceptT)
+import Control.Monad.IO.Class (liftIO)
+import Data.Aeson             (ToJSON, decode, eitherDecode, toJSON)
+import Data.ByteString.Lazy   (fromStrict)
+import Data.List              (isInfixOf, isPrefixOf, nub, (\\))
+import Data.Maybe             (fromMaybe)
+import GHC.Generics           (Generic)
+import System.Directory       (doesFileExist)
+import System.FilePath        ((</>))
+import System.Process         (readProcess)
 
 -- External imports: auxiliary
 import Data.ByteString.Extra  as B ( safeReadFile )
 import System.Directory.Extra ( copyTemplate )
 
--- Internal imports: auxiliary
-import Command.Result  (Result (..))
-import Data.Location   (Location (..))
-import Paths_ogma_core (getDataDir)
-
--- Internal imports: language ASTs, transformers
+-- External imports: language ASTs, transformers
 import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
                       Requirement (..), Spec (..))
 import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
 
--- Internal imports: language ASTs, transformers
+-- External imports: language ASTs, transformers
 import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
 import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
                                                              pBoolSpec )
@@ -82,6 +79,11 @@ import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
                                                          boolSpecNames)
 import           Language.Trans.Spec2Copilot     (spec2Copilot, specAnalyze)
 
+-- Internal imports: auxiliary
+import Command.Result  (Result (..))
+import Data.Location   (Location (..))
+import Paths_ogma_core (getDataDir)
+
 -- | Generate a new standalone Copilot monitor that implements the spec in an
 -- input file.
 --
@@ -91,38 +93,25 @@ import           Language.Trans.Spec2Copilot     (spec2Copilot, specAnalyze)
 -- used are valid C99 identifiers. The template, if provided, exists and uses
 -- the variables needed by the standalone application generator. The target
 -- directory is writable and there's enough disk space to copy the files over.
-standalone :: FilePath          -- ^ Path to a file containing a specification
-           -> StandaloneOptions -- ^ Customization options
-           -> IO (Result ErrorCode)
-standalone fp options = do
-  E.handle (return . standaloneTemplateError options fp) $ do
+command :: CommandOptions -- ^ Customization options
+        -> IO (Result ErrorCode)
+command options = processResult $ do
     -- Obtain template dir
-    templateDir <- case standaloneTemplateDir options of
-                     Just x  -> return x
-                     Nothing -> do
-                       dataDir <- getDataDir
-                       return $ dataDir </> "templates" </> "standalone"
+    templateDir <- locateTemplateDir mTemplateDir "standalone"
 
-    let functions = exprPair (standalonePropFormat options)
+    appData <- command' options functions
 
-    copilot <- standalone' fp options functions
+    let subst = toJSON appData
 
-    let (mOutput, result) = standaloneResult options fp copilot
-
-    for_ mOutput $ \(externs, internals, reqs, triggers, specName) -> do
-      let subst = object $
-                    [ "externs"   .= pack externs
-                    , "internals" .= pack internals
-                    , "reqs"      .= pack reqs
-                    , "triggers"  .= pack triggers
-                    , "specName"  .= pack specName
-                    ]
-
-      let targetDir = standaloneTargetDir options
-
+    -- Expand template
+    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
       copyTemplate templateDir subst targetDir
 
-    return result
+  where
+
+    targetDir    = commandTargetDir options
+    mTemplateDir = commandTemplateDir options
+    functions    = exprPair (commandPropFormat options)
 
 -- | Generate a new standalone Copilot monitor that implements the spec in an
 -- input file, using a subexpression handler.
@@ -133,59 +122,187 @@ standalone fp options = do
 -- used are valid C99 identifiers. The template, if provided, exists and uses
 -- the variables needed by the standalone application generator. The target
 -- directory is writable and there's enough disk space to copy the files over.
-standalone' :: FilePath
-            -> StandaloneOptions
-            -> ExprPair
-            -> IO (Either String (String, String, String, String, String))
-standalone' fp options (ExprPair parse replace print ids def) = do
-  let name     = standaloneFilename options
-      typeMaps = typeToCopilotTypeMapping options
+command' :: CommandOptions
+         -> ExprPair
+         -> ExceptT ErrorTriplet IO AppData
+command' options (ExprPair exprT) = do
 
-  -- Obtain format file.
-  --
-  -- A format name that exists as a file in the disk always takes preference
-  -- over a file format included with Ogma. A file format with a forward slash
-  -- in the name is always assumed to be a user-provided filename.
-  -- Regardless of whether the file is user-provided or known to Ogma, we check
-  -- (again) whether the file exists, and print an error message if not.
-  let formatName = standaloneFormat options
-  exists  <- doesFileExist formatName
-  dataDir <- getDataDir
-  let formatFile
-        | isInfixOf "/" formatName || exists
-        = formatName
-        | otherwise
-        = dataDir </> "data" </> "formats" </>
-             (standaloneFormat options ++ "_" ++ standalonePropFormat options)
-  formatMissing <- not <$> doesFileExist formatFile
+    -- Read spec and complement the specification with any missing/implicit
+    -- definitions.
+    input <- parseInputFile fp options exprT
+    let spec = addMissingIdentifiers ids input
 
-  if formatMissing
-    then return $ Left $ standaloneIncorrectFormatSpec formatFile
-    else do
-      format <- readFile formatFile
+    -- Analyze the spec for incorrect identifiers and convert it to Copilot.
+    -- If there is an error, we change the error to a message we control.
+    let appData = mapLeft (commandIncorrectSpec fp) $ do
+          spec' <- specAnalyze spec
+          res   <- spec2Copilot name typeMaps replace print spec'
 
-      let wrapper = wrapVia (standalonePropVia options) parse
-      -- All of the following operations use Either to return error messages.
-      -- The use of the monadic bind to pass arguments from one function to the
-      -- next will cause the program to stop at the earliest error.
-      res <-
-        if | isPrefixOf "XMLFormat" format
-           -> do let xmlFormat = read format
-                 content <- readFile fp
-                 parseXMLSpec wrapper def xmlFormat content
-           | otherwise
-           -> do let jsonFormat = read format
-                 content <- B.safeReadFile fp
-                 case content of
-                   Left s  -> return $ Left s
-                   Right b -> do case eitherDecode b of
-                                   Left e  -> return $ Left e
-                                   Right v -> parseJSONSpec wrapper jsonFormat v
+          -- Pack the results
+          let (ext, int, reqs, trigs, specN) = res
 
-      -- Complement the specification with any missing/implicit definitions
-      let res' = fmap (addMissingIdentifiers ids) res
+          return $ AppData ext int reqs trigs specN
 
-      return $ spec2Copilot name typeMaps replace print =<< specAnalyze =<< res'
+    liftEither appData
+
+  where
+
+    fp       = commandInputFile options
+    name     = commandFilename options
+    typeMaps = typeToCopilotTypeMapping options
+
+    ExprPairT parse replace print ids def = exprT
+
+-- ** Argument processing
+
+-- | Options used to customize the conversion of specifications to Copilot
+-- code.
+data CommandOptions = CommandOptions
+  { commandInputFile   :: FilePath           -- ^ Input specification file.
+  , commandTargetDir   :: FilePath           -- ^ Target directory where the
+                                             -- application should be created.
+  , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
+                                             -- is to be found.
+  , commandFormat      :: String             -- ^ Format of the input file.
+  , commandPropFormat  :: String             -- ^ Format used for input
+                                             -- properties.
+  , commandTypeMapping :: [(String, String)]
+  , commandFilename    :: String
+  , commandPropVia     :: Maybe String       -- ^ Use external command to
+                                             -- pre-process system properties.
+  }
+
+-- * Mapping of types from input format to Copilot
+typeToCopilotTypeMapping :: CommandOptions -> [(String, String)]
+typeToCopilotTypeMapping options =
+    [ ("bool",    "Bool")
+    , ("int",     intType)
+    , ("integer", intType)
+    , ("real",    realType)
+    , ("string",  "String")
+    , ("",        "_")
+    ]
+  where
+    intType  = fromMaybe "Int64" $ lookup "int" types
+    realType = fromMaybe "Float" $ lookup "real" types
+
+    types = commandTypeMapping options
+-- | Data that may be relevant to generate a ROS application.
+data AppData = AppData
+    { externs   :: String
+    , internals :: String
+    , reqs      :: String
+    , triggers  :: String
+    , specName  :: String
+    }
+  deriving (Generic)
+
+instance ToJSON AppData
+
+-- | Process input specification, if available, and return its abstract
+-- representation.
+parseInputFile :: FilePath
+               -> CommandOptions
+               -> ExprPairT a
+               -> ExceptT ErrorTriplet IO (Spec a)
+parseInputFile fp opts (ExprPairT parse replace print ids def) =
+  ExceptT $ do
+    let wrapper = wrapVia (commandPropVia opts) parse
+    -- Obtain format file.
+    --
+    -- A format name that exists as a file in the disk always takes preference
+    -- over a file format included with Ogma. A file format with a forward
+    -- slash in the name is always assumed to be a user-provided filename.
+    -- Regardless of whether the file is user-provided or known to Ogma, we
+    -- check (again) whether the file exists, and print an error message if
+    -- not.
+    let formatName = commandFormat opts
+    exists  <- doesFileExist formatName
+    dataDir <- getDataDir
+    let formatFile
+          | isInfixOf "/" formatName || exists
+          = formatName
+          | otherwise
+          = dataDir </> "data" </> "formats" </>
+               (formatName ++ "_" ++ commandPropFormat opts)
+    formatMissing <- not <$> doesFileExist formatFile
+
+    if formatMissing
+      then return $ Left $ commandIncorrectFormatSpec formatFile
+      else do
+        res <- do
+          format <- readFile formatFile
+
+          -- All of the following operations use Either to return error
+          -- messages.  The use of the monadic bind to pass arguments from one
+          -- function to the next will cause the program to stop at the
+          -- earliest error.
+          if | isPrefixOf "XMLFormat" format
+             -> do let xmlFormat = read format
+                   content <- readFile fp
+                   parseXMLSpec
+                     (wrapper) (def) xmlFormat content
+                     -- (fmap (fmap print) . wrapper) (print def) xmlFormat content
+             | otherwise
+             -> do let jsonFormat = read format
+                   content <- B.safeReadFile fp
+                   case content of
+                     Left e  -> return $ Left e
+                     Right b -> do case eitherDecode b of
+                                     Left e  -> return $ Left e
+                                     Right v ->
+                                       parseJSONSpec
+                                         (wrapper)
+                                         jsonFormat
+                                         v
+        case res of
+          Left _  -> return $ Left $ cannotOpenInputFile fp
+          Right x -> return $ Right x
+-- * Handler for boolean expressions
+
+-- | Handler for boolean expressions that knows how to parse them, replace
+-- variables in them, and convert them to Copilot.
+--
+-- It also contains a default value to be used whenever an expression cannot be
+-- found in the input file.
+data ExprPair = forall a . ExprPair
+  { exprTPair   :: ExprPairT a
+  }
+
+data ExprPairT a = ExprPairT
+  { exprTParse   :: String -> Either String a
+  , exprTReplace :: [(String, String)] -> a -> a
+  , exprTPrint   :: a -> String
+  , exprTIdents  :: a -> [String]
+  , exprTUnknown :: a
+  }
+
+
+-- | Return a handler depending on whether it should be for CoCoSpec boolean
+-- expressions or for SMV boolean expressions. We default to SMV if not format
+-- is given.
+exprPair :: String -> ExprPair
+exprPair "cocospec" = ExprPair $
+  ExprPairT
+    (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
+    (\_ -> id)
+    (CoCoSpec.boolSpec2Copilot)
+    (CoCoSpec.boolSpecNames)
+    (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
+exprPair "literal" = ExprPair $
+  ExprPairT
+    Right
+    (\_ -> id)
+    id
+    (const [])
+    "undefined"
+exprPair _ = ExprPair $
+  ExprPairT
+    (SMV.pBoolSpec . SMV.myLexer)
+    (substituteBoolExpr)
+    (SMV.boolSpec2Copilot)
+    (SMV.boolSpecNames)
+    (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- | Parse a property using an auxiliary program to first translate it, if
 -- available.
@@ -200,120 +317,87 @@ wrapVia :: Maybe String                -- ^ Auxiliary program to translate the
         -> IO (Either String a)
 wrapVia Nothing  parse s = return (parse s)
 wrapVia (Just f) parse s =
-  E.handle (\(e :: IOException) -> return $ Left $ show e) $ do
+  E.handle (\(e :: E.IOException) -> return $ Left $ show e) $ do
     out <- readProcess f [] s
     return $ parse out
 
--- | Options used to customize the conversion of specifications to Copilot
--- code.
-data StandaloneOptions = StandaloneOptions
-  { standaloneTargetDir   :: FilePath
-  , standaloneTemplateDir :: Maybe FilePath
-  , standaloneFormat      :: String
-  , standalonePropFormat  :: String
-  , standaloneTypeMapping :: [(String, String)]
-  , standaloneFilename    :: String
-  , standalonePropVia     :: Maybe String
-  }
+-- * Errors
 
--- * Error codes
+-- | A triplet containing error information.
+data ErrorTriplet = ErrorTriplet ErrorCode String Location
 
 -- | Encoding of reasons why the command can fail.
 --
--- The error code used is 1 for user error.
+-- The error codes used are 1 for user error, and 2 for internal bug.
 type ErrorCode = Int
 
--- | Error: the input file cannot be read due to it being unreadable or the
--- format being incorrect.
-ecStandaloneError :: ErrorCode
-ecStandaloneError = 1
+-- | Process a computation that can fail with an error code, and turn it into a
+-- computation that returns a 'Result'.
+processResult :: Monad m => ExceptT ErrorTriplet m a -> m (Result ErrorCode)
+processResult m = do
+  r <- runExceptT m
+  case r of
+    Left (ErrorTriplet errorCode msg location)
+      -> return $ Error errorCode msg location
+    _ -> return Success
 
--- | Error: standalone component generation failed during the copy/write
--- process.
-ecStandaloneTemplateError :: ErrorCode
-ecStandaloneTemplateError = 2
-
--- * Result
-
--- | Process the result of the transformation function.
-standaloneResult :: StandaloneOptions
-                 -> FilePath
-                 -> Either String a
-                 -> (Maybe a, Result ErrorCode)
-standaloneResult options fp result = case result of
-  Left msg -> (Nothing, Error ecStandaloneError msg (LocationFile fp))
-  Right t  -> (Just t, Success)
-
--- | Report an error when trying to open or copy the template
-standaloneTemplateError :: StandaloneOptions
-                        -> FilePath
-                        -> E.SomeException
-                        -> Result ErrorCode
-standaloneTemplateError options fp exception =
-    Error ecStandaloneTemplateError msg (LocationFile fp)
+-- ** Error messages
+-- | Exception handler to deal with the case in which the input file cannot be
+-- opened.
+cannotOpenInputFile :: FilePath -> ErrorTriplet
+cannotOpenInputFile file =
+    ErrorTriplet ecCannotOpenInputFile msg (LocationFile file)
   where
     msg =
-      "Standlone monitor generation failed during copy/write operation. Check"
-      ++ " that there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory. "
-      ++ show exception
+      "cannot open input specification file " ++ file
+
 
 -- | Error message associated to the format file not being found.
-standaloneIncorrectFormatSpec :: String -> String
-standaloneIncorrectFormatSpec formatFile =
-  "The format specification " ++ formatFile ++ " does not exist or is not "
-  ++ "readable"
-
--- * Mapping of types from input format to Copilot
-typeToCopilotTypeMapping :: StandaloneOptions -> [(String, String)]
-typeToCopilotTypeMapping options =
-    [ ("bool",    "Bool")
-    , ("int",     intType)
-    , ("integer", intType)
-    , ("real",    realType)
-    , ("string",  "String")
-    , ("",        "_")
-    ]
+commandIncorrectFormatSpec :: FilePath -> ErrorTriplet
+commandIncorrectFormatSpec formatFile =
+    ErrorTriplet ecIncorrectFormatFile msg (LocationFile formatFile)
   where
-    intType  = fromMaybe "Int64" $ lookup "int" types
-    realType = fromMaybe "Float" $ lookup "real" types
+    msg =
+      "The format specification " ++ formatFile ++ " does not exist or is not "
+      ++ "readable"
 
-    types = standaloneTypeMapping options
+-- | Exception handler to deal with the case of files that cannot be
+-- copied/generated due lack of space or permissions or some I/O error.
+cannotCopyTemplate :: ErrorTriplet
+cannotCopyTemplate =
+    ErrorTriplet ecCannotCopyTemplate msg LocationNothing
+  where
+    msg =
+      "Generation failed during copy/write operation. Check that"
+      ++ " there's free space in the disk and that you have the necessary"
+      ++ " permissions to write in the destination directory."
 
--- * Handler for boolean expressions
+-- | Error message associated to not being able to formalize the input spec.
+commandIncorrectSpec :: String -> String -> ErrorTriplet
+commandIncorrectSpec file e =
+    ErrorTriplet ecIncorrectSpec msg (LocationFile file)
+  where
+    msg =
+      "The input specification " ++ file ++ " canbot be formalized: " ++ e
 
--- | Handler for boolean expressions that knows how to parse them, replace
--- variables in them, and convert them to Copilot.
---
--- It also contains a default value to be used whenever an expression cannot be
--- found in the input file.
-data ExprPair = forall a . ExprPair
-  { exprParse   :: String -> Either String a
-  , exprReplace :: [(String, String)] -> a -> a
-  , exprPrint   :: a -> String
-  , exprIdents  :: a -> [String]
-  , exprUnknown :: a
-  }
+-- ** Error codes
 
--- | Return a handler depending on whether it should be for CoCoSpec boolean
--- expressions or for SMV boolean expressions. We default to SMV if not format
--- is given.
-exprPair :: String -> ExprPair
-exprPair "cocospec" = ExprPair (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
-                               (\_ -> id)
-                               (CoCoSpec.boolSpec2Copilot)
-                               (CoCoSpec.boolSpecNames)
-                               (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
-exprPair "literal"  = ExprPair Right
-                               (\_ -> id)
-                               id
-                               (const [])
-                               "undefined"
-exprPair _          = ExprPair (SMV.pBoolSpec . SMV.myLexer)
-                               (substituteBoolExpr)
-                               (SMV.boolSpec2Copilot)
-                               (SMV.boolSpecNames)
-                               (SMV.BoolSpecSignal (SMV.Ident "undefined"))
+-- | Error: the input specification provided by the user cannot be opened.
+ecCannotOpenInputFile :: ErrorCode
+ecCannotOpenInputFile = 1
+
+-- | Error: the input specification cannot be formalized.
+ecIncorrectSpec :: ErrorCode
+ecIncorrectSpec = 1
+
+-- | Error: the format file cannot be opened.
+ecIncorrectFormatFile :: ErrorCode
+ecIncorrectFormatFile = 1
+
+-- | Error: the files cannot be copied/generated due lack of space or
+-- permissions or some I/O error.
+ecCannotCopyTemplate :: ErrorCode
+ecCannotCopyTemplate = 1
 
 -- | Add to a spec external variables for all identifiers mentioned in
 -- expressions that are not defined anywhere.
@@ -332,3 +416,23 @@ addMissingIdentifiers f s = s { externalVariables = vars' }
     -- Names that are defined in variables.
     existingNames = map externalVariableName (externalVariables s)
                  ++ map internalVariableName (internalVariables s)
+
+-- | Return the path to the template directory.
+locateTemplateDir :: Maybe FilePath
+                  -> FilePath
+                  -> ExceptT e IO FilePath
+locateTemplateDir mTemplateDir name =
+  case mTemplateDir of
+    Just x  -> return x
+    Nothing -> liftIO $ do
+      dataDir <- getDataDir
+      return $ dataDir </> "templates" </> name
+
+-- | Replace the left Exception in an Either.
+makeLeftE :: c -> Either E.SomeException b -> Either c b
+makeLeftE c (Left _)   = Left c
+makeLeftE _ (Right x)  = Right x
+
+mapLeft :: (a -> c) -> Either a b -> Either c b
+mapLeft f (Left x)  = Left (f x)
+mapLeft _ (Right x) = Right x
