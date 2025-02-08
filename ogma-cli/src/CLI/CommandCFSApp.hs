@@ -50,7 +50,8 @@ import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import Command.CFSApp ( ErrorCode, cFSApp )
+import           Command.CFSApp ( ErrorCode )
+import qualified Command.CFSApp
 
 -- * Command
 
@@ -58,7 +59,7 @@ import Command.CFSApp ( ErrorCode, cFSApp )
 data CommandOpts = CommandOpts
   { cFSAppTarget       :: String
   , cFSAppTemplateDir  :: Maybe String
-  , cFSAppVarNames     :: String
+  , cFSAppVarNames     :: Maybe String
   , cFSAppVarDB        :: Maybe String
   , cFSAppHandlers     :: Maybe String
   , cFSAppTemplateVars :: Maybe String
@@ -70,14 +71,16 @@ data CommandOpts = CommandOpts
 --
 -- This is just an uncurried version of "Command.CFSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c =
-  cFSApp
-    (cFSAppTarget c)
-    (cFSAppTemplateDir c)
-    (cFSAppVarNames c)
-    (cFSAppVarDB c)
-    (cFSAppHandlers c)
-    (cFSAppTemplateVars c)
+command c = Command.CFSApp.command options
+  where
+    options = Command.CFSApp.CommandOptions
+                { Command.CFSApp.commandTargetDir   = cFSAppTarget c
+                , Command.CFSApp.commandTemplateDir = cFSAppTemplateDir c
+                , Command.CFSApp.commandVariables   = cFSAppVarNames c
+                , Command.CFSApp.commandVariableDB  = cFSAppVarDB c
+                , Command.CFSApp.commandHandlers    = cFSAppHandlers c
+                , Command.CFSApp.commandExtraVars   = cFSAppTemplateVars c
+                }
 
 -- * CLI
 
@@ -103,12 +106,14 @@ commandOptsParser = CommandOpts
             <> help strCFSAppTemplateDirArgDesc
             )
         )
-  <*> strOption
-        (  long "variable-file"
-        <> metavar "FILENAME"
-        <> showDefault
-        <> value "variables"
-        <> help strCFSAppVarListArgDesc
+  <*> optional
+        ( strOption
+            (  long "variable-file"
+            <> metavar "FILENAME"
+            <> showDefault
+            <> value "variables"
+            <> help strCFSAppVarListArgDesc
+            )
         )
   <*> optional
         ( strOption
