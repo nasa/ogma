@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
@@ -48,12 +49,11 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT(..), liftEither, runExceptT,
                                           throwError )
 import           Control.Monad.IO.Class ( liftIO )
-import           Data.Aeson             ( eitherDecode, object, (.=) )
+import           Data.Aeson             ( ToJSON, eitherDecode, object, toJSON )
 import           Data.Char              ( toUpper )
-import           Data.List              ( isInfixOf, isPrefixOf, find,
-                                          intercalate, nub, sort )
-import           Data.Maybe             ( fromMaybe )
-import           Data.Text.Lazy         ( pack )
+import           Data.List              ( isInfixOf, isPrefixOf, find )
+import           Data.Maybe             ( fromMaybe, mapMaybe )
+import           GHC.Generics           ( Generic )
 import           System.Directory       ( doesFileExist )
 import           System.FilePath        ( (</>) )
 import           System.Process         ( readProcess )
@@ -140,38 +140,10 @@ fprimeApp' targetDir mTemplateDir varNames varDB monitors =
                        dataDir <- getDataDir
                        return $ dataDir </> "templates" </> "fprime"
 
-    let f n o@(oVars) =
-          case variableMap varDB n of
-            Nothing   -> o
-            Just vars -> (vars : oVars)
-
-    -- This is a Data.List.unzip4
-    let vars = foldr f [] varNames
-
-        -- Copilot.fpp
-        (ifaceTypePorts, ifaceInputPorts, ifaceViolationEvents) =
-          componentInterface vars monitors
-
-        -- Copilot.hpp
-        hdrHandlers = componentHeader vars monitors
-
-        -- Copilot.cpp
-        (implInputs,             implMonitorResults, implInputHandlers,
-         implTriggerResultReset, implTriggerChecks,  implTriggers) =
-          componentImpl vars monitors
-
-        subst = object $
-                  [ "ifaceTypePorts"         .= pack ifaceTypePorts
-                  , "ifaceInputPorts"        .= pack ifaceInputPorts
-                  , "ifaceViolationEvents"   .= pack ifaceViolationEvents
-                  , "hdrHandlers"            .= pack hdrHandlers
-                  , "implInputs"             .= pack implInputs
-                  , "implMonitorResults"     .= pack implMonitorResults
-                  , "implInputHandlers"      .= pack implInputHandlers
-                  , "implTriggerResultReset" .= pack implTriggerResultReset
-                  , "implTriggerChecks"      .= pack implTriggerChecks
-                  , "implTriggers"           .= pack implTriggers
-                  ]
+    let subst     = toJSON appData
+        appData   = AppData variables monitors'
+        variables = mapMaybe (variableMap varDB) varNames
+        monitors' = map (\x -> Monitor x (map toUpper x)) monitors
 
     copyTemplate templateDir subst targetDir
 
@@ -369,13 +341,47 @@ variableMap varDB varName =
     -- Convert a DB row into Variable info needed to generate the FPrime file
     csvToVarMap :: (String, String)
                 -> (VarDecl)
-    csvToVarMap (nm, ty) = (VarDecl nm ty)
+    csvToVarMap (nm, ty) = (VarDecl nm ty (fprimeVarDeclType ty))
+
+    fprimeVarDeclType ty = case ty of
+      "uint8_t"  -> "U8"
+      "uint16_t" -> "U16"
+      "uint32_t" -> "U32"
+      "uint64_t" -> "U64"
+      "int8_t"   -> "I8"
+      "int16_t"  -> "I16"
+      "int32_t"  -> "I32"
+      "int64_t"  -> "I64"
+      "float"    -> "F32"
+      "double"   -> "F64"
+      def        -> def
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
-  { varDeclName :: String
-  , varDeclType :: String
+    { varDeclName       :: String
+    , varDeclType       :: String
+    , varDeclFPrimeType :: String
+    }
+  deriving Generic
+
+instance ToJSON VarDecl
+
+data Monitor = Monitor
+    { monitorName :: String
+    , monitorUC   :: String
+    }
+  deriving Generic
+
+instance ToJSON Monitor
+
+-- | Data that may be relevant to generate a ROS application.
+data AppData = AppData
+  { variables :: [VarDecl]
+  , monitors  :: [Monitor]
   }
+  deriving (Generic)
+
+instance ToJSON AppData
 
 -- * Handler for boolean expressions
 
@@ -434,151 +440,6 @@ wrapVia (Just f) parse s =
   E.handle (\(e :: E.IOException) -> return $ Left $ show e) $ do
     out <- readProcess f [] s
     return $ parse out
-
--- * FPrime component content
-
--- | Return the contents of the FPrime component interface (.fpp) specification.
-componentInterface :: [VarDecl]
-                   -> [String]     -- Monitors
-                   -> (String, String, String)
-componentInterface variables monitors =
-    (typePorts, inputPorts, violationEvents)
-  where
-
-    typePorts = unlines' $ nub $ sort $ map toTypePort variables
-    toTypePort varDecl = "    port "
-                       ++ fprimeVarDeclType varDecl
-                       ++ "Value(value: "
-                       ++ fprimeVarDeclType varDecl
-                       ++ ")"
-
-    inputPorts = unlines' $ map toInputPortDecl variables
-    toInputPortDecl varDecl = "    async input port "
-                            ++ varDeclName varDecl
-                            ++ "In : " ++ fprimeVarDeclType varDecl
-                            ++ "Value"
-
-    fprimeVarDeclType varDecl = case varDeclType varDecl of
-      "uint8_t"  -> "U8"
-      "uint16_t" -> "U16"
-      "uint32_t" -> "U32"
-      "uint64_t" -> "U64"
-      "int8_t"   -> "I8"
-      "int16_t"  -> "I16"
-      "int32_t"  -> "I32"
-      "int64_t"  -> "I64"
-      "float"    -> "F32"
-      "double"   -> "F64"
-      def        -> def
-
-    violationEvents = unlines'
-                    $ intercalate [""]
-                    $ map violationEvent monitors
-    violationEvent monitor =
-        [ "    @ " ++ monitor ++ " violation"
-        , "    event " ++ ucMonitor ++ "_VIOLATION("
-        , "          " ++ replicate (length ucMonitor) ' ' ++ "          ) \\"
-        , "      severity activity high \\"
-        , "      id 0 \\"
-        , "      format \"" ++ monitor ++ " violation\""
-        ]
-      where
-        ucMonitor = map toUpper monitor
-
--- | Return the contents of the FPrime component header file.
-componentHeader :: [VarDecl]
-                -> [String]     -- Monitors
-                -> String
-componentHeader variables _monitors = handlers
-  where
-    handlers = unlines'
-             $ intercalate [""]
-             $ map toInputHandler variables
-    toInputHandler nm =
-        [ "      //! Handler implementation for " ++ varDeclName nm ++ "In"
-        , "      //!"
-        , "      void " ++ varDeclName nm ++ "In_handler("
-        , "            const NATIVE_INT_TYPE portNum, /*!< The port number*/"
-        , "            " ++ portTy ++ " value"
-        , "        );"
-        ]
-      where
-        portTy = varDeclType nm
-
-
--- | Return the contents of the main FPrime component.
-componentImpl :: [VarDecl]
-              -> [String]     -- Monitors
-              -> (String, String, String, String, String, String)
-componentImpl variables monitors =
-    ( inputs
-    , monitorResults
-    , inputHandlers
-    , triggerResultReset
-    , triggerChecks
-    , triggers
-    )
-
-  where
-
-    inputs = unlines' variablesS
-
-    monitorResults = unlines'
-                   $ intercalate [""]
-                   $ map monitorResult monitors
-    monitorResult monitor =
-        [ "bool " ++ monitor ++ "_result;"
-        ]
-
-    inputHandlers = unlines'
-                  $ intercalate [""]
-                  $ map toInputHandler variables
-    toInputHandler nm =
-        [ "  void Copilot :: "
-        , "    " ++ varDeclName nm ++ "In_handler("
-        , "        const NATIVE_INT_TYPE portNum,"
-        , "        " ++ portTy ++ " value"
-        , "    )"
-        , "  {"
-        , "    " ++ varDeclName nm ++ " = (" ++ ty ++ ") value;"
-        , "  }"
-        ]
-      where
-        portTy = varDeclType nm
-        ty     = varDeclType nm
-
-    triggerResultReset = unlines'
-                       $ intercalate [""]
-                       $ map monitorResultReset monitors
-    monitorResultReset monitor =
-        [ "    " ++ monitor ++ "_result = false;"
-        ]
-
-    triggerChecks = unlines'
-                  $ intercalate [""]
-                  $ map triggerCheck monitors
-    triggerCheck monitor =
-        [ "    if (" ++ monitor ++ "_result) {"
-        , "       this->log_ACTIVITY_HI_" ++ ucMonitor ++ "_VIOLATION();"
-        , "    }"
-        ]
-      where
-        ucMonitor = map toUpper monitor
-
-    triggers :: String
-    triggers = unlines'
-             $ intercalate [""]
-             $ map triggerImpl monitors
-    triggerImpl monitor =
-        [ "void " ++ monitor ++ "() {"
-        , "  " ++ monitor ++ "_result = true;"
-        , "}"
-        ]
-
-    variablesS :: [String]
-    variablesS = map toVarDecl variables
-    toVarDecl varDecl =
-      varDeclType varDecl ++ " " ++ varDeclName varDecl ++ ";"
 
 -- * Exception handlers
 
@@ -697,11 +558,3 @@ ecCannotCopyTemplate = 1
 -- | Error: the format file cannot be opened.
 ecIncorrectFormatFile :: ErrorCode
 ecIncorrectFormatFile = 1
-
--- * Auxliary functions
-
--- | Create a string from a list of strings, inserting new line characters
--- between them. Unlike 'Prelude.unlines', this function does not insert
--- an end of line character at the end of the last string.
-unlines' :: [String] -> String
-unlines' = intercalate "\n"
