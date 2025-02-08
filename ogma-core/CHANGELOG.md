@@ -15,6 +15,7 @@
 * Remove incorrect function declaration from template (#240).
 * Re-structure cFS backend to avoid nested conditions (#242).
 * Make structured data available to ROS template (#244).
+* Make structured data available to FPrime template (#246).
 
 ## [1.6.0] - 2025-01-21
 
