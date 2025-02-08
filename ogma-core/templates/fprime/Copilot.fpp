@@ -1,7 +1,9 @@
 module Ref {
 
-{{{ifaceTypePorts}}}
+{{#variables}}
+    port {{varDeclFPrimeType}}Value(value: {{varDeclFPrimeType}})
 
+{{/variables}}
   @ Monitoring component
   queued component Copilot {
 
@@ -9,8 +11,10 @@ module Ref {
     # General ports
     # ----------------------------------------------------------------------
 
-{{{ifaceInputPorts}}}
+{{#variables}}
+    async input port {{varDeclName}}In : {{varDeclFPrimeType}}Value
 
+{{/variables}}
     # ----------------------------------------------------------------------
     # Special ports
     # ----------------------------------------------------------------------
@@ -52,8 +56,14 @@ module Ref {
     # Events
     # ----------------------------------------------------------------------
 
-{{{ifaceViolationEvents}}}
+{{#monitors}}
+    @ {{monitorName}} violation
+    event {{monitorUC}}_VIOLATION() \
+      severity activity high \
+      id 0 \
+      format "{{monitorName}} violation"
 
+{{/monitors}}
     # ----------------------------------------------------------------------
     # Commands
     # ----------------------------------------------------------------------

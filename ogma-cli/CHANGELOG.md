@@ -11,6 +11,7 @@
 * Document new template variables in README (#237).
 * Fix formatting of template variables in README (#222).
 * Update README with new ROS template variables (#244).
+* Update README with new FPrime template variables (#246).
 
 ## [1.6.0] - 2025-01-21
 
