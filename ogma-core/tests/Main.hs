@@ -10,7 +10,7 @@ import System.Directory               ( getTemporaryDirectory )
 -- Internal imports
 import Command.CStructs2Copilot (cstructs2Copilot)
 import Command.Result           (isSuccess)
-import Command.Standalone       (StandaloneOptions (..), standalone)
+import Command.Standalone       (CommandOptions (..), command)
 
 -- | Run all unit tests on ogma-core.
 main :: IO ()
@@ -102,16 +102,17 @@ testStandaloneFCS :: FilePath  -- ^ Path to a input file
                   -> IO ()
 testStandaloneFCS file success = do
     targetDir <- getTemporaryDirectory
-    let opts = StandaloneOptions
-                 { standaloneFormat      = "fcs"
-                 , standalonePropFormat  = "smv"
-                 , standaloneTypeMapping = [("int", "Int64"), ("real", "Float")]
-                 , standaloneFilename    = "monitor"
-                 , standaloneTargetDir   = targetDir
-                 , standaloneTemplateDir = Nothing
-                 , standalonePropVia     = Nothing
+    let opts = CommandOptions
+                 { commandInputFile   = file
+                 , commandFormat      = "fcs"
+                 , commandPropFormat  = "smv"
+                 , commandTypeMapping = [("int", "Int64"), ("real", "Float")]
+                 , commandFilename    = "monitor"
+                 , commandTargetDir   = targetDir
+                 , commandTemplateDir = Nothing
+                 , commandPropVia     = Nothing
                  }
-    result <- standalone file opts
+    result <- command opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
@@ -137,16 +138,17 @@ testStandaloneFDB :: FilePath  -- ^ Path to input file
                   -> IO ()
 testStandaloneFDB file success = do
     targetDir <- getTemporaryDirectory
-    let opts = StandaloneOptions
-                 { standaloneFormat      = "fdb"
-                 , standalonePropFormat  = "cocospec"
-                 , standaloneTypeMapping = []
-                 , standaloneFilename    = "monitor"
-                 , standaloneTargetDir   = targetDir
-                 , standaloneTemplateDir = Nothing
-                 , standalonePropVia     = Nothing
+    let opts = CommandOptions
+                 { commandInputFile   = file
+                 , commandFormat      = "fdb"
+                 , commandPropFormat  = "cocospec"
+                 , commandTypeMapping = []
+                 , commandFilename    = "monitor"
+                 , commandTargetDir   = targetDir
+                 , commandTemplateDir = Nothing
+                 , commandPropVia     = Nothing
                  }
-    result <- standalone file opts
+    result <- command opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.

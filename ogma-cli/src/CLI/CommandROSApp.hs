@@ -50,7 +50,7 @@ import Options.Applicative ( Parser, help, long, metavar, optional, short,
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import           Command.ROSApp (ErrorCode, rosApp)
+import           Command.ROSApp (ErrorCode)
 import qualified Command.ROSApp
 
 -- * Command
@@ -74,17 +74,18 @@ data CommandOpts = CommandOpts
 --
 -- This is just a wrapper around "Command.ROSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = rosApp (rosAppInputFile c) options
+command c = Command.ROSApp.command options
   where
-    options = Command.ROSApp.ROSAppOptions
-                { Command.ROSApp.rosAppTargetDir   = rosAppTarget c
-                , Command.ROSApp.rosAppTemplateDir = rosAppTemplateDir c
-                , Command.ROSApp.rosAppVariables   = rosAppVarNames c
-                , Command.ROSApp.rosAppVariableDB  = rosAppVarDB c
-                , Command.ROSApp.rosAppHandlers    = rosAppHandlers c
-                , Command.ROSApp.rosAppFormat      = rosAppFormat c
-                , Command.ROSApp.rosAppPropFormat  = rosAppPropFormat c
-                , Command.ROSApp.rosAppPropVia     = rosAppPropVia c
+    options = Command.ROSApp.CommandOptions
+                { Command.ROSApp.commandInputFile   = rosAppInputFile c
+                , Command.ROSApp.commandTargetDir   = rosAppTarget c
+                , Command.ROSApp.commandTemplateDir = rosAppTemplateDir c
+                , Command.ROSApp.commandVariables   = rosAppVarNames c
+                , Command.ROSApp.commandVariableDB  = rosAppVarDB c
+                , Command.ROSApp.commandHandlers    = rosAppHandlers c
+                , Command.ROSApp.commandFormat      = rosAppFormat c
+                , Command.ROSApp.commandPropFormat  = rosAppPropFormat c
+                , Command.ROSApp.commandPropVia     = rosAppPropVia c
                 }
 
 -- * CLI
