@@ -38,9 +38,9 @@
 
 {- HLINT ignore "Functor law" -}
 module Command.FPrimeApp
-    ( fprimeApp
+    ( command
+    , CommandOptions(..)
     , ErrorCode
-    , FPrimeAppOptions(..)
     )
   where
 
@@ -69,11 +69,7 @@ import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
 import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
 
--- Internal imports: auxiliary
-import Command.Result                 ( Result (..) )
-import Data.Location                  ( Location (..) )
-
--- Internal imports: language ASTs, transformers
+-- External imports: language ASTs, transformers
 import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
 import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
                                                              pBoolSpec )
@@ -87,240 +83,89 @@ import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot,
 import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
                                                          boolSpecNames)
 
--- Internal imports
-import Paths_ogma_core ( getDataDir )
-
--- * FPrime component generation
+-- Internal imports: auxiliary
+import Command.Result  (Result (..))
+import Data.Location   (Location (..))
+import Paths_ogma_core (getDataDir)
 
 -- | Generate a new FPrime component connected to Copilot.
-fprimeApp :: Maybe FilePath   -- ^ Input specification file.
-          -> FPrimeAppOptions -- ^ Options to the ROS backend.
-          -> IO (Result ErrorCode)
-fprimeApp fp options =
-    processResult $ do
-      spec  <- parseOptionalInputFile fp options functions
-      vs    <- parseOptionalVariablesFile varNameFile
-      rs    <- parseOptionalRequirementsListFile handlersFile
-      varDB <- parseOptionalVarDBFile varDBFile
-
-      liftEither $ checkArguments spec vs rs
-
-      let varNames = fromMaybe (specExtractExternalVariables spec) vs
-          monitors = fromMaybe (specExtractHandlers spec) rs
-
-      e <- liftIO $ fprimeApp' targetDir mTemplateDir varNames varDB monitors
-      liftEither e
-  where
-    targetDir    = fprimeAppTargetDir options
-    mTemplateDir = fprimeAppTemplateDir options
-    varNameFile  = fprimeAppVarNames options
-    varDBFile    = fprimeAppVariableDB options
-    handlersFile = fprimeAppHandlers options
-    functions    = exprPair (fprimeAppPropFormat options)
-
--- | Generate a new FPrime component connected to Copilot, by copying the
--- template and filling additional necessary files.
-fprimeApp' :: FilePath           -- ^ Target directory where the component
-                                 -- should be created.
-           -> Maybe FilePath     -- ^ Directory where the template is to be
-                                 -- found.
-           -> [String]           -- ^ List of variable names (data sources).
-           -> [(String, String)] -- ^ List of variables with their types, and
-                                 -- the message IDs (topics) they can be
-                                 -- obtained from.
-           -> [String]           -- ^ List of handlers associated to the
-                                 -- monitors (or requirements monitored).
-           -> IO (Either ErrorTriplet ())
-fprimeApp' targetDir mTemplateDir varNames varDB monitors =
-  E.handle (return . Left . cannotCopyTemplate) $ do
+command :: CommandOptions -- ^ Options to the ROS backend.
+        -> IO (Result ErrorCode)
+command options = processResult $ do
     -- Obtain template dir
-    templateDir <- case mTemplateDir of
-                     Just x  -> return x
-                     Nothing -> do
-                       dataDir <- getDataDir
-                       return $ dataDir </> "templates" </> "fprime"
+    templateDir <- locateTemplateDir mTemplateDir "fprime"
 
-    let subst     = toJSON appData
-        appData   = AppData variables monitors'
+    appData <- command' options functions
+
+    let subst = toJSON appData
+
+    -- Expand template
+    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+      copyTemplate templateDir subst targetDir
+
+  where
+
+    targetDir    = commandTargetDir options
+    mTemplateDir = commandTemplateDir options
+    functions    = exprPair (commandPropFormat options)
+
+command' :: CommandOptions
+         -> ExprPair
+         -> ExceptT ErrorTriplet IO AppData
+command' options (ExprPair exprT) = do
+    -- Open files needed to fill in details in the template.
+    vs    <- parseVariablesFile varNameFile
+    rs    <- parseRequirementsListFile handlersFile
+    varDB <- parseVarDBFile varDBFile
+
+    spec  <- maybe (return Nothing)
+                   (\f -> Just <$> parseInputFile f options exprT)
+                   fp
+
+    liftEither $ checkArguments spec vs rs
+
+    let varNames = fromMaybe (specExtractExternalVariables spec) vs
+        monitors = fromMaybe (specExtractHandlers spec) rs
+
+    let appData   = AppData variables monitors'
         variables = mapMaybe (variableMap varDB) varNames
         monitors' = map (\x -> Monitor x (map toUpper x)) monitors
 
-    copyTemplate templateDir subst targetDir
+    return appData
 
-    return $ Right ()
+  where
+
+    fp           = commandInputFile options
+    varNameFile  = commandVariables options
+    varDBFile    = commandVariableDB options
+    handlersFile = commandHandlers options
 
 -- ** Argument processing
 
 -- | Options used to customize the conversion of specifications to F'
 -- applications.
-data FPrimeAppOptions = FPrimeAppOptions
-  { fprimeAppTargetDir   :: FilePath       -- ^ Target directory where the
-                                           -- component should be created.
-  , fprimeAppTemplateDir :: Maybe FilePath -- ^ Directory where the template is
-                                           -- to be found.
-  , fprimeAppVarNames    :: Maybe FilePath -- ^ File containing a list of
-                                           -- variables to make available to
-                                           -- Copilot.
-  , fprimeAppVariableDB  :: Maybe FilePath -- ^ File containing a list of known
-                                           -- variables with their types and
-                                           -- the message IDs they can be
-                                           -- obtained from.
-  , fprimeAppHandlers    :: Maybe FilePath -- ^ File containing a list of
-                                           -- handlers used in the Copilot
-                                           -- specification. The handlers are
-                                           -- assumed to receive no arguments.
-  , fprimeAppFormat      :: String         -- ^ Format of the input file.
-  , fprimeAppPropFormat  :: String         -- ^ Format used for input
-                                           -- properties.
-  , fprimeAppPropVia     :: Maybe String   -- ^ Use external command to
-                                           -- pre-process system properties.
+data CommandOptions = CommandOptions
+  { commandInputFile   :: Maybe FilePath -- ^ Input specification file.
+  , commandTargetDir   :: FilePath       -- ^ Target directory where the
+                                         -- component should be created.
+  , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
+                                         -- to be found.
+  , commandVariables   :: Maybe FilePath -- ^ File containing a list of
+                                         -- variables to make available to
+                                         -- Copilot.
+  , commandVariableDB  :: Maybe FilePath -- ^ File containing a list of known
+                                         -- variables with their types and the
+                                         -- message IDs they can be obtained
+                                         -- from.
+  , commandHandlers    :: Maybe FilePath -- ^ File containing a list of
+                                         -- handlers used in the Copilot
+                                         -- specification. The handlers are
+                                         -- assumed to receive no arguments.
+  , commandFormat      :: String         -- ^ Format of the input file.
+  , commandPropFormat  :: String         -- ^ Format used for input properties.
+  , commandPropVia     :: Maybe String   -- ^ Use external command to
+                                         -- pre-process system properties.
   }
-
--- | Process input specification, if available, and return its abstract
--- representation.
-parseOptionalInputFile :: Maybe FilePath
-                       -> FPrimeAppOptions
-                       -> ExprPair
-                       -> ExceptT ErrorTriplet IO (Maybe (Spec String))
-parseOptionalInputFile Nothing   _    _ =
-  return Nothing
-parseOptionalInputFile (Just fp) opts (ExprPair parse replace print ids def) =
-  ExceptT $ do
-    let wrapper = wrapVia (fprimeAppPropVia opts) parse
-    -- Obtain format file.
-    --
-    -- A format name that exists as a file in the disk always takes preference
-    -- over a file format included with Ogma. A file format with a forward
-    -- slash in the name is always assumed to be a user-provided filename.
-    -- Regardless of whether the file is user-provided or known to Ogma, we
-    -- check (again) whether the file exists, and print an error message if
-    -- not.
-    let formatName = fprimeAppFormat opts
-    exists  <- doesFileExist formatName
-    dataDir <- getDataDir
-    let formatFile
-          | isInfixOf "/" formatName || exists
-          = formatName
-          | otherwise
-          = dataDir </> "data" </> "formats" </>
-               (formatName ++ "_" ++ fprimeAppPropFormat opts)
-    formatMissing <- not <$> doesFileExist formatFile
-
-    if formatMissing
-      then return $ Left $ fprimeAppIncorrectFormatSpec formatFile
-      else do
-        res <- do
-          format <- readFile formatFile
-
-          -- All of the following operations use Either to return error
-          -- messages.  The use of the monadic bind to pass arguments from one
-          -- function to the next will cause the program to stop at the
-          -- earliest error.
-          if | isPrefixOf "XMLFormat" format
-             -> do let xmlFormat = read format
-                   content <- readFile fp
-                   parseXMLSpec
-                     (fmap (fmap print) . wrapper)
-                     (print def)
-                     xmlFormat
-                     content
-             | otherwise
-             -> do let jsonFormat = read format
-                   content <- B.safeReadFile fp
-                   case content of
-                     Left e  -> return $ Left e
-                     Right b -> do case eitherDecode b of
-                                     Left e  -> return $ Left e
-                                     Right v ->
-                                       parseJSONSpec
-                                         (fmap (fmap print) . wrapper)
-                                         jsonFormat
-                                         v
-        case res of
-          Left e  -> return $ Left $ cannotOpenInputFile fp e
-          Right x -> return $ Right $ Just x
-
--- | Process a variable selection file, if available, and return the variable
--- names.
-parseOptionalVariablesFile :: Maybe FilePath
-                           -> ExceptT ErrorTriplet IO (Maybe [String])
-parseOptionalVariablesFile Nothing   = return Nothing
-parseOptionalVariablesFile (Just fp) = do
-  -- Fail if the file cannot be opened.
-  varNamesE <- liftIO $ E.try $ lines <$> readFile fp
-  case varNamesE of
-    Left e         -> throwError $ cannotOpenVarFile fp e
-    Right varNames -> return $ Just varNames
-
--- | Process a requirements / handlers list file, if available, and return the
--- handler names.
-parseOptionalRequirementsListFile :: Maybe FilePath
-                                  -> ExceptT ErrorTriplet IO (Maybe [String])
-parseOptionalRequirementsListFile Nothing   = return Nothing
-parseOptionalRequirementsListFile (Just fp) = do
-  -- Fail if the file cannot be opened.
-  handlerNamesE <- liftIO $ E.try $ lines <$> readFile fp
-  case handlerNamesE of
-    Left e         -> throwError $ cannotOpenHandlersFile fp e
-    Right monitors -> return $ Just monitors
-
--- | Process a variable database file, if available, and return the rows in it.
-parseOptionalVarDBFile :: Maybe FilePath
-                       -> ExceptT ErrorTriplet
-                                  IO
-                                  [(String, String)]
-parseOptionalVarDBFile Nothing   = return []
-parseOptionalVarDBFile (Just fp) = do
-  -- We first try to open the files we need to fill in details in the FPrime
-  -- component template.
-  --
-  -- The variable DB is optional, so this check only fails if the filename
-  -- provided does not exist or if the file cannot be opened or parsed (wrong
-  -- format).
-  varDBE <- liftIO $ E.try $ fmap read <$> lines <$> readFile fp
-  case varDBE of
-    Left  e     -> throwError $ cannotOpenDB fp e
-    Right varDB -> return varDB
-
--- | Check that the arguments provided are sufficient to operate.
---
--- The FPrime backend provides several modes of operation, which are selected
--- by providing different arguments to the `ros` command.
---
--- When an input specification file is provided, the variables and requirements
--- defined in it are used unless variables or handlers files are provided, in
--- which case the latter take priority.
---
--- If an input file is not provided, then the user must provide BOTH a variable
--- list, and a list of handlers.
-checkArguments :: Maybe (Spec a)
-               -> Maybe [String]
-               -> Maybe [String]
-               -> Either ErrorTriplet ()
-checkArguments Nothing Nothing   Nothing   = Left wrongArguments
-checkArguments Nothing Nothing   _         = Left wrongArguments
-checkArguments Nothing _         Nothing   = Left wrongArguments
-checkArguments _       (Just []) _         = Left wrongArguments
-checkArguments _       _         (Just []) = Left wrongArguments
-checkArguments _       _         _         = Right ()
-
--- | Extract the variables from a specification, and sanitize them to be used
--- in FPrime.
-specExtractExternalVariables :: Maybe (Spec a) -> [String]
-specExtractExternalVariables Nothing   = []
-specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
-                                       $ map externalVariableName
-                                       $ externalVariables cs
-
--- | Extract the requirements from a specification, and sanitize them to match
--- the names of the handlers used by Copilot.
-specExtractHandlers :: Maybe (Spec a) -> [String]
-specExtractHandlers Nothing   = []
-specExtractHandlers (Just cs) = map handlerNameF
-                              $ map requirementName
-                              $ requirements cs
-  where
-    handlerNameF = ("handler" ++) . sanitizeUCIdentifier
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
@@ -383,6 +228,135 @@ data AppData = AppData
 
 instance ToJSON AppData
 
+-- | Process input specification, if available, and return its abstract
+-- representation.
+parseInputFile :: FilePath
+               -> CommandOptions
+               -> ExprPairT a
+               -> ExceptT ErrorTriplet IO (Spec a)
+parseInputFile fp opts (ExprPairT parse replace print ids def) =
+  ExceptT $ do
+    let wrapper = wrapVia (commandPropVia opts) parse
+    -- Obtain format file.
+    --
+    -- A format name that exists as a file in the disk always takes preference
+    -- over a file format included with Ogma. A file format with a forward
+    -- slash in the name is always assumed to be a user-provided filename.
+    -- Regardless of whether the file is user-provided or known to Ogma, we
+    -- check (again) whether the file exists, and print an error message if
+    -- not.
+    let formatName = commandFormat opts
+    exists  <- doesFileExist formatName
+    dataDir <- getDataDir
+    let formatFile
+          | isInfixOf "/" formatName || exists
+          = formatName
+          | otherwise
+          = dataDir </> "data" </> "formats" </>
+               (formatName ++ "_" ++ commandPropFormat opts)
+    formatMissing <- not <$> doesFileExist formatFile
+
+    if formatMissing
+      then return $ Left $ commandIncorrectFormatSpec formatFile
+      else do
+        res <- do
+          format <- readFile formatFile
+
+          -- All of the following operations use Either to return error
+          -- messages.  The use of the monadic bind to pass arguments from one
+          -- function to the next will cause the program to stop at the
+          -- earliest error.
+          if | isPrefixOf "XMLFormat" format
+             -> do let xmlFormat = read format
+                   content <- readFile fp
+                   parseXMLSpec
+                     (wrapper) (def) xmlFormat content
+                     -- (fmap (fmap print) . wrapper) (print def) xmlFormat content
+             | otherwise
+             -> do let jsonFormat = read format
+                   content <- B.safeReadFile fp
+                   case content of
+                     Left e  -> return $ Left e
+                     Right b -> do case eitherDecode b of
+                                     Left e  -> return $ Left e
+                                     Right v ->
+                                       parseJSONSpec
+                                         (wrapper)
+                                         jsonFormat
+                                         v
+        case res of
+          Left e  -> return $ Left $ cannotOpenInputFile fp
+          Right x -> return $ Right x
+
+-- | Process a variable selection file, if available, and return the variable
+-- names.
+parseVariablesFile :: Maybe FilePath
+                   -> ExceptT ErrorTriplet IO (Maybe [String])
+parseVariablesFile Nothing   = return Nothing
+parseVariablesFile (Just fp) = do
+  -- Fail if the file cannot be opened.
+  varNamesE <- liftIO $ E.try $ lines <$> readFile fp
+  case (varNamesE :: Either E.SomeException [String]) of
+    Left _         -> throwError $ cannotOpenVarFile fp
+    Right varNames -> return $ Just varNames
+
+-- | Process a requirements / handlers list file, if available, and return the
+-- handler names.
+parseRequirementsListFile :: Maybe FilePath
+                          -> ExceptT ErrorTriplet IO (Maybe [String])
+parseRequirementsListFile Nothing   = return Nothing
+parseRequirementsListFile (Just fp) =
+  ExceptT $ makeLeftE (cannotOpenHandlersFile fp) <$>
+    (E.try $ Just . lines <$> readFile fp)
+
+-- | Process a variable database file, if available, and return the rows in it.
+parseVarDBFile :: Read a
+               => Maybe FilePath
+               -> ExceptT ErrorTriplet IO [a]
+parseVarDBFile Nothing   = return []
+parseVarDBFile (Just fn) =
+  ExceptT $ makeLeftE (cannotOpenDB fn) <$>
+    (E.try $ fmap read <$> lines <$> readFile fn)
+
+-- | Check that the arguments provided are sufficient to operate.
+--
+-- The backend provides several modes of operation, which are selected
+-- by providing different arguments to the `ros` command.
+--
+-- When an input specification file is provided, the variables and requirements
+-- defined in it are used unless variables or handlers files are provided, in
+-- which case the latter take priority.
+--
+-- If an input file is not provided, then the user must provide BOTH a variable
+-- list, and a list of handlers.
+checkArguments :: Maybe (Spec a)
+               -> Maybe [String]
+               -> Maybe [String]
+               -> Either ErrorTriplet ()
+checkArguments Nothing Nothing   Nothing   = Left wrongArguments
+checkArguments Nothing Nothing   _         = Left wrongArguments
+checkArguments Nothing _         Nothing   = Left wrongArguments
+checkArguments _       (Just []) _         = Left wrongArguments
+checkArguments _       _         (Just []) = Left wrongArguments
+checkArguments _       _         _         = Right ()
+
+-- | Extract the variables from a specification, and sanitize them.
+specExtractExternalVariables :: Maybe (Spec a) -> [String]
+specExtractExternalVariables Nothing   = []
+specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
+                                       $ map externalVariableName
+                                       $ externalVariables cs
+
+-- | Extract the requirements from a specification, and sanitize them to match
+-- the names of the handlers used by Copilot.
+specExtractHandlers :: Maybe (Spec a) -> [String]
+specExtractHandlers Nothing   = []
+specExtractHandlers (Just cs) = map handlerNameF
+                              $ map requirementName
+                              $ requirements cs
+  where
+    handlerNameF = ("handler" ++) . sanitizeUCIdentifier
+
 -- * Handler for boolean expressions
 
 -- | Handler for boolean expressions that knows how to parse them, replace
@@ -391,33 +365,38 @@ instance ToJSON AppData
 -- It also contains a default value to be used whenever an expression cannot be
 -- found in the input file.
 data ExprPair = forall a . ExprPair
-  { exprParse   :: String -> Either String a
-  , exprReplace :: [(String, String)] -> a -> a
-  , exprPrint   :: a -> String
-  , exprIdents  :: a -> [String]
-  , exprUnknown :: a
+  { exprTPair   :: ExprPairT a
   }
+
+data ExprPairT a = ExprPairT
+  { exprTParse   :: String -> Either String a
+  , exprTReplace :: [(String, String)] -> a -> a
+  , exprTPrint   :: a -> String
+  , exprTIdents  :: a -> [String]
+  , exprTUnknown :: a
+  }
+
 
 -- | Return a handler depending on whether it should be for CoCoSpec boolean
 -- expressions or for SMV boolean expressions. We default to SMV if not format
 -- is given.
 exprPair :: String -> ExprPair
-exprPair "cocospec" =
-  ExprPair
+exprPair "cocospec" = ExprPair $
+  ExprPairT
     (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
     (\_ -> id)
     (CoCoSpec.boolSpec2Copilot)
     (CoCoSpec.boolSpecNames)
     (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
-exprPair "literal" =
-  ExprPair
+exprPair "literal" = ExprPair $
+  ExprPairT
     Right
     (\_ -> id)
     id
     (const [])
     "undefined"
-exprPair _ =
-  ExprPair
+exprPair _ = ExprPair $
+  ExprPairT
     (SMV.pBoolSpec . SMV.myLexer)
     (substituteBoolExpr)
     (SMV.boolSpec2Copilot)
@@ -441,7 +420,27 @@ wrapVia (Just f) parse s =
     out <- readProcess f [] s
     return $ parse out
 
--- * Exception handlers
+-- * Errors
+
+-- | A triplet containing error information.
+data ErrorTriplet = ErrorTriplet ErrorCode String Location
+
+-- | Encoding of reasons why the command can fail.
+--
+-- The error codes used are 1 for user error, and 2 for internal bug.
+type ErrorCode = Int
+
+-- | Process a computation that can fail with an error code, and turn it into a
+-- computation that returns a 'Result'.
+processResult :: Monad m => ExceptT ErrorTriplet m a -> m (Result ErrorCode)
+processResult m = do
+  r <- runExceptT m
+  case r of
+    Left (ErrorTriplet errorCode msg location)
+      -> return $ Error errorCode msg location
+    _ -> return Success
+
+-- ** Error messages
 
 -- | Exception handler to deal with the case in which the arguments
 -- provided are incorrect.
@@ -455,8 +454,8 @@ wrongArguments =
 
 -- | Exception handler to deal with the case in which the input file cannot be
 -- opened.
-cannotOpenInputFile :: FilePath -> String -> ErrorTriplet
-cannotOpenInputFile file _e =
+cannotOpenInputFile :: FilePath -> ErrorTriplet
+cannotOpenInputFile file =
     ErrorTriplet ecCannotOpenInputFile msg (LocationFile file)
   where
     msg =
@@ -464,71 +463,52 @@ cannotOpenInputFile file _e =
 
 -- | Exception handler to deal with the case in which the variable DB cannot be
 -- opened.
-cannotOpenDB :: FilePath -> E.SomeException -> ErrorTriplet
-cannotOpenDB file _e =
-    ErrorTriplet ecCannotOpenDBUser msg (LocationFile file)
+cannotOpenDB :: FilePath -> ErrorTriplet
+cannotOpenDB file =
+    ErrorTriplet ecCannotOpenDBFile msg (LocationFile file)
   where
     msg =
       "cannot open variable DB file " ++ file
 
 -- | Exception handler to deal with the case in which the variable file
 -- provided by the user cannot be opened.
-cannotOpenVarFile :: FilePath -> E.SomeException -> ErrorTriplet
-cannotOpenVarFile file _e =
+cannotOpenVarFile :: FilePath -> ErrorTriplet
+cannotOpenVarFile file =
     ErrorTriplet ecCannotOpenVarFile  msg (LocationFile file)
   where
     msg =
       "cannot open variable list file " ++ file
 
--- | Exception handler to deal with the case in which the handlers file
--- provided by the user cannot be opened.
-cannotOpenHandlersFile :: FilePath -> E.SomeException -> ErrorTriplet
-cannotOpenHandlersFile file _e =
-    ErrorTriplet ecCannotOpenHandlersFile  msg (LocationFile file)
+-- | Exception handler to deal with the case in which the handlers file cannot
+-- be opened.
+cannotOpenHandlersFile :: FilePath -> ErrorTriplet
+cannotOpenHandlersFile file =
+    ErrorTriplet ecCannotOpenHandlersFile msg (LocationFile file)
   where
     msg =
-      "cannot open handler list file " ++ file
+      "cannot open handlers file " ++ file
 
--- | Exception handler to deal with the case of files that cannot be
--- copied/generated due lack of space or permissions or some I/O error.
-cannotCopyTemplate :: E.SomeException -> ErrorTriplet
-cannotCopyTemplate e =
-    ErrorTriplet ecCannotCopyTemplate msg LocationNothing
-  where
-    msg =
-      "FPrime component generation failed during copy/write operation. Check"
-      ++ " that there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory."
-      ++ show e
-
--- | Error messages associated to the format file not being found.
-fprimeAppIncorrectFormatSpec :: String -> ErrorTriplet
-fprimeAppIncorrectFormatSpec formatFile =
-    ErrorTriplet ecIncorrectFormatFile msg LocationNothing
+-- | Error message associated to the format file not being found.
+commandIncorrectFormatSpec :: FilePath -> ErrorTriplet
+commandIncorrectFormatSpec formatFile =
+    ErrorTriplet ecIncorrectFormatFile msg (LocationFile formatFile)
   where
     msg =
       "The format specification " ++ formatFile ++ " does not exist or is not "
       ++ "readable"
 
--- | A triplet containing error information.
-data ErrorTriplet = ErrorTriplet ErrorCode String Location
+-- | Exception handler to deal with the case of files that cannot be
+-- copied/generated due lack of space or permissions or some I/O error.
+cannotCopyTemplate :: ErrorTriplet
+cannotCopyTemplate =
+    ErrorTriplet ecCannotCopyTemplate msg LocationNothing
+  where
+    msg =
+      "Generation failed during copy/write operation. Check that"
+      ++ " there's free space in the disk and that you have the necessary"
+      ++ " permissions to write in the destination directory."
 
--- | Process a computation that can fail with an error code, and turn it into a
--- computation that returns a 'Result'.
-processResult :: Monad m => ExceptT ErrorTriplet m a -> m (Result ErrorCode)
-processResult m = do
-  r <- runExceptT m
-  case r of
-    Left (ErrorTriplet errorCode msg location)
-      -> return $ Error errorCode msg location
-    _ -> return Success
-
--- * Error codes
-
--- | Encoding of reasons why the command can fail.
---
--- The error codes used are 1 for user error, and 2 for internal bug.
-type ErrorCode = Int
+-- ** Error codes
 
 -- | Error: wrong arguments provided.
 ecWrongArguments :: ErrorCode
@@ -539,8 +519,8 @@ ecCannotOpenInputFile :: ErrorCode
 ecCannotOpenInputFile = 1
 
 -- | Error: the variable DB provided by the user cannot be opened.
-ecCannotOpenDBUser :: ErrorCode
-ecCannotOpenDBUser = 1
+ecCannotOpenDBFile :: ErrorCode
+ecCannotOpenDBFile = 1
 
 -- | Error: the variable file provided by the user cannot be opened.
 ecCannotOpenVarFile :: ErrorCode
@@ -550,11 +530,29 @@ ecCannotOpenVarFile = 1
 ecCannotOpenHandlersFile :: ErrorCode
 ecCannotOpenHandlersFile = 1
 
+-- | Error: the format file cannot be opened.
+ecIncorrectFormatFile :: ErrorCode
+ecIncorrectFormatFile = 1
+
 -- | Error: the files cannot be copied/generated due lack of space or
 -- permissions or some I/O error.
 ecCannotCopyTemplate :: ErrorCode
 ecCannotCopyTemplate = 1
 
--- | Error: the format file cannot be opened.
-ecIncorrectFormatFile :: ErrorCode
-ecIncorrectFormatFile = 1
+-- * Auxiliary Functions
+
+-- | Return the path to the template directory.
+locateTemplateDir :: Maybe FilePath
+                  -> FilePath
+                  -> ExceptT e IO FilePath
+locateTemplateDir mTemplateDir name =
+  case mTemplateDir of
+    Just x  -> return x
+    Nothing -> liftIO $ do
+      dataDir <- getDataDir
+      return $ dataDir </> "templates" </> name
+
+-- | Replace the left Exception in an Either.
+makeLeftE :: c -> Either E.SomeException b -> Either c b
+makeLeftE c (Left _)   = Left c
+makeLeftE _ (Right x)  = Right x
