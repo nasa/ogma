@@ -57,15 +57,16 @@ import qualified Command.ROSApp
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppInputFile   :: Maybe String
-  , rosAppTarget      :: String
-  , rosAppTemplateDir :: Maybe String
-  , rosAppVarNames    :: Maybe String
-  , rosAppVarDB       :: Maybe String
-  , rosAppHandlers    :: Maybe String
-  , rosAppFormat      :: String
-  , rosAppPropFormat  :: String
-  , rosAppPropVia     :: Maybe String
+  { rosAppInputFile    :: Maybe String
+  , rosAppTarget       :: String
+  , rosAppTemplateDir  :: Maybe String
+  , rosAppVarNames     :: Maybe String
+  , rosAppVarDB        :: Maybe String
+  , rosAppHandlers     :: Maybe String
+  , rosAppFormat       :: String
+  , rosAppPropFormat   :: String
+  , rosAppPropVia      :: Maybe String
+  , rosAppTemplateVars :: Maybe String
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -86,6 +87,7 @@ command c = Command.ROSApp.command options
                 , Command.ROSApp.commandFormat      = rosAppFormat c
                 , Command.ROSApp.commandPropFormat  = rosAppPropFormat c
                 , Command.ROSApp.commandPropVia     = rosAppPropVia c
+                , Command.ROSApp.commandExtraVars   = rosAppTemplateVars c
                 }
 
 -- * CLI
@@ -163,6 +165,13 @@ commandOptsParser = CommandOpts
             <> help strROSAppPropViaDesc
             )
         )
+  <*> optional
+        ( strOption
+            (  long "template-vars"
+            <> metavar "FILENAME"
+            <> help strROSAppTemplateVarsArgDesc
+            )
+        )
 
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
@@ -205,3 +214,8 @@ strROSAppPropFormatDesc = "Format of temporal or boolean properties"
 strROSAppPropViaDesc :: String
 strROSAppPropViaDesc =
   "Command to pre-process individual properties"
+
+-- | Additional template variable file flag description.
+strROSAppTemplateVarsArgDesc :: String
+strROSAppTemplateVarsArgDesc =
+  "JSON file containing additional variables to expand in template"
