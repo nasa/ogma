@@ -57,15 +57,16 @@ import qualified Command.FPrimeApp
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppInputFile   :: Maybe String
-  , fprimeAppTarget      :: String
-  , fprimeAppTemplateDir :: Maybe String
-  , fprimeAppVariables   :: Maybe String
-  , fprimeAppVarDB       :: Maybe String
-  , fprimeAppHandlers    :: Maybe String
-  , fprimeAppFormat      :: String
-  , fprimeAppPropFormat  :: String
-  , fprimeAppPropVia     :: Maybe String
+  { fprimeAppInputFile    :: Maybe String
+  , fprimeAppTarget       :: String
+  , fprimeAppTemplateDir  :: Maybe String
+  , fprimeAppVariables    :: Maybe String
+  , fprimeAppVarDB        :: Maybe String
+  , fprimeAppHandlers     :: Maybe String
+  , fprimeAppFormat       :: String
+  , fprimeAppPropFormat   :: String
+  , fprimeAppPropVia      :: Maybe String
+  , fprimeAppTemplateVars :: Maybe String
   }
 
 -- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
@@ -87,6 +88,7 @@ command c = Command.FPrimeApp.command options
         , Command.FPrimeApp.commandFormat      = fprimeAppFormat c
         , Command.FPrimeApp.commandPropFormat  = fprimeAppPropFormat c
         , Command.FPrimeApp.commandPropVia     = fprimeAppPropVia c
+        , Command.FPrimeApp.commandExtraVars   = fprimeAppTemplateVars c
         }
 
 -- * CLI
@@ -164,6 +166,13 @@ commandOptsParser = CommandOpts
             <> help strFPrimeAppPropViaDesc
             )
         )
+  <*> optional
+        ( strOption
+            (  long "template-vars"
+            <> metavar "FILENAME"
+            <> help strFPrimeAppTemplateVarsArgDesc
+            )
+        )
 
 -- | Argument target directory to FPrime component generation command
 strFPrimeAppDirArgDesc :: String
@@ -206,3 +215,8 @@ strFPrimeAppPropFormatDesc = "Format of temporal or boolean properties"
 strFPrimeAppPropViaDesc :: String
 strFPrimeAppPropViaDesc =
   "Command to pre-process individual properties"
+
+-- | Additional template variable file flag description.
+strFPrimeAppTemplateVarsArgDesc :: String
+strFPrimeAppTemplateVarsArgDesc =
+  "JSON file containing additional variables to expand in template"
