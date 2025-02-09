@@ -49,7 +49,9 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT(..), liftEither, runExceptT,
                                           throwError )
 import           Control.Monad.IO.Class ( liftIO )
-import           Data.Aeson             ( ToJSON, eitherDecode, object, toJSON )
+import           Data.Aeson             ( ToJSON, Value (Null, Object),
+                                          eitherDecode, object, toJSON )
+import           Data.Aeson.KeyMap      ( union )
 import           Data.Char              ( toUpper )
 import           Data.List              ( isInfixOf, isPrefixOf, find )
 import           Data.Maybe             ( fromMaybe, mapMaybe )
@@ -95,9 +97,11 @@ command options = processResult $ do
     -- Obtain template dir
     templateDir <- locateTemplateDir mTemplateDir "fprime"
 
+    templateVars <- parseTemplateVarsFile templateVarsF
+
     appData <- command' options functions
 
-    let subst = toJSON appData
+    let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
     ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
@@ -105,9 +109,10 @@ command options = processResult $ do
 
   where
 
-    targetDir    = commandTargetDir options
-    mTemplateDir = commandTemplateDir options
-    functions    = exprPair (commandPropFormat options)
+    targetDir     = commandTargetDir options
+    mTemplateDir  = commandTemplateDir options
+    functions     = exprPair (commandPropFormat options)
+    templateVarsF = commandExtraVars options
 
 command' :: CommandOptions
          -> ExprPair
@@ -165,6 +170,9 @@ data CommandOptions = CommandOptions
   , commandPropFormat  :: String         -- ^ Format used for input properties.
   , commandPropVia     :: Maybe String   -- ^ Use external command to
                                          -- pre-process system properties.
+  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
+                                         -- variables to make available to the
+                                         -- template.
   }
 
 -- | Return the variable information needed to generate declarations
@@ -317,6 +325,20 @@ parseVarDBFile Nothing   = return []
 parseVarDBFile (Just fn) =
   ExceptT $ makeLeftE (cannotOpenDB fn) <$>
     (E.try $ fmap read <$> lines <$> readFile fn)
+
+-- | Process a JSON file with additional template variables to make available
+-- during template expansion.
+parseTemplateVarsFile :: Maybe FilePath
+                      -> ExceptT ErrorTriplet IO Value
+parseTemplateVarsFile Nothing   = return $ object []
+parseTemplateVarsFile (Just fp) = do
+  content <- liftIO $ B.safeReadFile fp
+  let value = eitherDecode =<< content
+  case value of
+    Right x@(Object _) -> return x
+    Right x@Null       -> return x
+    Right _            -> throwError (cannotReadObjectTemplateVars fp)
+    _                  -> throwError (cannotOpenTemplateVars fp)
 
 -- | Check that the arguments provided are sufficient to operate.
 --
@@ -497,6 +519,24 @@ commandIncorrectFormatSpec formatFile =
       "The format specification " ++ formatFile ++ " does not exist or is not "
       ++ "readable"
 
+-- | Exception handler to deal with the case in which the template vars file
+-- cannot be opened.
+cannotOpenTemplateVars :: FilePath -> ErrorTriplet
+cannotOpenTemplateVars file =
+    ErrorTriplet ecCannotOpenTemplateVarsFile msg (LocationFile file)
+  where
+    msg =
+      "Cannot open file with additional template variables: " ++ file
+
+-- | Exception handler to deal with the case in which the template vars file
+-- cannot be opened.
+cannotReadObjectTemplateVars :: FilePath -> ErrorTriplet
+cannotReadObjectTemplateVars file =
+    ErrorTriplet ecCannotReadObjectTemplateVarsFile msg (LocationFile file)
+  where
+    msg =
+      "Cannot open file with additional template variables: " ++ file
+
 -- | Exception handler to deal with the case of files that cannot be
 -- copied/generated due lack of space or permissions or some I/O error.
 cannotCopyTemplate :: ErrorTriplet
@@ -534,6 +574,14 @@ ecCannotOpenHandlersFile = 1
 ecIncorrectFormatFile :: ErrorCode
 ecIncorrectFormatFile = 1
 
+-- | Error: the template vars file provided by the user cannot be opened.
+ecCannotOpenTemplateVarsFile :: ErrorCode
+ecCannotOpenTemplateVarsFile = 1
+
+-- | Error: the template variables file passed does not contain a JSON object.
+ecCannotReadObjectTemplateVarsFile :: ErrorCode
+ecCannotReadObjectTemplateVarsFile = 1
+
 -- | Error: the files cannot be copied/generated due lack of space or
 -- permissions or some I/O error.
 ecCannotCopyTemplate :: ErrorCode
@@ -551,6 +599,15 @@ locateTemplateDir mTemplateDir name =
     Nothing -> liftIO $ do
       dataDir <- getDataDir
       return $ dataDir </> "templates" </> name
+
+-- | Merge two JSON objects.
+--
+-- Fails if the values are not objects or null.
+mergeObjects :: Value -> Value -> Value
+mergeObjects (Object m1) (Object m2) = Object (union m1 m2)
+mergeObjects obj         Null        = obj
+mergeObjects Null        obj         = obj
+mergeObjects _           _           = error "The values passed are not objects"
 
 -- | Replace the left Exception in an Either.
 makeLeftE :: c -> Either E.SomeException b -> Either c b
