@@ -111,6 +111,7 @@ testStandaloneFCS file success = do
                  , commandTargetDir   = targetDir
                  , commandTemplateDir = Nothing
                  , commandPropVia     = Nothing
+                 , commandExtraVars   = Nothing
                  }
     result <- command opts
 
@@ -147,6 +148,7 @@ testStandaloneFDB file success = do
                  , commandTargetDir   = targetDir
                  , commandTemplateDir = Nothing
                  , commandPropVia     = Nothing
+                 , commandExtraVars   = Nothing
                  }
     result <- command opts
 
