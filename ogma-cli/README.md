@@ -124,19 +124,42 @@ necessary messages and make it available to Copilot. Ogma provides additional
 flags to customize the list of known variables, so that projects can maintain
 their own variable databases beyond what Ogma includes by default.
 
-cFS applications are generated using the Ogma command `cfs`, which receives
-four main arguments:
+cFS applications are generated using the Ogma command `cfs`, which accepts
+the following arguments:
+- `--input-file FILENAME`: location of the specification or source file for
+  which a cFS application is being generated.
 - `--app-target-dir DIR`: location where the cFS application files must be
   stored.
 - `--app-template-dir DIR`: location of the cFS application template to use.
-- `--variable-file FILENAME`: a file containing a list of variables that must
-be made available to the monitor.
+- `--variable-file FILENAME`: a file containing a list of variables to monitor
+in the cFS application.
 - `--variable-db FILENAME`: a file containing a database of known variables,
 and the message they are included with.
 - `--handlers-file FILENAME`: a file containing a list of known fault handlers
   or triggers.
+- `--input-format FORMAT_NAME`: the name of a know input format description
+  file in JSON or XML. It can be a path to a file containing such description.
+- `--prop-format FORMAT_NAME`: the name of the format or language in which the
+  properties are encoded. For example, a file may contain a list of properties,
+  and each property may contain a field with a formula in SMV (`smv`) or
+  Copilot (`literal`).
+- `--parse-prop-via COMMAND`: a command in the `PATH` capable of translating
+  properties as listed in the specification file into properties in the target
+  property language. This external process may be a translation tool, or an LLM
+  capable of translating into the target language.
 - `--template-vars FILENAME`: a JSON file containing a list of additional
   variables to expand in the template.
+
+> [!NOTE]
+> Ogma does not guarantee that the result of a translation carried out by
+> calling an external command or LLM with the flag `--parse-prop-via` is
+> correct. It is your responsibility as the user to check the output produced
+> by the auxiliary translation command for accuracy. Ogma will accept whatever
+> output the command produces as a replacement for the property's formula, and
+> use it without changes if the property format selected is `literal`, or try
+> to translate it into Copilot if a different property format has been
+> selected. This limitation applies even in the case where the subsequent
+> translation to Copilot succeeds.
 
 The following execution generates an initial cFS application for runtime
 monitoring using Copilot:
