@@ -43,8 +43,8 @@ module CLI.CommandCFSApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, showDefault,
-                             strOption, value )
+import Options.Applicative ( Parser, help, long, metavar, optional, short,
+                             showDefault, strOption, value )
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -57,11 +57,15 @@ import qualified Command.CFSApp
 
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
-  { cFSAppTarget       :: String
+  { cFSAppInputFile    :: Maybe String
+  , cFSAppTarget       :: String
   , cFSAppTemplateDir  :: Maybe String
   , cFSAppVarNames     :: Maybe String
   , cFSAppVarDB        :: Maybe String
   , cFSAppHandlers     :: Maybe String
+  , cFSAppFormat       :: String
+  , cFSAppPropFormat   :: String
+  , cFSAppPropVia      :: Maybe String
   , cFSAppTemplateVars :: Maybe String
   }
 
@@ -74,11 +78,15 @@ command :: CommandOpts -> IO (Result ErrorCode)
 command c = Command.CFSApp.command options
   where
     options = Command.CFSApp.CommandOptions
-                { Command.CFSApp.commandTargetDir   = cFSAppTarget c
+                { Command.CFSApp.commandInputFile   = cFSAppInputFile c
+                , Command.CFSApp.commandTargetDir   = cFSAppTarget c
                 , Command.CFSApp.commandTemplateDir = cFSAppTemplateDir c
                 , Command.CFSApp.commandVariables   = cFSAppVarNames c
                 , Command.CFSApp.commandVariableDB  = cFSAppVarDB c
                 , Command.CFSApp.commandHandlers    = cFSAppHandlers c
+                , Command.CFSApp.commandFormat      = cFSAppFormat c
+                , Command.CFSApp.commandPropFormat  = cFSAppPropFormat c
+                , Command.CFSApp.commandPropVia     = cFSAppPropVia c
                 , Command.CFSApp.commandExtraVars   = cFSAppTemplateVars c
                 }
 
@@ -92,7 +100,14 @@ commandDesc = "Generate a complete cFS/Copilot application"
 -- System application connected to Copilot monitors.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
-  <$> strOption
+  <$> optional
+        ( strOption
+            (  long "input-file"
+            <> metavar "FILENAME"
+            <> help strCFSAppFileNameArgDesc
+            )
+        )
+  <*> strOption
         (  long "app-target-dir"
         <> metavar "DIR"
         <> showDefault
@@ -110,8 +125,6 @@ commandOptsParser = CommandOpts
         ( strOption
             (  long "variable-file"
             <> metavar "FILENAME"
-            <> showDefault
-            <> value "variables"
             <> help strCFSAppVarListArgDesc
             )
         )
@@ -127,6 +140,29 @@ commandOptsParser = CommandOpts
             (  long "handlers-file"
             <> metavar "FILENAME"
             <> help strCFSAppHandlerListArgDesc
+            )
+        )
+  <*> strOption
+        (  long "input-format"
+        <> short 'f'
+        <> metavar "FORMAT_NAME"
+        <> help strCFSAppFormatDesc
+        <> showDefault
+        <> value "fcs"
+        )
+  <*> strOption
+        (  long "prop-format"
+        <> short 'p'
+        <> metavar "FORMAT_NAME"
+        <> help strCFSAppPropFormatDesc
+        <> showDefault
+        <> value "smv"
+        )
+  <*> optional
+        ( strOption
+            (  long "parse-prop-via"
+            <> metavar "COMMAND"
+            <> help strCFSAppPropViaDesc
             )
         )
   <*> optional
@@ -146,6 +182,12 @@ strCFSAppTemplateDirArgDesc :: String
 strCFSAppTemplateDirArgDesc =
   "Directory holding cFS application source template"
 
+-- | Argument input file to CFS app generation command
+strCFSAppFileNameArgDesc :: String
+strCFSAppFileNameArgDesc =
+  "File containing input specification"
+
+
 -- | Argument variable list to cFS app generation command
 strCFSAppVarListArgDesc :: String
 strCFSAppVarListArgDesc =
@@ -160,6 +202,19 @@ strCFSAppVarDBArgDesc =
 strCFSAppHandlerListArgDesc :: String
 strCFSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
+
+-- | Format flag description.
+strCFSAppFormatDesc :: String
+strCFSAppFormatDesc = "Format of the input file"
+
+-- | Property format flag description.
+strCFSAppPropFormatDesc :: String
+strCFSAppPropFormatDesc = "Format of temporal or boolean properties"
+
+-- | External command to pre-process individual properties.
+strCFSAppPropViaDesc :: String
+strCFSAppPropViaDesc =
+  "Command to pre-process individual properties"
 
 -- | Argument template variables to cFS app generation command
 strCFSAppTemplateVarsArgDesc :: String
