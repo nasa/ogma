@@ -36,6 +36,8 @@
 -- | Transform a specification into a standalone Copilot specification.
 module Command.Standalone
     ( command
+    , commandLogic
+    , AppData
     , CommandOptions(..)
     , ErrorCode
     )
@@ -110,8 +112,25 @@ command' options (ExprPair exprT) = do
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
     input <- parseInputFile fp formatName propFormatName propVia exprT
-    let spec = addMissingIdentifiers ids input
+    commandLogic fp name typeMaps exprT input
+  where
+    fp             = commandInputFile options
+    name           = commandFilename options
+    typeMaps       = typeToCopilotTypeMapping (commandTypeMapping options)
+    formatName     = commandFormat options
+    propFormatName = commandPropFormat options
+    propVia        = commandPropVia options
 
+-- | Generate the data of a new standalone Copilot monitor that implements the
+-- spec, using a subexpression handler.
+commandLogic :: FilePath
+             -> String
+             -> [(String, String)]
+             -> ExprPairT a
+             -> Spec a
+             -> ExceptT ErrorTriplet IO AppData
+commandLogic fp name typeMaps exprT input = do
+    let spec = addMissingIdentifiers ids input
     -- Analyze the spec for incorrect identifiers and convert it to Copilot.
     -- If there is an error, we change the error to a message we control.
     let appData = mapLeft (commandIncorrectSpec fp) $ do
@@ -126,13 +145,6 @@ command' options (ExprPair exprT) = do
     liftEither appData
 
   where
-
-    fp             = commandInputFile options
-    name           = commandFilename options
-    typeMaps       = typeToCopilotTypeMapping options
-    formatName     = commandFormat options
-    propFormatName = commandPropFormat options
-    propVia        = commandPropVia options
 
     ExprPairT parse replace print ids def = exprT
 
@@ -159,8 +171,8 @@ data CommandOptions = CommandOptions
   }
 
 -- * Mapping of types from input format to Copilot
-typeToCopilotTypeMapping :: CommandOptions -> [(String, String)]
-typeToCopilotTypeMapping options =
+typeToCopilotTypeMapping :: [(String, String)] -> [(String, String)]
+typeToCopilotTypeMapping types =
     [ ("bool",    "Bool")
     , ("int",     intType)
     , ("integer", intType)
@@ -172,7 +184,6 @@ typeToCopilotTypeMapping options =
     intType  = fromMaybe "Int64" $ lookup "int" types
     realType = fromMaybe "Float" $ lookup "real" types
 
-    types = commandTypeMapping options
 -- | Data that may be relevant to generate a ROS application.
 data AppData = AppData
     { externs   :: String
