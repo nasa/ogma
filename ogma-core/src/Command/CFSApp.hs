@@ -50,12 +50,16 @@ module Command.CFSApp
   where
 
 -- External imports
+import           Control.Applicative    ( liftA2 )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither )
 import           Data.Aeson             ( ToJSON (..) )
 import           Data.List              ( find )
 import           Data.Maybe             ( fromMaybe )
 import           GHC.Generics           ( Generic )
+
+-- External imports: auxiliary
+import qualified Command.Standalone
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
@@ -101,10 +105,12 @@ command' options (ExprPair exprT) = do
 
     liftEither $ checkArguments spec vs rs
 
+    copilotM <- sequenceA $ liftA2 processSpec spec fp
+
     let varNames = fromMaybe (specExtractExternalVariables spec) vs
         monitors = fromMaybe (specExtractHandlers spec) rs
 
-    let appData = commandLogic varDB varNames monitors
+    let appData = commandLogic varDB varNames monitors copilotM
 
     return appData
 
@@ -121,13 +127,17 @@ command' options (ExprPair exprT) = do
     parseInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
+    processSpec spec' fp' =
+      Command.Standalone.commandLogic fp' "copilot" [] exprT spec'
+
 -- | Generate a variable substitution map for a cFS application.
 commandLogic :: [(String, String, String, String)]
              -> [String]
              -> [Trigger]
+             -> Maybe Command.Standalone.AppData
              -> AppData
-commandLogic varDB varNames handlers =
-    AppData vars ids infos datas handlers
+commandLogic varDB varNames handlers copilotM =
+    AppData vars ids infos datas handlers copilotM
   where
 
     -- This is a Data.List.unzip4
@@ -234,6 +244,7 @@ data AppData = AppData
   , msgCases    :: [MsgInfo]
   , msgHandlers :: [MsgData]
   , triggers    :: [Trigger]
+  , copilot     :: Maybe Command.Standalone.AppData
   }
   deriving (Generic)
 

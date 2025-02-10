@@ -1,64 +1,45 @@
-{-# LANGUAGE DataKinds #-}
+{{#copilot}}
+import           Copilot.Compile.C99
+import           Copilot.Language          hiding (prop)
+import           Copilot.Language.Prelude
+import           Copilot.Library.LTL       (next)
+import           Copilot.Library.MTL       hiding (since, alwaysBeen, trigger)
+import           Copilot.Library.PTLTL     (since, previous, alwaysBeen)
+import qualified Copilot.Library.PTLTL     as PTLTL
+import qualified Copilot.Library.MTL       as MTL
+import           Language.Copilot          (reify)
+import           Prelude                   hiding ((&&), (||), (++), (<=), (>=), (<), (>), (==), (/=), not)
 
-import Language.Copilot
-import Copilot.Compile.C99
+{{{copilot.externs}}}
+{{{copilot.internals}}}
+{{{copilot.reqs}}}
 
-import Prelude hiding ((>), (<), div, (++))
+-- | Clock that increases in one-unit steps.
+clock :: Stream Int64
+clock = [0] ++ (clock + 1)
 
-position :: Stream Position
-position = extern "my_position" Nothing
+-- | First Time Point
+ftp :: Stream Bool
+ftp = [True] ++ false
 
--- | Position information received from cFS application.
+pre :: Stream Bool -> Stream Bool
+pre = ([False] ++)
 
--- We hardcode 16 as the length of the array for the field TmlHeader because
--- the Haskell compiler does not accept using an identifier (e.g.,
--- tmlHeaderSize) for array lengths.
-data Position = Position
-  { tlmHeader   :: Field "TlmHeader" (Array 16 Word8)
-  , aircraft_id :: Field "aircraft_id" Word32
-  , time_gps    :: Field "time_gps" Double
-  , time_boot   :: Field "time_boot" Double
-  , latitute    :: Field "latitude"  Double
-  , longitude   :: Field "longitude" Double
-  , altitude_abs :: Field "altitude_abs" Double
-  , altitude_rel :: Field "altitude_rel" Double
-  , vn :: Field "vn" Double
-  , ve :: Field "ve" Double
-  , vd :: Field "vd" Double
-  , hdg :: Field "hdg" Double
-  , hdop :: Field "hdop" Word16
-  , vdop :: Field "vdop" Word16
-  , numSats :: Field "numSats" Int64
-  }
+tpre :: Stream Bool -> Stream Bool
+tpre = ([True] ++)
 
-instance Struct Position where
-  typename _ = "position_t"  -- Name of the type in C
+notPreviousNot :: Stream Bool -> Stream Bool
+notPreviousNot = not . PTLTL.previous . not
 
-  -- Function to translate Vec to list of Value's, order should match struct.
-  toValues v = [ Value (Array Word8) (tlmHeader v)
-               , Value Word32 (aircraft_id v)
-               , Value Double (time_gps    v)
-               , Value Double (time_boot   v)
-               , Value Double (latitute    v)
-               , Value Double (longitude   v)
-               , Value Double (altitude_abs v)
-               , Value Double (altitude_rel v)
-               , Value Double (vn v)
-               , Value Double (ve v)
-               , Value Double (vd v)
-               , Value Double (hdg v)
-               , Value Word16 (hdop v)
-               , Value Word16 (vdop v)
-               , Value Int64 (numSats v)
-               ]
-
--- We need to provide an instance to Typed with a bogus Vec
-instance Typed Position where
-  typeOf = Struct (Position (Field $ array []) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0) (Field 0))
-
+-- | Complete specification. Calls C handler functions when properties are
+-- violated.
+spec :: Spec
 spec = do
-  -- Trigger that always executes, splits the vec into seperate args.
-  -- trigger "split" true [arg $ vecs # x, arg $ vecs # y]
-  trigger "split" (position # vn > 10) []
+{{{copilot.triggers}}}
 
-main = reify spec >>= compile "position"
+main :: IO ()
+main = reify spec >>= compile "{{{copilot.specName}}}"
+{{/copilot}}
+{{^copilot}}
+-- No specification provided. Place your specification in this file.
+{{/copilot}}

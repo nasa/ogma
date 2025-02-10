@@ -19,12 +19,15 @@
 {{#impl_extra_header}}
 {{{.}}}
 {{/impl_extra_header}}
+{{#copilot}}
+#include "{{{copilot.specName}}}_types.h"
+#include "{{{copilot.specName}}}.h"
+#include "{{{copilot.specName}}}.c"
+{{/copilot}}
 
 {{#variables}}
 {{varDeclType}} {{varDeclName}};
 {{/variables}}
-
-void step(void);
 
 /*
 ** global data
