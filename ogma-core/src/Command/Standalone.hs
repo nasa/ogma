@@ -43,9 +43,11 @@ module Command.Standalone
 
 -- External imports
 import Control.Exception      as E
-import Control.Monad.Except   (ExceptT (..), liftEither, runExceptT)
+import Control.Monad.Except   (ExceptT (..), liftEither, runExceptT, throwError)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson             (ToJSON, decode, eitherDecode, toJSON)
+import Data.Aeson             (ToJSON (..), Value (Null, Object), decode,
+                               eitherDecode, object)
+import Data.Aeson.KeyMap      (union)
 import Data.ByteString.Lazy   (fromStrict)
 import Data.List              (isInfixOf, isPrefixOf, nub, (\\))
 import Data.Maybe             (fromMaybe)
@@ -99,9 +101,11 @@ command options = processResult $ do
     -- Obtain template dir
     templateDir <- locateTemplateDir mTemplateDir "standalone"
 
+    templateVars <- parseTemplateVarsFile templateVarsF
+
     appData <- command' options functions
 
-    let subst = toJSON appData
+    let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
     ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
@@ -109,9 +113,10 @@ command options = processResult $ do
 
   where
 
-    targetDir    = commandTargetDir options
-    mTemplateDir = commandTemplateDir options
-    functions    = exprPair (commandPropFormat options)
+    targetDir     = commandTargetDir options
+    mTemplateDir  = commandTemplateDir options
+    functions     = exprPair (commandPropFormat options)
+    templateVarsF = commandExtraVars options
 
 -- | Generate a new standalone Copilot monitor that implements the spec in an
 -- input file, using a subexpression handler.
@@ -170,6 +175,9 @@ data CommandOptions = CommandOptions
   , commandFilename    :: String
   , commandPropVia     :: Maybe String       -- ^ Use external command to
                                              -- pre-process system properties.
+  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
+                                         -- variables to make available to the
+                                         -- template.
   }
 
 -- * Mapping of types from input format to Copilot
@@ -258,6 +266,21 @@ parseInputFile fp opts (ExprPairT parse replace print ids def) =
         case res of
           Left _  -> return $ Left $ cannotOpenInputFile fp
           Right x -> return $ Right x
+
+-- | Process a JSON file with additional template variables to make available
+-- during template expansion.
+parseTemplateVarsFile :: Maybe FilePath
+                      -> ExceptT ErrorTriplet IO Value
+parseTemplateVarsFile Nothing   = return $ object []
+parseTemplateVarsFile (Just fp) = do
+  content <- liftIO $ B.safeReadFile fp
+  let value = eitherDecode =<< content
+  case value of
+    Right x@(Object _) -> return x
+    Right x@Null       -> return x
+    Right _            -> throwError (cannotReadObjectTemplateVars fp)
+    _                  -> throwError (cannotOpenTemplateVars fp)
+
 -- * Handler for boolean expressions
 
 -- | Handler for boolean expressions that knows how to parse them, replace
@@ -361,6 +384,24 @@ commandIncorrectFormatSpec formatFile =
       "The format specification " ++ formatFile ++ " does not exist or is not "
       ++ "readable"
 
+-- | Exception handler to deal with the case in which the template vars file
+-- cannot be opened.
+cannotOpenTemplateVars :: FilePath -> ErrorTriplet
+cannotOpenTemplateVars file =
+    ErrorTriplet ecCannotOpenTemplateVarsFile msg (LocationFile file)
+  where
+    msg =
+      "Cannot open file with additional template variables: " ++ file
+
+-- | Exception handler to deal with the case in which the template vars file
+-- cannot be opened.
+cannotReadObjectTemplateVars :: FilePath -> ErrorTriplet
+cannotReadObjectTemplateVars file =
+    ErrorTriplet ecCannotReadObjectTemplateVarsFile msg (LocationFile file)
+  where
+    msg =
+      "Cannot open file with additional template variables: " ++ file
+
 -- | Exception handler to deal with the case of files that cannot be
 -- copied/generated due lack of space or permissions or some I/O error.
 cannotCopyTemplate :: ErrorTriplet
@@ -393,6 +434,14 @@ ecIncorrectSpec = 1
 -- | Error: the format file cannot be opened.
 ecIncorrectFormatFile :: ErrorCode
 ecIncorrectFormatFile = 1
+
+-- | Error: the template vars file provided by the user cannot be opened.
+ecCannotOpenTemplateVarsFile :: ErrorCode
+ecCannotOpenTemplateVarsFile = 1
+
+-- | Error: the template variables file passed does not contain a JSON object.
+ecCannotReadObjectTemplateVarsFile :: ErrorCode
+ecCannotReadObjectTemplateVarsFile = 1
 
 -- | Error: the files cannot be copied/generated due lack of space or
 -- permissions or some I/O error.
@@ -427,6 +476,15 @@ locateTemplateDir mTemplateDir name =
     Nothing -> liftIO $ do
       dataDir <- getDataDir
       return $ dataDir </> "templates" </> name
+
+-- | Merge two JSON objects.
+--
+-- Fails if the values are not objects or null.
+mergeObjects :: Value -> Value -> Value
+mergeObjects (Object m1) (Object m2) = Object (union m1 m2)
+mergeObjects obj         Null        = obj
+mergeObjects Null        obj         = obj
+mergeObjects _           _           = error "The values passed are not objects"
 
 -- | Replace the left Exception in an Either.
 makeLeftE :: c -> Either E.SomeException b -> Either c b

@@ -282,6 +282,8 @@ be made available to the monitor.
 and the topic they are included with.
 - `--handlers FILENAME`: a file containing a list of handlers used in the
   specification.
+- `--template-vars FILENAME`: a JSON file containing a list of additional
+  variables to expand in the template.
 
 The following execution generates an initial ROS application for runtime
 monitoring using Copilot:
@@ -405,6 +407,8 @@ be made available to the monitor.
 and their types.
 - `--handlers FILENAME`: a file containing a list of handlers used in the
   specification.
+- `--template-vars FILENAME`: a JSON file containing a list of additional
+  variables to expand in the template.
 
 The following execution generates an initial F' component for runtime
 monitoring using Copilot:

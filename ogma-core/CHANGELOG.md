@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-02-08
+## [1.X.Y] - 2025-02-09
 
 * Import liftIO from Control.Monad.IO.Class (#215).
 * Remove references to old design of Ogma from hlint files (#220).
@@ -17,6 +17,7 @@
 * Make structured data available to ROS template (#244).
 * Make structured data available to FPrime template (#246).
 * Equalize backends (#248).
+* Update ROS, FPrime, standalone backends to process template vars file (#250).
 
 ## [1.6.0] - 2025-01-21
 

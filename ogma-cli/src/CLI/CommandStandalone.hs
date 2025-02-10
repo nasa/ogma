@@ -58,14 +58,15 @@ import qualified Command.Standalone
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { standaloneTargetDir   :: FilePath
-  , standaloneTemplateDir :: Maybe FilePath
-  , standaloneFileName    :: FilePath
-  , standaloneFormat      :: String
-  , standalonePropFormat  :: String
-  , standaloneTypes       :: [String]
-  , standaloneTarget      :: String
-  , standalonePropVia     :: Maybe String
+  { standaloneTargetDir    :: FilePath
+  , standaloneTemplateDir  :: Maybe FilePath
+  , standaloneFileName     :: FilePath
+  , standaloneFormat       :: String
+  , standalonePropFormat   :: String
+  , standaloneTypes        :: [String]
+  , standaloneTarget       :: String
+  , standalonePropVia      :: Maybe String
+  , standaloneTemplateVars :: Maybe String
   }
 
 -- | Transform an input specification into a Copilot specification.
@@ -83,6 +84,7 @@ command c =
       , Command.Standalone.commandTypeMapping = types
       , Command.Standalone.commandFilename    = standaloneTarget c
       , Command.Standalone.commandPropVia     = standalonePropVia c
+      , Command.Standalone.commandExtraVars   = standaloneTemplateVars c
       }
 
     types :: [(String, String)]
@@ -161,6 +163,13 @@ commandOptsParser = CommandOpts
             <> help strStandalonePropViaDesc
             )
         )
+  <*> optional
+        ( strOption
+            (  long "template-vars"
+            <> metavar "FILENAME"
+            <> help strStandaloneTemplateVarsArgDesc
+            )
+        )
 
 -- | Target dir flag description.
 strStandaloneTargetDirDesc :: String
@@ -195,3 +204,8 @@ strStandaloneTargetDesc =
 strStandalonePropViaDesc :: String
 strStandalonePropViaDesc =
   "Command to pre-process individual properties"
+
+-- | Additional template variable file flag description.
+strStandaloneTemplateVarsArgDesc :: String
+strStandaloneTemplateVarsArgDesc =
+  "JSON file containing additional variables to expand in template"

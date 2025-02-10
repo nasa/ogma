@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-02-08
+## [1.X.Y] - 2025-02-09
 
 * Add all auxiliary test files to distributable Cabal package (#216).
 * Remove extraneous EOL character (#224).
@@ -13,6 +13,7 @@
 * Update README with new ROS template variables (#244).
 * Update README with new FPrime template variables (#246).
 * Adjust CLI to match new backend API (#248).
+* Expose template-vars argument to ROS, FPrime, standalone backends (#250).
 
 ## [1.6.0] - 2025-01-21
 
