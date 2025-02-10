@@ -14,6 +14,7 @@
 * Update README with new FPrime template variables (#246).
 * Adjust CLI to match new backend API (#248).
 * Expose template-vars argument to ROS, FPrime, standalone backends (#250).
+* Expose spec processing arguments to cFS backend in CLI (#252).
 
 ## [1.6.0] - 2025-01-21
 
