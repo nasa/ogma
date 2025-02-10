@@ -18,6 +18,7 @@
 * Make structured data available to FPrime template (#246).
 * Equalize backends (#248).
 * Update ROS, FPrime, standalone backends to process template vars file (#250).
+* Make cFS backend accept spec as input (#252).
 
 ## [1.6.0] - 2025-01-21
 
