@@ -12,8 +12,10 @@
 extern "C" {
 #endif
 
-#include "copilot.h"
-#include "copilot_types.h"
+{{#copilot}}
+#include "{{{copilot.specName}}}_types.h"
+#include "{{{copilot.specName}}}.h"
+{{/copilot}}
 
 #ifdef __cplusplus
 }
