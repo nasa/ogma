@@ -118,6 +118,7 @@ library
 
   other-modules:
     Paths_ogma_core
+    Command.Common
 
   autogen-modules:
     Paths_ogma_core
