@@ -44,8 +44,9 @@ jobs:
 
     - name: Generate ROS app
       run: |
-        ogma ros --app-target-dir demo --variable-db ogma-cli/examples/ros-copilot/vars-db --variable-file ogma-cli/examples/ros-copilot/variables --handlers-file ogma-cli/examples/ros-copilot/handlers
-        runhaskell ROS.hs
-        find demo/
-        cd demo/
+        ogma ros --app-target-dir demo --input-file ogma-cli/examples/ros-copilot/document.json --input-format ogma-cli/examples/ros-copilot/json-format.cfg --prop-format literal --variable-db ogma-cli/examples/ros-copilot/vars-db
+        cd demo/copilot/src/
+        runhaskell Copilot.hs
+        cd ../../
+        find .
         docker build .
