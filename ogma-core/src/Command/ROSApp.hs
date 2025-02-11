@@ -49,6 +49,7 @@ module Command.ROSApp
   where
 
 -- External imports
+import           Control.Applicative  (liftA2)
 import qualified Control.Exception    as E
 import           Control.Monad.Except (ExceptT (..), liftEither)
 import           Data.Aeson           (ToJSON (..))
@@ -58,6 +59,8 @@ import           GHC.Generics         (Generic)
 
 -- External imports: auxiliary
 import System.Directory.Extra (copyTemplate)
+
+import qualified Command.Standalone
 
 -- Internal imports: auxiliary
 import Command.Result (Result (..))
@@ -102,10 +105,12 @@ command' options (ExprPair exprT) = do
 
     liftEither $ checkArguments spec vs rs
 
+    copilotM <- sequenceA $ liftA2 processSpec spec fp
+
     let varNames = fromMaybe (specExtractExternalVariables spec) vs
         monitors = fromMaybe (specExtractHandlers spec) rs
 
-    let appData   = AppData variables monitors
+    let appData   = AppData variables monitors copilotM
         variables = mapMaybe (variableMap varDB) varNames
 
     return appData
@@ -122,6 +127,9 @@ command' options (ExprPair exprT) = do
 
     parseInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
+
+    processSpec spec' fp' =
+      Command.Standalone.commandLogic fp' "copilot" [] exprT spec'
 
 -- ** Argument processing
 
@@ -222,6 +230,7 @@ type Monitor = String
 data AppData = AppData
   { variables :: [VarDecl]
   , monitors  :: [Monitor]
+  , copilot   :: Maybe Command.Standalone.AppData
   }
   deriving (Generic)
 
