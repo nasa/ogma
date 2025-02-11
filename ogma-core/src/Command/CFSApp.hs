@@ -131,9 +131,7 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- parseVarDBFile varDBFile
 
-    spec  <- maybe (return Nothing)
-                   (\f -> Just <$> parseInputFile f options exprT)
-                   fp
+    spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
 
     liftEither $ checkArguments spec vs rs
 
@@ -146,11 +144,16 @@ command' options (ExprPair exprT) = do
 
   where
 
-    fp           = commandInputFile options
-    varNameFile  = commandVariables options
-    varDBFile    = commandVariableDB options
-    handlersFile = commandHandlers options
+    fp             = commandInputFile options
+    varNameFile    = commandVariables options
+    varDBFile      = commandVariableDB options
+    handlersFile   = commandHandlers options
+    formatName     = commandFormat options
+    propFormatName = commandPropFormat options
+    propVia        = commandPropVia options
 
+    parseInputFile' f =
+      parseInputFile f formatName propFormatName propVia exprT
 
 -- | Generate a variable substitution map for a cFS application.
 commandLogic :: [(String, String, String, String)]
@@ -273,12 +276,16 @@ instance ToJSON AppData
 -- | Process input specification, if available, and return its abstract
 -- representation.
 parseInputFile :: FilePath
-               -> CommandOptions
+               -> String
+               -> String
+               -> Maybe String
                -> ExprPairT a
                -> ExceptT ErrorTriplet IO (Spec a)
-parseInputFile fp opts (ExprPairT parse replace print ids def) =
+parseInputFile fp formatName propFormatName propVia exprT =
   ExceptT $ do
-    let wrapper = wrapVia (commandPropVia opts) parse
+    let ExprPairT parse replace print ids def = exprT
+
+    let wrapper = wrapVia propVia parse
     -- Obtain format file.
     --
     -- A format name that exists as a file in the disk always takes preference
@@ -287,7 +294,6 @@ parseInputFile fp opts (ExprPairT parse replace print ids def) =
     -- Regardless of whether the file is user-provided or known to Ogma, we
     -- check (again) whether the file exists, and print an error message if
     -- not.
-    let formatName = commandFormat opts
     exists  <- doesFileExist formatName
     dataDir <- getDataDir
     let formatFile
@@ -295,7 +301,7 @@ parseInputFile fp opts (ExprPairT parse replace print ids def) =
           = formatName
           | otherwise
           = dataDir </> "data" </> "formats" </>
-               (formatName ++ "_" ++ commandPropFormat opts)
+               (formatName ++ "_" ++ propFormatName)
     formatMissing <- not <$> doesFileExist formatFile
 
     if formatMissing
