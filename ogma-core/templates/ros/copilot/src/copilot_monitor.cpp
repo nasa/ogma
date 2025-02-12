@@ -16,8 +16,11 @@
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include <cstdint>
-#include "monitor.h"
-#include "monitor.c"
+{{#copilot}}
+#include "{{{copilot.specName}}}_types.h"
+#include "{{{copilot.specName}}}.h"
+#include "{{{copilot.specName}}}.c"
+{{/copilot}}
 
 using std::placeholders::_1;
 

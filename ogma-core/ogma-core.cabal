@@ -65,6 +65,7 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/ros/copilot/CMakeLists.txt
                      templates/ros/copilot/src/copilot_logger.cpp
                      templates/ros/copilot/src/copilot_monitor.cpp
+                     templates/ros/copilot/src/Copilot.hs
                      templates/ros/copilot/package.xml
                      templates/diagram/Copilot.hs
                      templates/fprime/CMakeLists.txt
@@ -118,6 +119,7 @@ library
 
   other-modules:
     Paths_ogma_core
+    Command.Common
 
   autogen-modules:
     Paths_ogma_core
