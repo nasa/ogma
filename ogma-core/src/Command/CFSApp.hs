@@ -54,8 +54,7 @@ import           Control.Applicative    ( liftA2 )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither )
 import           Data.Aeson             ( ToJSON (..) )
-import           Data.List              ( find )
-import           Data.Maybe             ( fromMaybe )
+import           Data.Maybe             ( fromMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
@@ -63,11 +62,16 @@ import qualified Command.Standalone
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
+import Data.List.Extra        ( stripSuffix )
+import Data.String.Extra      ( pascalCase )
 import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
 import Command.Common
-import Command.Errors (ErrorCode, ErrorTriplet(..))
+import Command.Errors     (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
+                           VariableDB, findConnection, findInput, findTopic,
+                           findType)
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions
@@ -100,7 +104,7 @@ command' options (ExprPair exprT) = do
     -- Open files needed to fill in details in the template.
     vs    <- parseVariablesFile varNameFile
     rs    <- parseRequirementsListFile handlersFile
-    varDB <- parseVarDBFile varDBFile
+    varDB <- openVarDBFilesWithDefault varDBFile
 
     spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
 
@@ -119,7 +123,7 @@ command' options (ExprPair exprT) = do
 
     fp             = commandInputFile options
     varNameFile    = commandVariables options
-    varDBFile      = commandVariableDB options
+    varDBFile      = maybeToList $ commandVariableDB options
     handlersFile   = commandHandlers options
     formatName     = commandFormat options
     propFormatName = commandPropFormat options
@@ -132,7 +136,7 @@ command' options (ExprPair exprT) = do
       Command.Standalone.commandLogic fp' "copilot" [] exprT spec'
 
 -- | Generate a variable substitution map for a cFS application.
-commandLogic :: [(String, String, String, String)]
+commandLogic :: VariableDB
              -> [String]
              -> [Trigger]
              -> Maybe Command.Standalone.AppData
@@ -182,25 +186,26 @@ data CommandOptions = CommandOptions
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
-variableMap :: [(String, String, String, String)]
+variableMap :: VariableDB
             -> String
             -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
-variableMap varDB varName =
-    csvToVarMap <$> find (sameName varName) varDB
+variableMap varDB varName = do
+    inputDef  <- findInput varDB varName
+    mid       <- connectionTopic <$> findConnection inputDef "cfs"
+    topicDef  <- findTopic varDB "cfs" mid
+    let typeVar' = fromMaybe
+                     (topicType topicDef)
+                     (typeToType <$> findType varDB varName "cfs" "C")
 
+    -- Pick name for the function to process a message ID.
+    let mn = pascalCase $ stripSuffix "_MID" mid
+
+    return ( VarDecl varName typeVar'
+           , mid
+           , MsgInfo mid mn
+           , MsgData mn varName typeVar'
+           )
   where
-
-    -- True if the given variable and db entry have the same name
-    sameName :: String
-             -> (String, String, String, String)
-             -> Bool
-    sameName n (vn, _, _, _) = n == vn
-
-    -- Convert a DB row into Variable info needed to generate the CFS file
-    csvToVarMap :: (String, String, String, String)
-                -> (VarDecl, String, MsgInfo, MsgData)
-    csvToVarMap (nm, ty, mid, mn) =
-      (VarDecl nm ty, mid, MsgInfo mid mn, MsgData mn nm ty)
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
@@ -250,3 +255,4 @@ data AppData = AppData
   deriving (Generic)
 
 instance ToJSON AppData
+
