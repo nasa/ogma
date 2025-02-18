@@ -50,8 +50,7 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT(..), liftEither )
 import           Data.Aeson             ( ToJSON, toJSON )
 import           Data.Char              ( toUpper )
-import           Data.List              ( find )
-import           Data.Maybe             ( fromMaybe, mapMaybe )
+import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
@@ -64,7 +63,9 @@ import Command.Result (Result (..))
 
 -- Internal imports
 import Command.Common
-import Command.Errors (ErrorCode, ErrorTriplet (..))
+import Command.Errors     (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB (InputDef (..), TypeDef (..), VariableDB, findInput,
+                           findType)
 
 -- | Generate a new FPrime component connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
@@ -97,7 +98,7 @@ command' options (ExprPair exprT) = do
     -- Open files needed to fill in details in the template.
     vs    <- parseVariablesFile varNameFile
     rs    <- parseRequirementsListFile handlersFile
-    varDB <- parseVarDBFile varDBFile
+    varDB <- openVarDBFilesWithDefault varDBFile
 
     spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
 
@@ -118,7 +119,7 @@ command' options (ExprPair exprT) = do
 
     fp             = commandInputFile options
     varNameFile    = commandVariables options
-    varDBFile      = commandVariableDB options
+    varDBFile      = maybeToList $ commandVariableDB options
     handlersFile   = commandHandlers options
     formatName     = commandFormat options
     propFormatName = commandPropFormat options
@@ -162,37 +163,17 @@ data CommandOptions = CommandOptions
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
-variableMap :: [(String, String)]
+variableMap :: VariableDB
             -> String
             -> Maybe VarDecl
-variableMap varDB varName =
-    csvToVarMap <$> find (sameName varName) varDB
+variableMap varDB varName = do
+  inputDef     <- findInput varDB varName
+  inputDefType <- inputType inputDef
+  let typeDef = findType varDB varName "fprime/port" "C"
 
-  where
+  portType <- maybe (inputType inputDef) (Just . typeFromType) typeDef
 
-    -- True if the given variable and db entry have the same name
-    sameName :: String
-             -> (String, String)
-             -> Bool
-    sameName n (vn, _) = n == vn
-
-    -- Convert a DB row into Variable info needed to generate the FPrime file
-    csvToVarMap :: (String, String)
-                -> (VarDecl)
-    csvToVarMap (nm, ty) = (VarDecl nm ty (fprimeVarDeclType ty))
-
-    fprimeVarDeclType ty = case ty of
-      "uint8_t"  -> "U8"
-      "uint16_t" -> "U16"
-      "uint32_t" -> "U32"
-      "uint64_t" -> "U64"
-      "int8_t"   -> "I8"
-      "int16_t"  -> "I16"
-      "int32_t"  -> "I32"
-      "int64_t"  -> "I64"
-      "float"    -> "F32"
-      "double"   -> "F64"
-      def        -> def
+  return $ VarDecl varName inputDefType portType
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
