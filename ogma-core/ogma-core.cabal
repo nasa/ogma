@@ -83,6 +83,7 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      data/formats/xml-md_smv
                      data/formats/xml-reqif_cocospec
                      data/formats/xml-reqif_smv
+                     data/variable-db.json
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
