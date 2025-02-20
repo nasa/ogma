@@ -31,6 +31,9 @@
 -- | Auxiliary functions for working with values of type '[]'.
 module Data.List.Extra where
 
+-- External imports
+import Data.List ( isSuffixOf )
+
 -- | Safely extract the head of a list.
 headEither :: [a] -> Either String a
 headEither (a:_) = Right a
@@ -45,3 +48,9 @@ toHead _ xs     = xs
 toTail :: (a -> a) -> [a] -> [a]
 toTail f (x:xs) = x : fmap f xs
 toTail _ xs     = xs
+
+-- | Remove a suffix from a string, if present.
+stripSuffix :: String -> String -> String
+stripSuffix suffix string
+  | isSuffixOf suffix string = take (length string - length suffix) string
+  | otherwise                = string
