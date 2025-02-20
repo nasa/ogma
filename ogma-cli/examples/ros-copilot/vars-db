@@ -1,3 +1,0 @@
-("input_signal","int64_t","/demo/topic","int64_t")
-("input_signal_float","float","/demo/topicf","float")
-("input_signal_double","double","/demo/topicd","double")
