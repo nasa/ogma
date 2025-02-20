@@ -67,6 +67,7 @@ import Command.Result (Result (..))
 
 -- Internal imports
 import Command.Common
+import Command.Errors (ErrorCode, ErrorTriplet (..))
 
 -- | Generate a new ROS application connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.

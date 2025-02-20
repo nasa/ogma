@@ -67,6 +67,7 @@ import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
 import Command.Common
+import Command.Errors (ErrorCode, ErrorTriplet(..))
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions

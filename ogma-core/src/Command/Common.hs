@@ -45,8 +45,6 @@ module Command.Common
     , ExprPair(..)
     , ExprPairT(..)
     , exprPair
-    , ErrorTriplet(..)
-    , ErrorCode
     , processResult
     , cannotCopyTemplate
     , makeLeftE
@@ -92,6 +90,7 @@ import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
                                                          boolSpecNames)
 
 -- Internal imports: auxiliary
+import Command.Errors  (ErrorTriplet(..), ErrorCode)
 import Command.Result  (Result (..))
 import Data.Location   (Location (..))
 import Paths_ogma_core (getDataDir)
@@ -289,14 +288,6 @@ exprPair _ = ExprPair $
     (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- * Errors
-
--- | A triplet containing error information.
-data ErrorTriplet = ErrorTriplet ErrorCode String Location
-
--- | Encoding of reasons why the command can fail.
---
--- The error codes used are 1 for user error, and 2 for internal bug.
-type ErrorCode = Int
 
 -- | Process a computation that can fail with an error code, and turn it into a
 -- computation that returns a 'Result'.

@@ -120,6 +120,7 @@ library
   other-modules:
     Paths_ogma_core
     Command.Common
+    Command.Errors
 
   autogen-modules:
     Paths_ogma_core
