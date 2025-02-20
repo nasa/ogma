@@ -121,6 +121,7 @@ library
     Paths_ogma_core
     Command.Common
     Command.Errors
+    Command.VariableDB
 
   autogen-modules:
     Paths_ogma_core
