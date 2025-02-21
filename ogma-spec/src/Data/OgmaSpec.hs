@@ -63,5 +63,7 @@ data Requirement a = Requirement
     { requirementName        :: String
     , requirementExpr        :: a
     , requirementDescription :: String
+    , requirementResultType  :: Maybe String
+    , requirementResultExpr  :: Maybe a
     }
   deriving (Show)
