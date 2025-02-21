@@ -69,7 +69,7 @@ import Command.Common
 import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (Connection (..), InputDef (..), TopicDef (..),
                            TypeDef (..), VariableDB, findConnection, findInput,
-                           findTopic, findType)
+                           findTopic, findType, findTypeByType)
 
 -- | Generate a new ROS application connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
@@ -111,10 +111,14 @@ command' options (ExprPair exprT) = do
     copilotM <- sequenceA $ liftA2 processSpec spec fp
 
     let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = fromMaybe (specExtractHandlers spec) rs
+        monitors = maybe
+                     (specExtractHandlers spec)
+                     (map (\x -> (x, Nothing)))
+                     rs
 
-    let appData   = AppData variables monitors copilotM
+    let appData   = AppData variables monitors' copilotM
         variables = mapMaybe (variableMap varDB) varNames
+        monitors' = mapMaybe (monitorMap varDB) monitors
 
     return appData
 
@@ -182,6 +186,18 @@ variableMap varDB varName = do
                    (typeFromType <$> findType varDB varName "ros/message" "C")
   return $ VarDecl varName typeVar' mid typeMsg'
 
+-- | Return the monitor information needed to generate declarations and
+-- publishers for the given monitor info, and variable database.
+monitorMap :: VariableDB
+           -> (String, Maybe String)
+           -> Maybe Monitor
+monitorMap varDB (monitorName, Nothing) =
+  Just $ Monitor monitorName Nothing Nothing
+monitorMap varDB (monitorName, Just ty) = do
+  let ty1 = maybe ty typeFromType $ findTypeByType varDB "ros/variable" "C" ty
+  ty2 <- typeFromType <$> findTypeByType varDB "ros/message" "C" ty
+  return $ Monitor monitorName (Just ty1) (Just ty2)
+
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
     { varDeclName    :: String
@@ -193,8 +209,16 @@ data VarDecl = VarDecl
 
 instance ToJSON VarDecl
 
--- | The name of a handler associated to each condition.
-type Monitor = String
+-- | The name of a handler associated to each condition, and the type
+-- of value it receives, together with the type for the message.
+data Monitor = Monitor
+    { monitorName    :: String
+    , monitorType    :: Maybe String
+    , monitorMsgType :: Maybe String
+    }
+  deriving Generic
+
+instance ToJSON Monitor
 
 -- | Data that may be relevant to generate a ROS application.
 data AppData = AppData
