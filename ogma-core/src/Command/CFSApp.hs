@@ -54,7 +54,7 @@ import           Control.Applicative    ( liftA2 )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither )
 import           Data.Aeson             ( ToJSON (..) )
-import           Data.Maybe             ( fromMaybe, maybeToList )
+import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
@@ -71,7 +71,7 @@ import Command.Common
 import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
                            VariableDB, findConnection, findInput, findTopic,
-                           findType)
+                           findType, findTypeByType)
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions
@@ -113,9 +113,13 @@ command' options (ExprPair exprT) = do
     copilotM <- sequenceA $ liftA2 processSpec spec fp
 
     let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = fromMaybe (specExtractHandlers spec) rs
+        monitors = maybe
+                     (specExtractHandlers spec)
+                     (map (\x -> (x, Nothing)))
+                     rs
 
-    let appData = commandLogic varDB varNames monitors copilotM
+    let appData   = commandLogic varDB varNames monitors' copilotM
+        monitors' = mapMaybe (monitorMap varDB) monitors
 
     return appData
 
@@ -207,6 +211,17 @@ variableMap varDB varName = do
            )
   where
 
+-- | Return the monitor information needed to generate declarations and
+-- publishers for the given monitor info, and variable database.
+monitorMap :: VariableDB
+           -> (String, Maybe String)
+           -> Maybe Trigger
+monitorMap varDB (monitorName, Nothing) =
+  Just $ Trigger monitorName Nothing Nothing
+monitorMap varDB (monitorName, Just ty) = do
+  let tyCFS = typeFromType <$> findTypeByType varDB "cfs" "C" ty
+  return $ Trigger monitorName (Just ty) tyCFS
+
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
     { varDeclName :: String
@@ -241,7 +256,14 @@ data MsgData = MsgData
 instance ToJSON MsgData
 
 -- | The message ID to subscribe to.
-type Trigger = String
+data Trigger = Trigger
+    { triggerName    :: String
+    , triggerType    :: Maybe String
+    , triggerMsgType :: Maybe String
+    }
+  deriving (Generic)
+
+instance ToJSON Trigger
 
 -- | Data that may be relevant to generate a cFS monitoring application.
 data AppData = AppData
