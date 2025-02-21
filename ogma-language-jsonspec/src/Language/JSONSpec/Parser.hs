@@ -53,32 +53,36 @@ import           Text.Megaparsec       (eof, errorBundlePretty, parse)
 import Data.OgmaSpec
 
 data JSONFormat = JSONFormat
-    { specInternalVars    :: Maybe String
-    , specInternalVarId   :: String
-    , specInternalVarExpr :: String
-    , specInternalVarType :: Maybe String
-    , specExternalVars    :: Maybe String
-    , specExternalVarId   :: String
-    , specExternalVarType :: Maybe String
-    , specRequirements    :: String
-    , specRequirementId   :: String
-    , specRequirementDesc :: Maybe String
-    , specRequirementExpr :: String
+    { specInternalVars          :: Maybe String
+    , specInternalVarId         :: String
+    , specInternalVarExpr       :: String
+    , specInternalVarType       :: Maybe String
+    , specExternalVars          :: Maybe String
+    , specExternalVarId         :: String
+    , specExternalVarType       :: Maybe String
+    , specRequirements          :: String
+    , specRequirementId         :: String
+    , specRequirementDesc       :: Maybe String
+    , specRequirementExpr       :: String
+    , specRequirementResultType :: Maybe String
+    , specRequirementResultExpr :: Maybe String
     }
   deriving (Read)
 
 data JSONFormatInternal = JSONFormatInternal
-  { jfiInternalVars    :: Maybe [JSONPathElement]
-  , jfiInternalVarId   :: [JSONPathElement]
-  , jfiInternalVarExpr :: [JSONPathElement]
-  , jfiInternalVarType :: Maybe [JSONPathElement]
-  , jfiExternalVars    :: Maybe [JSONPathElement]
-  , jfiExternalVarId   :: [JSONPathElement]
-  , jfiExternalVarType :: Maybe [JSONPathElement]
-  , jfiRequirements    :: [JSONPathElement]
-  , jfiRequirementId   :: [JSONPathElement]
-  , jfiRequirementDesc :: Maybe [JSONPathElement]
-  , jfiRequirementExpr :: [JSONPathElement]
+  { jfiInternalVars          :: Maybe [JSONPathElement]
+  , jfiInternalVarId         :: [JSONPathElement]
+  , jfiInternalVarExpr       :: [JSONPathElement]
+  , jfiInternalVarType       :: Maybe [JSONPathElement]
+  , jfiExternalVars          :: Maybe [JSONPathElement]
+  , jfiExternalVarId         :: [JSONPathElement]
+  , jfiExternalVarType       :: Maybe [JSONPathElement]
+  , jfiRequirements          :: [JSONPathElement]
+  , jfiRequirementId         :: [JSONPathElement]
+  , jfiRequirementDesc       :: Maybe [JSONPathElement]
+  , jfiRequirementExpr       :: [JSONPathElement]
+  , jfiRequirementResultType :: Maybe [JSONPathElement]
+  , jfiRequirementResultExpr :: Maybe [JSONPathElement]
   }
 
 parseJSONFormat :: JSONFormat -> Either String JSONFormatInternal
@@ -94,18 +98,22 @@ parseJSONFormat jsonFormat = do
   jfi10 <- showErrors $ parseJSONPath $ pack $ specRequirementId   jsonFormat
   jfi11 <- showErrorsM $ fmap (parseJSONPath . pack) $ specRequirementDesc jsonFormat
   jfi12 <- showErrors $ parseJSONPath $ pack $ specRequirementExpr jsonFormat
+  jfi13 <- showErrorsM $ fmap (parseJSONPath . pack) $ specRequirementResultType jsonFormat
+  jfi14 <- showErrorsM $ fmap (parseJSONPath . pack) $ specRequirementResultExpr jsonFormat
   return $ JSONFormatInternal
-             { jfiInternalVars    = jfi2
-             , jfiInternalVarId   = jfi3
-             , jfiInternalVarExpr = jfi4
-             , jfiInternalVarType = jfi5
-             , jfiExternalVars    = jfi6
-             , jfiExternalVarId   = jfi7
-             , jfiExternalVarType = jfi8
-             , jfiRequirements    = jfi9
-             , jfiRequirementId   = jfi10
-             , jfiRequirementDesc = jfi11
-             , jfiRequirementExpr = jfi12
+             { jfiInternalVars          = jfi2
+             , jfiInternalVarId         = jfi3
+             , jfiInternalVarExpr       = jfi4
+             , jfiInternalVarType       = jfi5
+             , jfiExternalVars          = jfi6
+             , jfiExternalVarId         = jfi7
+             , jfiExternalVarType       = jfi8
+             , jfiRequirements          = jfi9
+             , jfiRequirementId         = jfi10
+             , jfiRequirementDesc       = jfi11
+             , jfiRequirementExpr       = jfi12
+             , jfiRequirementResultType = jfi13
+             , jfiRequirementResultExpr = jfi14
              }
 
 parseJSONSpec :: (String -> IO (Either String a)) -> JSONFormat -> Value -> IO (Either String (Spec a))
@@ -168,10 +176,26 @@ parseJSONSpec parseExpr jsonFormat value = runExceptT $ do
         let msg = "Requirement description"
         reqDesc <- except $ maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) (jfiRequirementDesc jsonFormatInternal)
 
+        let msg = "Requirement result type"
+            ty :: Maybe (Either String String)
+            ty = (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) <$> (jfiRequirementResultType jsonFormatInternal)
+        reqResType <- except $ maybeEither ty
+
+        let msg = "Requirement result expression"
+            resultExpr :: Maybe (Either String String)
+            resultExpr = (\e -> valueToString msg =<< (listToEither msg (executeJSONPath e value))) <$> (jfiRequirementResultExpr jsonFormatInternal)
+
+        reqResExpr  <- except $ maybeEither resultExpr
+        reqResExpr' <- ExceptT $ case reqResExpr of
+                                   Nothing -> return $ Right Nothing
+                                   Just x  -> fmap Just <$> parseExpr x
+
         return $ Requirement
                    { requirementName        = reqId
                    , requirementExpr        = reqExpr'
                    , requirementDescription = reqDesc
+                   , requirementResultType  = reqResType
+                   , requirementResultExpr  = reqResExpr'
                    }
 
   requirements <- mapM requirementDef values
@@ -203,3 +227,8 @@ showErrorsM (Just (Right x)) = Right (Just x)
 -- | Wrap an 'Either' value in an @ExceptT m@ monad.
 except :: Monad m => Either e a -> ExceptT e m a
 except = ExceptT . return
+
+-- | Swap the order in a Maybe and an Either monad.
+maybeEither :: Maybe (Either a b) -> Either a (Maybe b)
+maybeEither Nothing  = Right Nothing
+maybeEither (Just e) = fmap Just e
