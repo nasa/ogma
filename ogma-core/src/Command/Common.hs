@@ -37,7 +37,8 @@ module Command.Common
     ( parseInputFile
     , parseVariablesFile
     , parseRequirementsListFile
-    , parseVarDBFile
+    , openVarDBFiles
+    , openVarDBFilesWithDefault
     , parseTemplateVarsFile
     , checkArguments
     , specExtractExternalVariables
@@ -45,8 +46,6 @@ module Command.Common
     , ExprPair(..)
     , ExprPairT(..)
     , exprPair
-    , ErrorTriplet(..)
-    , ErrorCode
     , processResult
     , cannotCopyTemplate
     , makeLeftE
@@ -60,7 +59,7 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   (ExceptT (..), runExceptT, throwError)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (Value (Null, Object), eitherDecode,
-                                         object)
+                                         eitherDecodeFileStrict, object)
 import           Data.Aeson.KeyMap      (union)
 import           Data.List              (isInfixOf, isPrefixOf)
 import           System.Directory       (doesFileExist)
@@ -91,7 +90,11 @@ import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot,
 import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
                                                          boolSpecNames)
 
+-- Internal imports: VariableDBs
+import Command.VariableDB (VariableDB, emptyVariableDB, mergeVariableDB)
+
 -- Internal imports: auxiliary
+import Command.Errors  (ErrorTriplet(..), ErrorCode)
 import Command.Result  (Result (..))
 import Data.Location   (Location (..))
 import Paths_ogma_core (getDataDir)
@@ -180,14 +183,33 @@ parseRequirementsListFile (Just fp) =
   ExceptT $ makeLeftE (cannotOpenHandlersFile fp) <$>
     (E.try $ Just . lines <$> readFile fp)
 
--- | Process a variable database file, if available, and return the rows in it.
-parseVarDBFile :: Read a
-               => Maybe FilePath
-               -> ExceptT ErrorTriplet IO [a]
-parseVarDBFile Nothing   = return []
-parseVarDBFile (Just fn) =
-  ExceptT $ makeLeftE (cannotOpenDB fn) <$>
-    (E.try $ fmap read <$> lines <$> readFile fn)
+-- | Read a list of variable DBs.
+openVarDBFiles :: VariableDB
+               -> [FilePath]
+               -> ExceptT ErrorTriplet IO VariableDB
+openVarDBFiles acc []     = return acc
+openVarDBFiles acc (x:xs) = do
+    file <- parseVarDBFile (Just x)
+    acc' <- mergeVariableDB acc file
+    openVarDBFiles acc' xs
+
+  where
+
+    -- Process a variable database file, if available.
+    parseVarDBFile :: Maybe FilePath
+                   -> ExceptT ErrorTriplet IO VariableDB
+    parseVarDBFile Nothing   = return emptyVariableDB
+    parseVarDBFile (Just fn) =
+      ExceptT $ makeLeftE' (cannotOpenDB fn) <$>
+        eitherDecodeFileStrict fn
+
+-- | Read a list of variable DBs, as well as the default variable DB.
+openVarDBFilesWithDefault :: [FilePath]
+                          -> ExceptT ErrorTriplet IO VariableDB
+openVarDBFilesWithDefault files = do
+  dataDir <- liftIO getDataDir
+  let defaultDB = dataDir </> "data" </> "variable-db.json"
+  openVarDBFiles emptyVariableDB (files ++ [defaultDB])
 
 -- | Process a JSON file with additional template variables to make available
 -- during template expansion.
@@ -289,14 +311,6 @@ exprPair _ = ExprPair $
     (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- * Errors
-
--- | A triplet containing error information.
-data ErrorTriplet = ErrorTriplet ErrorCode String Location
-
--- | Encoding of reasons why the command can fail.
---
--- The error codes used are 1 for user error, and 2 for internal bug.
-type ErrorCode = Int
 
 -- | Process a computation that can fail with an error code, and turn it into a
 -- computation that returns a 'Result'.
@@ -474,5 +488,9 @@ mergeObjects _           _           = error "The values passed are not objects"
 
 -- | Replace the left Exception in an Either.
 makeLeftE :: c -> Either E.SomeException b -> Either c b
-makeLeftE c (Left _)   = Left c
-makeLeftE _ (Right x)  = Right x
+makeLeftE = makeLeftE'
+
+-- | Replace the left value in an @Either@.
+makeLeftE' :: c -> Either a b -> Either c b
+makeLeftE' c (Left _)  = Left c
+makeLeftE' _ (Right x) = Right x

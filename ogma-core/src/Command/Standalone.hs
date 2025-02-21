@@ -59,6 +59,7 @@ import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
 import Command.Common
+import Command.Errors              (ErrorCode, ErrorTriplet(..))
 import Command.Result              (Result (..))
 import Data.Location               (Location (..))
 import Language.Trans.Spec2Copilot (spec2Copilot, specAnalyze)

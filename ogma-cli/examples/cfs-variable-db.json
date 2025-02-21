@@ -1,0 +1,30 @@
+{ "inputs":
+     [ { "name": "position"
+       , "type": "position_t"
+       , "connections":
+           [ { "scope": "cfs"
+             , "topic": "ICAROUS_POSITION_MID"
+             }
+           ]
+       }
+     , { "name": "velocity"
+       , "type": "velocity_t"
+       , "connections":
+           [ { "scope": "cfs"
+             , "topic": "ICAROUS_VELOCITY_MID"
+             }
+           ]
+       }
+     ]
+, "topics":
+     [ { "scope": "cfs"
+       , "topic": "ICAROUS_POSITION_MID"
+       , "type":  "position_t"
+       }
+     , { "scope": "cfs"
+       , "topic": "ICAROUS_VELOCITY_MID"
+       , "type":  "velocity_t"
+       }
+     ]
+, "types": []
+}

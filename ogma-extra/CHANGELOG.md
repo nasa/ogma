@@ -1,9 +1,10 @@
 # Revision history for ogma-extra
 
-## [1.X.Y] - 2025-02-01
+## [1.X.Y] - 2025-02-19
 * Bump upper version constraint on Cabal (#213).
 * Bump upper version constraint on aeson, text (#225).
 * Remove extraneous EOL character (#224).
+* Add auxiliary functions to manipulate strings, lists (#256).
 
 ## [1.6.0] - 2025-01-21
 

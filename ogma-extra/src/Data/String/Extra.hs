@@ -34,6 +34,9 @@ module Data.String.Extra
       -- * Safe I/O
       safeReadFile
 
+      -- * String transformation
+    , pascalCase
+
       -- * String sanitization
     , sanitizeLCIdentifier
     , sanitizeUCIdentifier
@@ -69,6 +72,23 @@ strStringFileNotFound fp = "File not found: " ++ fp
 -- | Cannot-open-file message.
 strStringCannotOpenFile :: FilePath -> String
 strStringCannotOpenFile fp = "Error opening file: " ++ fp
+
+-- * Transformation
+
+-- | Convert a string with underscores to PascalCase.
+pascalCase :: String -> String
+pascalCase = concatMap capitalize . parts
+  where
+    capitalize (x:xs) = toUpper x : map toLower xs
+    capitalize [] = []
+
+    parts :: String -> [String]
+    parts "" = []
+    parts s =
+      let (l, r) = break (== '_') s
+      in l : case r of
+               []     -> []
+               (_:rs) -> parts rs
 
 -- * Sanitization
 

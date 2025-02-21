@@ -1,4 +1,4 @@
--- Copyright 2020 United States Government as represented by the Administrator
+-- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -28,29 +28,18 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Auxiliary functions for working with values of type '[]'.
-module Data.List.Extra where
+-- | Types to encapsulate information useful for error reporting.
+module Command.Errors
+    ( ErrorTriplet(..)
+    , ErrorCode
+    )
+  where
 
--- External imports
-import Data.List ( isSuffixOf )
+import Data.Location (Location)
 
--- | Safely extract the head of a list.
-headEither :: [a] -> Either String a
-headEither (a:_) = Right a
-headEither []    = Left "Empty list"
+-- | A triplet containing error information.
+data ErrorTriplet = ErrorTriplet ErrorCode String Location
 
--- | Apply a transformation only to the head of a list.
-toHead :: (a -> a) -> [a] -> [a]
-toHead f (x:xs) = f x : xs
-toHead _ xs     = xs
+-- | Encoding of reasons why the command can fail.
+type ErrorCode = Int
 
--- | Apply a transformation only to the tail of a list.
-toTail :: (a -> a) -> [a] -> [a]
-toTail f (x:xs) = x : fmap f xs
-toTail _ xs     = xs
-
--- | Remove a suffix from a string, if present.
-stripSuffix :: String -> String -> String
-stripSuffix suffix string
-  | isSuffixOf suffix string = take (length string - length suffix) string
-  | otherwise                = string
