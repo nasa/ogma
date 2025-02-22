@@ -62,7 +62,7 @@ namespace Ref {
   // ----------------------------------------------------------------------
 
 {{#variables}}
-  void Copilot :: 
+  void Copilot ::
     {{varDeclName}}In_handler(
         const NATIVE_INT_TYPE portNum,
         {{varDeclType}} value
@@ -97,7 +97,14 @@ namespace Ref {
 } // end namespace Ref
 {{#monitors}}
 
+{{#monitorType}}
+void {{monitorName}}({{.}} arg) {
+  {{monitorName}}_result = true;
+}
+{{/monitorType}}
+{{^monitorType}}
 void {{monitorName}}() {
   {{monitorName}}_result = true;
 }
+{{/monitorType}}
 {{/monitors}}
