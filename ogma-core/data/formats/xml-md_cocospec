@@ -1,13 +1,15 @@
 XMLFormat
-  { XML.specInternalVars    = Nothing
-  , XML.specInternalVarId   = ("//*", Nothing)
-  , XML.specInternalVarExpr = ("//*", Nothing)
-  , XML.specInternalVarType = Nothing
-  , XML.specExternalVars    = Nothing
-  , XML.specExternalVarId   = ("//*", Nothing)
-  , XML.specExternalVarType = Nothing
-  , XML.specRequirements    = ("//sysml:Requirement", Nothing)
-  , XML.specRequirementId   = ("//sysml:Requirement/@Id/text()", Nothing)
-  , XML.specRequirementDesc = Just ("//sysml:Requirement/@Id/text()", Nothing)
-  , XML.specRequirementExpr = ("//sysml:Requirement/@Text/text()", Nothing)
+  { XML.specInternalVars          = Nothing
+  , XML.specInternalVarId         = ("//*", Nothing)
+  , XML.specInternalVarExpr       = ("//*", Nothing)
+  , XML.specInternalVarType       = Nothing
+  , XML.specExternalVars          = Nothing
+  , XML.specExternalVarId         = ("//*", Nothing)
+  , XML.specExternalVarType       = Nothing
+  , XML.specRequirements          = ("//sysml:Requirement", Nothing)
+  , XML.specRequirementId         = ("//sysml:Requirement/@Id/text()", Nothing)
+  , XML.specRequirementDesc       = Just ("//sysml:Requirement/@Id/text()", Nothing)
+  , XML.specRequirementExpr       = ("//sysml:Requirement/@Text/text()", Nothing)
+  , XML.specRequirementResultType = Nothing
+  , XML.specRequirementResultExpr = Nothing
   }
