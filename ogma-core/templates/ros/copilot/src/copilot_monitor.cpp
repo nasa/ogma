@@ -38,18 +38,34 @@ class CopilotRV : public rclcpp::Node {
 
       {{/variables}}
       {{#monitors}}
-      {{.}}_publisher_ = this->create_publisher<std_msgs::msg::Empty>(
-        "copilot/{{.}}", 10);
+      {{#monitorMsgType}}
+      {{monitorName}}_publisher_ = this->create_publisher<{{.}}>(
+        "copilot/{{monitorName}}", 10);
+      {{/monitorMsgType}}
+      {{^monitorMsgType}}
+      {{monitorName}}_publisher_ = this->create_publisher<std_msgs::msg::Empty>(
+        "copilot/{{monitorName}}", 10);
+      {{/monitorMsgType}}
 
       {{/monitors}}
     }
 
 {{#monitors}}
+    {{#monitorType}}
     // Report (publish) monitor violations.
-    void {{.}}() {
+    void {{monitorName}}({{.}} arg) {
+      {{#monitorMsgType}}
+      auto output = {{.}}();
+      output.data = arg;
+      {{/monitorMsgType}}
+      {{^monitorMsgType}}
       auto output = std_msgs::msg::Empty();
-      {{.}}_publisher_->publish(output);
+      {{/monitorMsgType}}
+      {{monitorName}}_publisher_->publish(output);
     }
+    {{/monitorType}}
+    {{^monitorType}}
+    {{/monitorType}}
 
 {{/monitors}}
     // Needed so we can report messages to the log.
@@ -71,7 +87,12 @@ class CopilotRV : public rclcpp::Node {
 
     {{/variables}}
     {{#monitors}}
-    rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr {{.}}_publisher_;
+    {{#monitorMsgType}}
+    rclcpp::Publisher<{{.}}>::SharedPtr {{monitorName}}_publisher_;
+    {{/monitorMsgType}}
+    {{^monitorMsgType}}
+    rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr {{monitorName}}_publisher_;
+    {{/monitorMsgType}}
 
     {{/monitors}}
 };
@@ -79,9 +100,16 @@ class CopilotRV : public rclcpp::Node {
 {{#monitors}}
 // Pass monitor violations to the actual class, which has ways to
 // communicate with other applications.
-void {{.}}() {
-  CopilotRV::getInstance().{{.}}();
+{{#monitorType}}
+void {{monitorName}}({{.}} arg) {
+  CopilotRV::getInstance().{{monitorName}}(arg);
 }
+{{/monitorType}}
+{{^monitorType}}
+void {{monitorName}}() {
+  CopilotRV::getInstance().{{monitorName}}();
+}
+{{/monitorType}}
 
 {{/monitors}}
 int main(int argc, char* argv[]) {
