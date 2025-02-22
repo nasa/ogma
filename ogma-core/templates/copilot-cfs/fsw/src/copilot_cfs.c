@@ -173,8 +173,13 @@ void COPILOT_Process{{msgDataDesc}}(void)
 /**
  * Report copilot property violations.
  */
-void {{.}}(void) {
+{{#triggerType}}
+void {{triggerName}}({{.}} arg) {
+{{/triggerType}}
+{{^triggerType}}
+void {{triggerName}}(void) {
+{{/triggerType}}
     CFE_EVS_SendEvent(COPILOT_COMMANDCPVIOL_INF_EID, CFE_EVS_ERROR,
-        "COPILOT: violation: {{.}}");
+        "COPILOT: violation: {{triggerName}}");
 }
 {{/triggers}}
