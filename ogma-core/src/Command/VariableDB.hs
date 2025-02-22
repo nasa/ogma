@@ -42,6 +42,7 @@ module Command.VariableDB
     , findConnection
     , findTopic
     , findType
+    , findTypeByType
     , mergeVariableDB
     )
   where
@@ -164,6 +165,19 @@ findType varDB name scope destConn = do
                && typeFromField typeDef == field
                && typeToScope typeDef   == destConn
           (Nothing, Nothing) -> False
+
+  find match (types varDB)
+
+-- | Find a type definition for a given scope, and destination system, and
+-- destination type.
+findTypeByType :: VariableDB -> String -> String -> String -> Maybe TypeDef
+findTypeByType varDB fromScope toScope toType = do
+
+  let match :: TypeDef -> Bool
+      match typeDef =
+           typeFromScope typeDef == fromScope
+        && typeToScope typeDef   == toScope
+        && typeToType typeDef    == toType
 
   find match (types varDB)
 

@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-02-19
+## [1.X.Y] - 2025-02-22
 
 * Import liftIO from Control.Monad.IO.Class (#215).
 * Remove references to old design of Ogma from hlint files (#220).
@@ -21,6 +21,7 @@
 * Make cFS backend accept spec as input (#252).
 * Make cFS, ROS, FPrime backends generate Copilot monitor (#107).
 * Standardize variable DB format across backends (#256).
+* Make backends accept additional data to be passed to handlers (#219).
 
 ## [1.6.0] - 2025-01-21
 

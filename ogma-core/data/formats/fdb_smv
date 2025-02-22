@@ -1,13 +1,15 @@
 JSONFormat
-  { specInternalVars    = Nothing
-  , specInternalVarId   = ""
-  , specInternalVarExpr = ""
-  , specInternalVarType = Nothing
-  , specExternalVars    = Just ".semantics.variables..*.*"
-  , specExternalVarId   = ""
-  , specExternalVarType = Nothing
-  , specRequirements    = "$[:]"
-  , specRequirementId   = ".reqid"
-  , specRequirementDesc = Just ".fulltext"
-  , specRequirementExpr = ".semantics.ptExpanded"
+  { specInternalVars          = Nothing
+  , specInternalVarId         = ""
+  , specInternalVarExpr       = ""
+  , specInternalVarType       = Nothing
+  , specExternalVars          = Just ".semantics.variables..*.*"
+  , specExternalVarId         = ""
+  , specExternalVarType       = Nothing
+  , specRequirements          = "$[:]"
+  , specRequirementId         = ".reqid"
+  , specRequirementDesc       = Just ".fulltext"
+  , specRequirementExpr       = ".semantics.ptExpanded"
+  , specRequirementResultType = Nothing
+  , specRequirementResultExpr = Nothing
   }

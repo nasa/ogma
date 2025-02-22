@@ -65,7 +65,7 @@ import Command.Result (Result (..))
 import Command.Common
 import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (InputDef (..), TypeDef (..), VariableDB, findInput,
-                           findType)
+                           findType, findTypeByType)
 
 -- | Generate a new FPrime component connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
@@ -107,11 +107,14 @@ command' options (ExprPair exprT) = do
     copilotM <- sequenceA $ liftA2 processSpec spec fp
 
     let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = fromMaybe (specExtractHandlers spec) rs
+        monitors = maybe
+                     (specExtractHandlers spec)
+                     (map (\x -> (x, Nothing)))
+                     rs
 
     let appData   = AppData variables monitors' copilotM
         variables = mapMaybe (variableMap varDB) varNames
-        monitors' = map (\x -> Monitor x (map toUpper x)) monitors
+        monitors' = mapMaybe (monitorMap varDB) monitors
 
     return appData
 
@@ -175,6 +178,17 @@ variableMap varDB varName = do
 
   return $ VarDecl varName inputDefType portType
 
+-- | Return the monitor information needed to generate declarations and
+-- publishers for the given monitor info, and variable database.
+monitorMap :: VariableDB
+           -> (String, Maybe String)
+           -> Maybe Monitor
+monitorMap varDB (monitorName, Nothing) =
+  Just $ Monitor monitorName (map toUpper monitorName) Nothing Nothing
+monitorMap varDB (monitorName, Just ty) = do
+  let tyPort = maybe ty typeFromType $ findTypeByType varDB "fprime/port" "C" ty
+  return $ Monitor monitorName (map toUpper monitorName) (Just ty) (Just tyPort)
+
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
     { varDeclName       :: String
@@ -186,8 +200,10 @@ data VarDecl = VarDecl
 instance ToJSON VarDecl
 
 data Monitor = Monitor
-    { monitorName :: String
-    , monitorUC   :: String
+    { monitorName     :: String
+    , monitorUC       :: String
+    , monitorType     :: Maybe String
+    , monitorPortType :: Maybe String
     }
   deriving Generic
 

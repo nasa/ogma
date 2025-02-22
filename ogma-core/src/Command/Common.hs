@@ -72,7 +72,8 @@ import Data.String.Extra     (sanitizeLCIdentifier, sanitizeUCIdentifier)
 
 -- External imports: ogma
 import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
-                                 requirementName, requirements)
+                                 requirementName, requirementResultType,
+                                 requirements)
 import Language.JSONSpec.Parser (parseJSONSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
 
@@ -256,12 +257,14 @@ specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
 
 -- | Extract the requirements from a specification, and sanitize them to match
 -- the names of the handlers used by Copilot.
-specExtractHandlers :: Maybe (Spec a) -> [String]
+specExtractHandlers :: Maybe (Spec a) -> [(String, Maybe String)]
 specExtractHandlers Nothing   = []
-specExtractHandlers (Just cs) = map handlerNameF
-                              $ map requirementName
+specExtractHandlers (Just cs) = map extractReqData
                               $ requirements cs
   where
+    extractReqData r =
+      (handlerNameF (requirementName r), requirementResultType r)
+
     handlerNameF = ("handler" ++) . sanitizeUCIdentifier
 
 -- * Handler for boolean expressions

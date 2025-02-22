@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- Copyright 2024 United States Government as represented by the Administrator
 -- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -52,7 +53,8 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
 --
 -- PRE: there are no name clashes between the variables and names used in the
 -- specification and any definitions in Haskell's Prelude or in Copilot.
-spec2Copilot :: String                         -- Spec / target file name
+spec2Copilot :: forall a
+             .  String                         -- Spec / target file name
              -> [(String, String)]             -- Type substitution table
              -> ([(String, String)] -> a -> a) -- Expr subsitution function
              -> (a -> String)                  -- Expr show function
@@ -143,10 +145,14 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
       where
         reqTrigger :: Requirement a -> String
         reqTrigger r = "  trigger " ++ show handlerName ++ " (not "
-                       ++ propName ++ ") " ++ "[]"
+                       ++ propName ++ ") " ++ handlerArg
           where
             handlerName = "handler" ++ sanitizeUCIdentifier (requirementName r)
             propName    = safeMap nameSubstitutions (requirementName r)
+            handlerArg  =
+              case (requirementResultType r, requirementResultExpr r) of
+                (Just ty, Just ex) -> "[ arg (" ++ showExpr ex ++ " ) ]"
+                _                  -> "[]"
 
     -- Map from a variable name to its desired identifier in the code
     -- generated.

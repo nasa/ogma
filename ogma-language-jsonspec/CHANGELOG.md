@@ -1,9 +1,10 @@
 # Revision history for ogma-language-jsonspec
 
-## [1.X.Y] - 2025-02-01
+## [1.X.Y] - 2025-02-22
 
 * Bump upper version constraint on aeson, text (#225).
 * Remove extraneous EOL character (#224).
+* Extend JSONSpec with additional data associated with results (#219).
 
 ## [1.6.0] - 2025-01-21
 
