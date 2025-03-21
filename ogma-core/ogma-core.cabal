@@ -144,6 +144,7 @@ library
     , ogma-language-c         >= 1.6.0 && < 1.7
     , ogma-language-cocospec  >= 1.6.0 && < 1.7
     , ogma-language-copilot   >= 1.6.0 && < 1.7
+    , ogma-language-csv       >= 1.6.0 && < 1.7
     , ogma-language-jsonspec  >= 1.6.0 && < 1.7
     , ogma-language-smv       >= 1.6.0 && < 1.7
     , ogma-language-xmlspec   >= 1.6.0 && < 1.7
