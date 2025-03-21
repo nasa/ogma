@@ -74,6 +74,7 @@ import Data.String.Extra     (sanitizeLCIdentifier, sanitizeUCIdentifier)
 import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
                                  requirementName, requirementResultType,
                                  requirements)
+import Language.CSVSpec.Parser  (parseCSVSpec)
 import Language.JSONSpec.Parser (parseJSONSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
 
@@ -147,6 +148,10 @@ parseInputFile fp formatName propFormatName propVia exprT =
                    parseXMLSpec
                      (wrapper) (def) xmlFormat content
                      -- (fmap (fmap print) . wrapper) (print def) xmlFormat content
+             | isPrefixOf "CSVFormat" format
+             -> do let csvFormat = read format
+                   content <- readFile fp
+                   parseCSVSpec wrapper def csvFormat content
              | otherwise
              -> do let jsonFormat = read format
                    content <- B.safeReadFile fp
