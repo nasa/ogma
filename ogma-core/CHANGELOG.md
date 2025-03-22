@@ -25,6 +25,7 @@
 * Add support to read properties from CSV files (#261).
 * Add support to read properties from XLSX files (#263).
 * Add all auxiliary test files to distributable Cabal package (#258).
+* Update to support boolean expressions in the Lustre language (#267).
 
 ## [1.6.0] - 2025-01-21
 
