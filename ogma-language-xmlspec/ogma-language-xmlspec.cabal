@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-language-xmlspec
-version:             1.6.0
+version:             1.7.0
 homepage:            http://nasa.gov
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -71,7 +71,7 @@ library
     , hxt-xpath           >= 8.5      && < 9.2
     , pretty              >= 1.1      && < 1.2
 
-    , ogma-spec           >= 1.6.0 && < 1.7
+    , ogma-spec           >= 1.7.0 && < 1.8
 
   hs-source-dirs:
     src
