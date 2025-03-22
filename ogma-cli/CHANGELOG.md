@@ -1,7 +1,8 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-03-21
+## [1.7.0] - 2025-03-21
 
+* Version bump 1.7.0 (#269).
 * Add all auxiliary test files to distributable Cabal package (#216).
 * Remove extraneous EOL character (#224).
 * Update installation instructions to use cabal install (#149).
