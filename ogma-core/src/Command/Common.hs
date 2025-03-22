@@ -61,6 +61,7 @@ import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (Value (Null, Object), eitherDecode,
                                          eitherDecodeFileStrict, object)
 import           Data.Aeson.KeyMap      (union)
+import qualified Data.ByteString.Lazy   as L
 import           Data.List              (isInfixOf, isPrefixOf)
 import           System.Directory       (doesFileExist)
 import           System.FilePath        ((</>))
@@ -76,6 +77,7 @@ import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
                                  requirements)
 import Language.CSVSpec.Parser  (parseCSVSpec)
 import Language.JSONSpec.Parser (parseJSONSpec)
+import Language.XLSXSpec.Parser (parseXLSXSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
 
 -- External imports: language ASTs, transformers
@@ -152,6 +154,10 @@ parseInputFile fp formatName propFormatName propVia exprT =
              -> do let csvFormat = read format
                    content <- readFile fp
                    parseCSVSpec wrapper def csvFormat content
+             | isPrefixOf "XLSXFormat" format
+             -> do let xlsxFormat = read format
+                   content <- L.readFile fp
+                   parseXLSXSpec wrapper def xlsxFormat content
              | otherwise
              -> do let jsonFormat = read format
                    content <- B.safeReadFile fp
