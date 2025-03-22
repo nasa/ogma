@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-02-22
+## [1.X.Y] - 2025-03-21
 
 * Add all auxiliary test files to distributable Cabal package (#216).
 * Remove extraneous EOL character (#224).
@@ -18,6 +18,7 @@
 * Use new sample spec with ROS backend in CI job (#107).
 * Update examples, Github Actions, README to use new variable DB format (#256).
 * Update README, ROS example with ability to pass data to handlers (#219).
+* Update README, Github Actions with new dependencies (#263).
 
 ## [1.6.0] - 2025-01-21
 
