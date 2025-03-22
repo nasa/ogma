@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-03-20
+## [1.X.Y] - 2025-03-21
 
 * Import liftIO from Control.Monad.IO.Class (#215).
 * Remove references to old design of Ogma from hlint files (#220).
@@ -23,6 +23,7 @@
 * Standardize variable DB format across backends (#256).
 * Make backends accept additional data to be passed to handlers (#219).
 * Add support to read properties from CSV files (#261).
+* Add support to read properties from XLSX files (#263).
 
 ## [1.6.0] - 2025-01-21
 
