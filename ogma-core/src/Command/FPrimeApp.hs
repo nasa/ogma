@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
@@ -37,670 +38,183 @@
 
 {- HLINT ignore "Functor law" -}
 module Command.FPrimeApp
-    ( fprimeApp
+    ( command
+    , CommandOptions(..)
     , ErrorCode
-    , FPrimeAppOptions(..)
     )
   where
 
 -- External imports
-import qualified Control.Exception    as E
-import           Control.Monad.Except ( ExceptT(..), liftEither, liftIO,
-                                        runExceptT, throwError )
-import           Data.Aeson           ( eitherDecode, object, (.=) )
-import           Data.Char            ( toUpper )
-import           Data.List            ( isInfixOf, isPrefixOf, find,
-                                        intercalate, nub, sort )
-import           Data.Maybe           ( fromMaybe )
-import           Data.Text.Lazy       ( pack )
-import           System.Directory     ( doesFileExist )
-import           System.FilePath      ( (</>) )
-import           System.Process       ( readProcess )
+import           Control.Applicative    ( liftA2 )
+import qualified Control.Exception      as E
+import           Control.Monad.Except   ( ExceptT(..), liftEither )
+import           Data.Aeson             ( ToJSON, toJSON )
+import           Data.Char              ( toUpper )
+import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
+import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
-import Data.ByteString.Extra  as B ( safeReadFile )
-import Data.String.Extra      ( sanitizeLCIdentifier, sanitizeUCIdentifier )
 import System.Directory.Extra ( copyTemplate )
 
--- External imports: ogma
-import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
-                                 requirementName, requirements)
-import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
-import Language.XMLSpec.Parser  (parseXMLSpec)
+import qualified Command.Standalone
 
 -- Internal imports: auxiliary
-import Command.Result                 ( Result (..) )
-import Data.Location                  ( Location (..) )
-
--- Internal imports: language ASTs, transformers
-import qualified Language.CoCoSpec.AbsCoCoSpec as CoCoSpec
-import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
-                                                             pBoolSpec )
-
-import qualified Language.SMV.AbsSMV       as SMV
-import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
-import           Language.SMV.Substitution (substituteBoolExpr)
-
-import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot,
-                                                              boolSpecNames)
-import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
-                                                         boolSpecNames)
+import Command.Result (Result (..))
 
 -- Internal imports
-import Paths_ogma_core ( getDataDir )
-
--- * FPrime component generation
+import Command.Common
+import Command.Errors     (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB (InputDef (..), TypeDef (..), VariableDB, findInput,
+                           findType, findTypeByType)
 
 -- | Generate a new FPrime component connected to Copilot.
-fprimeApp :: Maybe FilePath   -- ^ Input specification file.
-          -> FPrimeAppOptions -- ^ Options to the ROS backend.
-          -> IO (Result ErrorCode)
-fprimeApp fp options =
-    processResult $ do
-      spec  <- parseOptionalInputFile fp options functions
-      vs    <- parseOptionalVariablesFile varNameFile
-      rs    <- parseOptionalRequirementsListFile handlersFile
-      varDB <- parseOptionalVarDBFile varDBFile
-
-      liftEither $ checkArguments spec vs rs
-
-      let varNames = fromMaybe (specExtractExternalVariables spec) vs
-          monitors = fromMaybe (specExtractHandlers spec) rs
-
-      e <- liftIO $ fprimeApp' targetDir mTemplateDir varNames varDB monitors
-      liftEither e
-  where
-    targetDir    = fprimeAppTargetDir options
-    mTemplateDir = fprimeAppTemplateDir options
-    varNameFile  = fprimeAppVarNames options
-    varDBFile    = fprimeAppVariableDB options
-    handlersFile = fprimeAppHandlers options
-    functions    = exprPair (fprimeAppPropFormat options)
-
--- | Generate a new FPrime component connected to Copilot, by copying the
--- template and filling additional necessary files.
-fprimeApp' :: FilePath           -- ^ Target directory where the component
-                                 -- should be created.
-           -> Maybe FilePath     -- ^ Directory where the template is to be
-                                 -- found.
-           -> [String]           -- ^ List of variable names (data sources).
-           -> [(String, String)] -- ^ List of variables with their types, and
-                                 -- the message IDs (topics) they can be
-                                 -- obtained from.
-           -> [String]           -- ^ List of handlers associated to the
-                                 -- monitors (or requirements monitored).
-           -> IO (Either ErrorTriplet ())
-fprimeApp' targetDir mTemplateDir varNames varDB monitors =
-  E.handle (return . Left . cannotCopyTemplate) $ do
+command :: CommandOptions -- ^ Options to the ROS backend.
+        -> IO (Result ErrorCode)
+command options = processResult $ do
     -- Obtain template dir
-    templateDir <- case mTemplateDir of
-                     Just x  -> return x
-                     Nothing -> do
-                       dataDir <- getDataDir
-                       return $ dataDir </> "templates" </> "fprime"
+    templateDir <- locateTemplateDir mTemplateDir "fprime"
 
-    let f n o@(oVars) =
-          case variableMap varDB n of
-            Nothing   -> o
-            Just vars -> (vars : oVars)
+    templateVars <- parseTemplateVarsFile templateVarsF
 
-    -- This is a Data.List.unzip4
-    let vars = foldr f [] varNames
+    appData <- command' options functions
 
-        -- Copilot.fpp
-        (ifaceTypePorts, ifaceInputPorts, ifaceViolationEvents) =
-          componentInterface vars monitors
+    let subst = mergeObjects (toJSON appData) templateVars
 
-        -- Copilot.hpp
-        hdrHandlers = componentHeader vars monitors
+    -- Expand template
+    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+      copyTemplate templateDir subst targetDir
 
-        -- Copilot.cpp
-        (implInputs,             implMonitorResults, implInputHandlers,
-         implTriggerResultReset, implTriggerChecks,  implTriggers) =
-          componentImpl vars monitors
+  where
 
-        subst = object $
-                  [ "ifaceTypePorts"         .= pack ifaceTypePorts
-                  , "ifaceInputPorts"        .= pack ifaceInputPorts
-                  , "ifaceViolationEvents"   .= pack ifaceViolationEvents
-                  , "hdrHandlers"            .= pack hdrHandlers
-                  , "implInputs"             .= pack implInputs
-                  , "implMonitorResults"     .= pack implMonitorResults
-                  , "implInputHandlers"      .= pack implInputHandlers
-                  , "implTriggerResultReset" .= pack implTriggerResultReset
-                  , "implTriggerChecks"      .= pack implTriggerChecks
-                  , "implTriggers"           .= pack implTriggers
-                  ]
+    targetDir     = commandTargetDir options
+    mTemplateDir  = commandTemplateDir options
+    functions     = exprPair (commandPropFormat options)
+    templateVarsF = commandExtraVars options
 
-    copyTemplate templateDir subst targetDir
+command' :: CommandOptions
+         -> ExprPair
+         -> ExceptT ErrorTriplet IO AppData
+command' options (ExprPair exprT) = do
+    -- Open files needed to fill in details in the template.
+    vs    <- parseVariablesFile varNameFile
+    rs    <- parseRequirementsListFile handlersFile
+    varDB <- openVarDBFilesWithDefault varDBFile
 
-    return $ Right ()
+    spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
+
+    liftEither $ checkArguments spec vs rs
+
+    copilotM <- sequenceA $ liftA2 processSpec spec fp
+
+    let varNames = fromMaybe (specExtractExternalVariables spec) vs
+        monitors = maybe
+                     (specExtractHandlers spec)
+                     (map (\x -> (x, Nothing)))
+                     rs
+
+    let appData   = AppData variables monitors' copilotM
+        variables = mapMaybe (variableMap varDB) varNames
+        monitors' = mapMaybe (monitorMap varDB) monitors
+
+    return appData
+
+  where
+
+    fp             = commandInputFile options
+    varNameFile    = commandVariables options
+    varDBFile      = maybeToList $ commandVariableDB options
+    handlersFile   = commandHandlers options
+    formatName     = commandFormat options
+    propFormatName = commandPropFormat options
+    propVia        = commandPropVia options
+
+    parseInputFile' f =
+      parseInputFile f formatName propFormatName propVia exprT
+
+    processSpec spec' fp' =
+      Command.Standalone.commandLogic fp' "copilot" [] exprT spec'
 
 -- ** Argument processing
 
 -- | Options used to customize the conversion of specifications to F'
 -- applications.
-data FPrimeAppOptions = FPrimeAppOptions
-  { fprimeAppTargetDir   :: FilePath       -- ^ Target directory where the
-                                           -- component should be created.
-  , fprimeAppTemplateDir :: Maybe FilePath -- ^ Directory where the template is
-                                           -- to be found.
-  , fprimeAppVarNames    :: Maybe FilePath -- ^ File containing a list of
-                                           -- variables to make available to
-                                           -- Copilot.
-  , fprimeAppVariableDB  :: Maybe FilePath -- ^ File containing a list of known
-                                           -- variables with their types and
-                                           -- the message IDs they can be
-                                           -- obtained from.
-  , fprimeAppHandlers    :: Maybe FilePath -- ^ File containing a list of
-                                           -- handlers used in the Copilot
-                                           -- specification. The handlers are
-                                           -- assumed to receive no arguments.
-  , fprimeAppFormat      :: String         -- ^ Format of the input file.
-  , fprimeAppPropFormat  :: String         -- ^ Format used for input
-                                           -- properties.
-  , fprimeAppPropVia     :: Maybe String   -- ^ Use external command to
-                                           -- pre-process system properties.
+data CommandOptions = CommandOptions
+  { commandInputFile   :: Maybe FilePath -- ^ Input specification file.
+  , commandTargetDir   :: FilePath       -- ^ Target directory where the
+                                         -- component should be created.
+  , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
+                                         -- to be found.
+  , commandVariables   :: Maybe FilePath -- ^ File containing a list of
+                                         -- variables to make available to
+                                         -- Copilot.
+  , commandVariableDB  :: Maybe FilePath -- ^ File containing a list of known
+                                         -- variables with their types and the
+                                         -- message IDs they can be obtained
+                                         -- from.
+  , commandHandlers    :: Maybe FilePath -- ^ File containing a list of
+                                         -- handlers used in the Copilot
+                                         -- specification. The handlers are
+                                         -- assumed to receive no arguments.
+  , commandFormat      :: String         -- ^ Format of the input file.
+  , commandPropFormat  :: String         -- ^ Format used for input properties.
+  , commandPropVia     :: Maybe String   -- ^ Use external command to
+                                         -- pre-process system properties.
+  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
+                                         -- variables to make available to the
+                                         -- template.
   }
-
--- | Process input specification, if available, and return its abstract
--- representation.
-parseOptionalInputFile :: Maybe FilePath
-                       -> FPrimeAppOptions
-                       -> ExprPair
-                       -> ExceptT ErrorTriplet IO (Maybe (Spec String))
-parseOptionalInputFile Nothing   _    _ =
-  return Nothing
-parseOptionalInputFile (Just fp) opts (ExprPair parse replace print ids def) =
-  ExceptT $ do
-    let wrapper = wrapVia (fprimeAppPropVia opts) parse
-    -- Obtain format file.
-    --
-    -- A format name that exists as a file in the disk always takes preference
-    -- over a file format included with Ogma. A file format with a forward
-    -- slash in the name is always assumed to be a user-provided filename.
-    -- Regardless of whether the file is user-provided or known to Ogma, we
-    -- check (again) whether the file exists, and print an error message if
-    -- not.
-    let formatName = fprimeAppFormat opts
-    exists  <- doesFileExist formatName
-    dataDir <- getDataDir
-    let formatFile
-          | isInfixOf "/" formatName || exists
-          = formatName
-          | otherwise
-          = dataDir </> "data" </> "formats" </>
-               (formatName ++ "_" ++ fprimeAppPropFormat opts)
-    formatMissing <- not <$> doesFileExist formatFile
-
-    if formatMissing
-      then return $ Left $ fprimeAppIncorrectFormatSpec formatFile
-      else do
-        res <- do
-          format <- readFile formatFile
-
-          -- All of the following operations use Either to return error
-          -- messages.  The use of the monadic bind to pass arguments from one
-          -- function to the next will cause the program to stop at the
-          -- earliest error.
-          if | isPrefixOf "XMLFormat" format
-             -> do let xmlFormat = read format
-                   content <- readFile fp
-                   parseXMLSpec
-                     (fmap (fmap print) . wrapper)
-                     (print def)
-                     xmlFormat
-                     content
-             | otherwise
-             -> do let jsonFormat = read format
-                   content <- B.safeReadFile fp
-                   case content of
-                     Left e  -> return $ Left e
-                     Right b -> do case eitherDecode b of
-                                     Left e  -> return $ Left e
-                                     Right v ->
-                                       parseJSONSpec
-                                         (fmap (fmap print) . wrapper)
-                                         jsonFormat
-                                         v
-        case res of
-          Left e  -> return $ Left $ cannotOpenInputFile fp e
-          Right x -> return $ Right $ Just x
-
--- | Process a variable selection file, if available, and return the variable
--- names.
-parseOptionalVariablesFile :: Maybe FilePath
-                           -> ExceptT ErrorTriplet IO (Maybe [String])
-parseOptionalVariablesFile Nothing   = return Nothing
-parseOptionalVariablesFile (Just fp) = do
-  -- Fail if the file cannot be opened.
-  varNamesE <- liftIO $ E.try $ lines <$> readFile fp
-  case varNamesE of
-    Left e         -> throwError $ cannotOpenVarFile fp e
-    Right varNames -> return $ Just varNames
-
--- | Process a requirements / handlers list file, if available, and return the
--- handler names.
-parseOptionalRequirementsListFile :: Maybe FilePath
-                                  -> ExceptT ErrorTriplet IO (Maybe [String])
-parseOptionalRequirementsListFile Nothing   = return Nothing
-parseOptionalRequirementsListFile (Just fp) = do
-  -- Fail if the file cannot be opened.
-  handlerNamesE <- liftIO $ E.try $ lines <$> readFile fp
-  case handlerNamesE of
-    Left e         -> throwError $ cannotOpenHandlersFile fp e
-    Right monitors -> return $ Just monitors
-
--- | Process a variable database file, if available, and return the rows in it.
-parseOptionalVarDBFile :: Maybe FilePath
-                       -> ExceptT ErrorTriplet
-                                  IO
-                                  [(String, String)]
-parseOptionalVarDBFile Nothing   = return []
-parseOptionalVarDBFile (Just fp) = do
-  -- We first try to open the files we need to fill in details in the FPrime
-  -- component template.
-  --
-  -- The variable DB is optional, so this check only fails if the filename
-  -- provided does not exist or if the file cannot be opened or parsed (wrong
-  -- format).
-  varDBE <- liftIO $ E.try $ fmap read <$> lines <$> readFile fp
-  case varDBE of
-    Left  e     -> throwError $ cannotOpenDB fp e
-    Right varDB -> return varDB
-
--- | Check that the arguments provided are sufficient to operate.
---
--- The FPrime backend provides several modes of operation, which are selected
--- by providing different arguments to the `ros` command.
---
--- When an input specification file is provided, the variables and requirements
--- defined in it are used unless variables or handlers files are provided, in
--- which case the latter take priority.
---
--- If an input file is not provided, then the user must provide BOTH a variable
--- list, and a list of handlers.
-checkArguments :: Maybe (Spec a)
-               -> Maybe [String]
-               -> Maybe [String]
-               -> Either ErrorTriplet ()
-checkArguments Nothing Nothing   Nothing   = Left wrongArguments
-checkArguments Nothing Nothing   _         = Left wrongArguments
-checkArguments Nothing _         Nothing   = Left wrongArguments
-checkArguments _       (Just []) _         = Left wrongArguments
-checkArguments _       _         (Just []) = Left wrongArguments
-checkArguments _       _         _         = Right ()
-
--- | Extract the variables from a specification, and sanitize them to be used
--- in FPrime.
-specExtractExternalVariables :: Maybe (Spec a) -> [String]
-specExtractExternalVariables Nothing   = []
-specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
-                                       $ map externalVariableName
-                                       $ externalVariables cs
-
--- | Extract the requirements from a specification, and sanitize them to match
--- the names of the handlers used by Copilot.
-specExtractHandlers :: Maybe (Spec a) -> [String]
-specExtractHandlers Nothing   = []
-specExtractHandlers (Just cs) = map handlerNameF
-                              $ map requirementName
-                              $ requirements cs
-  where
-    handlerNameF = ("handler" ++) . sanitizeUCIdentifier
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
-variableMap :: [(String, String)]
+variableMap :: VariableDB
             -> String
             -> Maybe VarDecl
-variableMap varDB varName =
-    csvToVarMap <$> find (sameName varName) varDB
+variableMap varDB varName = do
+  inputDef     <- findInput varDB varName
+  inputDefType <- inputType inputDef
+  let typeDef = findType varDB varName "fprime/port" "C"
 
-  where
+  portType <- maybe (inputType inputDef) (Just . typeFromType) typeDef
 
-    -- True if the given variable and db entry have the same name
-    sameName :: String
-             -> (String, String)
-             -> Bool
-    sameName n (vn, _) = n == vn
+  return $ VarDecl varName inputDefType portType
 
-    -- Convert a DB row into Variable info needed to generate the FPrime file
-    csvToVarMap :: (String, String)
-                -> (VarDecl)
-    csvToVarMap (nm, ty) = (VarDecl nm ty)
+-- | Return the monitor information needed to generate declarations and
+-- publishers for the given monitor info, and variable database.
+monitorMap :: VariableDB
+           -> (String, Maybe String)
+           -> Maybe Monitor
+monitorMap varDB (monitorName, Nothing) =
+  Just $ Monitor monitorName (map toUpper monitorName) Nothing Nothing
+monitorMap varDB (monitorName, Just ty) = do
+  let tyPort = maybe ty typeFromType $ findTypeByType varDB "fprime/port" "C" ty
+  return $ Monitor monitorName (map toUpper monitorName) (Just ty) (Just tyPort)
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
-  { varDeclName :: String
-  , varDeclType :: String
+    { varDeclName       :: String
+    , varDeclType       :: String
+    , varDeclFPrimeType :: String
+    }
+  deriving Generic
+
+instance ToJSON VarDecl
+
+data Monitor = Monitor
+    { monitorName     :: String
+    , monitorUC       :: String
+    , monitorType     :: Maybe String
+    , monitorPortType :: Maybe String
+    }
+  deriving Generic
+
+instance ToJSON Monitor
+
+-- | Data that may be relevant to generate a ROS application.
+data AppData = AppData
+  { variables :: [VarDecl]
+  , monitors  :: [Monitor]
+  , copilot   :: Maybe Command.Standalone.AppData
   }
+  deriving (Generic)
 
--- * Handler for boolean expressions
-
--- | Handler for boolean expressions that knows how to parse them, replace
--- variables in them, and convert them to Copilot.
---
--- It also contains a default value to be used whenever an expression cannot be
--- found in the input file.
-data ExprPair = forall a . ExprPair
-  { exprParse   :: String -> Either String a
-  , exprReplace :: [(String, String)] -> a -> a
-  , exprPrint   :: a -> String
-  , exprIdents  :: a -> [String]
-  , exprUnknown :: a
-  }
-
--- | Return a handler depending on whether it should be for CoCoSpec boolean
--- expressions or for SMV boolean expressions. We default to SMV if not format
--- is given.
-exprPair :: String -> ExprPair
-exprPair "cocospec" =
-  ExprPair
-    (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
-    (\_ -> id)
-    (CoCoSpec.boolSpec2Copilot)
-    (CoCoSpec.boolSpecNames)
-    (CoCoSpec.BoolSpecSignal (CoCoSpec.Ident "undefined"))
-exprPair "literal" =
-  ExprPair
-    Right
-    (\_ -> id)
-    id
-    (const [])
-    "undefined"
-exprPair _ =
-  ExprPair
-    (SMV.pBoolSpec . SMV.myLexer)
-    (substituteBoolExpr)
-    (SMV.boolSpec2Copilot)
-    (SMV.boolSpecNames)
-    (SMV.BoolSpecSignal (SMV.Ident "undefined"))
-
--- | Parse a property using an auxiliary program to first translate it, if
--- available.
---
--- If a program is given, it is first called on the property, and then the
--- result is parsed with the parser passed as an argument. If a program is not
--- given, then the parser is applied to the given string.
-wrapVia :: Maybe String                -- ^ Auxiliary program to translate the
-                                       -- property.
-        -> (String -> Either String a) -- ^ Parser used on the result.
-        -> String                      -- ^ Property to parse.
-        -> IO (Either String a)
-wrapVia Nothing  parse s = return (parse s)
-wrapVia (Just f) parse s =
-  E.handle (\(e :: E.IOException) -> return $ Left $ show e) $ do
-    out <- readProcess f [] s
-    return $ parse out
-
--- * FPrime component content
-
--- | Return the contents of the FPrime component interface (.fpp) specification.
-componentInterface :: [VarDecl]
-                   -> [String]     -- Monitors
-                   -> (String, String, String)
-componentInterface variables monitors =
-    (typePorts, inputPorts, violationEvents)
-  where
-
-    typePorts = unlines' $ nub $ sort $ map toTypePort variables
-    toTypePort varDecl = "    port "
-                       ++ fprimeVarDeclType varDecl
-                       ++ "Value(value: "
-                       ++ fprimeVarDeclType varDecl
-                       ++ ")"
-
-    inputPorts = unlines' $ map toInputPortDecl variables
-    toInputPortDecl varDecl = "    async input port "
-                            ++ varDeclName varDecl
-                            ++ "In : " ++ fprimeVarDeclType varDecl
-                            ++ "Value"
-
-    fprimeVarDeclType varDecl = case varDeclType varDecl of
-      "uint8_t"  -> "U8"
-      "uint16_t" -> "U16"
-      "uint32_t" -> "U32"
-      "uint64_t" -> "U64"
-      "int8_t"   -> "I8"
-      "int16_t"  -> "I16"
-      "int32_t"  -> "I32"
-      "int64_t"  -> "I64"
-      "float"    -> "F32"
-      "double"   -> "F64"
-      def        -> def
-
-    violationEvents = unlines'
-                    $ intercalate [""]
-                    $ map violationEvent monitors
-    violationEvent monitor =
-        [ "    @ " ++ monitor ++ " violation"
-        , "    event " ++ ucMonitor ++ "_VIOLATION("
-        , "          " ++ replicate (length ucMonitor) ' ' ++ "          ) \\"
-        , "      severity activity high \\"
-        , "      id 0 \\"
-        , "      format \"" ++ monitor ++ " violation\""
-        ]
-      where
-        ucMonitor = map toUpper monitor
-
--- | Return the contents of the FPrime component header file.
-componentHeader :: [VarDecl]
-                -> [String]     -- Monitors
-                -> String
-componentHeader variables _monitors = handlers
-  where
-    handlers = unlines'
-             $ intercalate [""]
-             $ map toInputHandler variables
-    toInputHandler nm =
-        [ "      //! Handler implementation for " ++ varDeclName nm ++ "In"
-        , "      //!"
-        , "      void " ++ varDeclName nm ++ "In_handler("
-        , "            const NATIVE_INT_TYPE portNum, /*!< The port number*/"
-        , "            " ++ portTy ++ " value"
-        , "        );"
-        ]
-      where
-        portTy = varDeclType nm
-
-
--- | Return the contents of the main FPrime component.
-componentImpl :: [VarDecl]
-              -> [String]     -- Monitors
-              -> (String, String, String, String, String, String)
-componentImpl variables monitors =
-    ( inputs
-    , monitorResults
-    , inputHandlers
-    , triggerResultReset
-    , triggerChecks
-    , triggers
-    )
-
-  where
-
-    inputs = unlines' variablesS
-
-    monitorResults = unlines'
-                   $ intercalate [""]
-                   $ map monitorResult monitors
-    monitorResult monitor =
-        [ "bool " ++ monitor ++ "_result;"
-        ]
-
-    inputHandlers = unlines'
-                  $ intercalate [""]
-                  $ map toInputHandler variables
-    toInputHandler nm =
-        [ "  void Copilot :: "
-        , "    " ++ varDeclName nm ++ "In_handler("
-        , "        const NATIVE_INT_TYPE portNum,"
-        , "        " ++ portTy ++ " value"
-        , "    )"
-        , "  {"
-        , "    " ++ varDeclName nm ++ " = (" ++ ty ++ ") value;"
-        , "  }"
-        ]
-      where
-        portTy = varDeclType nm
-        ty     = varDeclType nm
-
-    triggerResultReset = unlines'
-                       $ intercalate [""]
-                       $ map monitorResultReset monitors
-    monitorResultReset monitor =
-        [ "    " ++ monitor ++ "_result = false;"
-        ]
-
-    triggerChecks = unlines'
-                  $ intercalate [""]
-                  $ map triggerCheck monitors
-    triggerCheck monitor =
-        [ "    if (" ++ monitor ++ "_result) {"
-        , "       this->log_ACTIVITY_HI_" ++ ucMonitor ++ "_VIOLATION();"
-        , "    }"
-        ]
-      where
-        ucMonitor = map toUpper monitor
-
-    triggers :: String
-    triggers = unlines'
-             $ intercalate [""]
-             $ map triggerImpl monitors
-    triggerImpl monitor =
-        [ "void " ++ monitor ++ "() {"
-        , "  " ++ monitor ++ "_result = true;"
-        , "}"
-        ]
-
-    variablesS :: [String]
-    variablesS = map toVarDecl variables
-    toVarDecl varDecl =
-      varDeclType varDecl ++ " " ++ varDeclName varDecl ++ ";"
-
--- * Exception handlers
-
--- | Exception handler to deal with the case in which the arguments
--- provided are incorrect.
-wrongArguments :: ErrorTriplet
-wrongArguments =
-    ErrorTriplet ecWrongArguments msg LocationNothing
-  where
-    msg =
-      "the arguments provided are insufficient: you must provide an input "
-      ++ "specification, or both a variables and a handlers file."
-
--- | Exception handler to deal with the case in which the input file cannot be
--- opened.
-cannotOpenInputFile :: FilePath -> String -> ErrorTriplet
-cannotOpenInputFile file _e =
-    ErrorTriplet ecCannotOpenInputFile msg (LocationFile file)
-  where
-    msg =
-      "cannot open input specification file " ++ file
-
--- | Exception handler to deal with the case in which the variable DB cannot be
--- opened.
-cannotOpenDB :: FilePath -> E.SomeException -> ErrorTriplet
-cannotOpenDB file _e =
-    ErrorTriplet ecCannotOpenDBUser msg (LocationFile file)
-  where
-    msg =
-      "cannot open variable DB file " ++ file
-
--- | Exception handler to deal with the case in which the variable file
--- provided by the user cannot be opened.
-cannotOpenVarFile :: FilePath -> E.SomeException -> ErrorTriplet
-cannotOpenVarFile file _e =
-    ErrorTriplet ecCannotOpenVarFile  msg (LocationFile file)
-  where
-    msg =
-      "cannot open variable list file " ++ file
-
--- | Exception handler to deal with the case in which the handlers file
--- provided by the user cannot be opened.
-cannotOpenHandlersFile :: FilePath -> E.SomeException -> ErrorTriplet
-cannotOpenHandlersFile file _e =
-    ErrorTriplet ecCannotOpenHandlersFile  msg (LocationFile file)
-  where
-    msg =
-      "cannot open handler list file " ++ file
-
--- | Exception handler to deal with the case of files that cannot be
--- copied/generated due lack of space or permissions or some I/O error.
-cannotCopyTemplate :: E.SomeException -> ErrorTriplet
-cannotCopyTemplate e =
-    ErrorTriplet ecCannotCopyTemplate msg LocationNothing
-  where
-    msg =
-      "FPrime component generation failed during copy/write operation. Check"
-      ++ " that there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory."
-      ++ show e
-
--- | Error messages associated to the format file not being found.
-fprimeAppIncorrectFormatSpec :: String -> ErrorTriplet
-fprimeAppIncorrectFormatSpec formatFile =
-    ErrorTriplet ecIncorrectFormatFile msg LocationNothing
-  where
-    msg =
-      "The format specification " ++ formatFile ++ " does not exist or is not "
-      ++ "readable"
-
--- | A triplet containing error information.
-data ErrorTriplet = ErrorTriplet ErrorCode String Location
-
--- | Process a computation that can fail with an error code, and turn it into a
--- computation that returns a 'Result'.
-processResult :: Monad m => ExceptT ErrorTriplet m a -> m (Result ErrorCode)
-processResult m = do
-  r <- runExceptT m
-  case r of
-    Left (ErrorTriplet errorCode msg location)
-      -> return $ Error errorCode msg location
-    _ -> return Success
-
--- * Error codes
-
--- | Encoding of reasons why the command can fail.
---
--- The error codes used are 1 for user error, and 2 for internal bug.
-type ErrorCode = Int
-
--- | Error: wrong arguments provided.
-ecWrongArguments :: ErrorCode
-ecWrongArguments = 1
-
--- | Error: the input specification provided by the user cannot be opened.
-ecCannotOpenInputFile :: ErrorCode
-ecCannotOpenInputFile = 1
-
--- | Error: the variable DB provided by the user cannot be opened.
-ecCannotOpenDBUser :: ErrorCode
-ecCannotOpenDBUser = 1
-
--- | Error: the variable file provided by the user cannot be opened.
-ecCannotOpenVarFile :: ErrorCode
-ecCannotOpenVarFile = 1
-
--- | Error: the handlers file provided by the user cannot be opened.
-ecCannotOpenHandlersFile :: ErrorCode
-ecCannotOpenHandlersFile = 1
-
--- | Error: the files cannot be copied/generated due lack of space or
--- permissions or some I/O error.
-ecCannotCopyTemplate :: ErrorCode
-ecCannotCopyTemplate = 1
-
--- | Error: the format file cannot be opened.
-ecIncorrectFormatFile :: ErrorCode
-ecIncorrectFormatFile = 1
-
--- * Auxliary functions
-
--- | Create a string from a list of strings, inserting new line characters
--- between them. Unlike 'Prelude.unlines', this function does not insert
--- an end of line character at the end of the last string.
-unlines' :: [String] -> String
-unlines' = intercalate "\n"
+instance ToJSON AppData

@@ -1,5 +1,0 @@
-- functions:
-  - {name: unsafePerformIO, within: []} # unsafePerformIO cannot appear in any modules
-
-# Ignore in automatically generated files.
-- ignore: {within: [Language.CoCoSpec.AbsCoCoSpec, Language.CoCoSpec.ErrM, Language.CoCoSpec.LexCoCoSpec, Language.CoCoSpec.ParCoCoSpec, Language.CoCoSpec.PrintCoCoSpec, Language.CoCoSpec.SkelCoCoSpec]}

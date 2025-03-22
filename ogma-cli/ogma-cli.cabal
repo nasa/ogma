@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS." 
+-- IT "AS IS."
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.6.0
+version:             1.7.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
@@ -114,6 +114,11 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      - "<https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf From Requirements to Autonomous Flight>", Dutle et al. 2020.
 
+extra-source-files:  tests/fcs-example1.json
+                     tests/fdb-example1.json
+                     tests/reduced_geofence_msgs.h
+                     tests/reduced_geofence_msgs_bad.h
+
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
 --
@@ -145,7 +150,7 @@ executable ogma
   build-depends:
       base                 >= 4.11.0.0 && < 5
     , optparse-applicative >= 0.14     && < 0.19
-    , ogma-core            >= 1.6.0 && < 1.7
+    , ogma-core            >= 1.7.0 && < 1.8
 
   hs-source-dirs:
     src

@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS." 
+-- IT "AS IS."
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-language-jsonspec
-version:             1.6.0
+version:             1.7.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
@@ -70,14 +70,14 @@ library
 
   build-depends:
       base                   >= 4.11.0.0 && < 5
-    , aeson                  >= 2.0.0.0  && < 2.2
+    , aeson                  >= 2.0.0.0  && < 2.3
     , jsonpath               >= 0.3      && < 0.4
-    , text                   >= 1.2.3.1  && < 2.1
+    , text                   >= 1.2.3.1  && < 2.2
     , megaparsec             >= 8.0.0    && < 9.10
     , mtl                    >= 2.2.2    && < 2.4
     , bytestring             >= 0.10.8.2 && < 0.13
 
-    , ogma-spec              >= 1.6.0 && < 1.7
+    , ogma-spec              >= 1.7.0 && < 1.8
 
   hs-source-dirs:
     src

@@ -51,36 +51,40 @@ import Command.Result ( Result(..) )
 import Data.Location  ( Location(..) )
 
 -- External imports: actions or commands supported
-import           Command.Standalone (standalone)
+import           Command.Standalone (ErrorCode)
 import qualified Command.Standalone
 
 -- * Command
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { standaloneTargetDir   :: FilePath
-  , standaloneTemplateDir :: Maybe FilePath
-  , standaloneFileName    :: FilePath
-  , standaloneFormat      :: String
-  , standalonePropFormat  :: String
-  , standaloneTypes       :: [String]
-  , standaloneTarget      :: String
-  , standalonePropVia     :: Maybe String
+  { standaloneTargetDir    :: FilePath
+  , standaloneTemplateDir  :: Maybe FilePath
+  , standaloneFileName     :: FilePath
+  , standaloneFormat       :: String
+  , standalonePropFormat   :: String
+  , standaloneTypes        :: [String]
+  , standaloneTarget       :: String
+  , standalonePropVia      :: Maybe String
+  , standaloneTemplateVars :: Maybe String
   }
 
 -- | Transform an input specification into a Copilot specification.
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = standalone (standaloneFileName c) internalCommandOpts
+command c =
+    Command.Standalone.command internalCommandOpts
   where
-    internalCommandOpts :: Command.Standalone.StandaloneOptions
-    internalCommandOpts = Command.Standalone.StandaloneOptions
-      { Command.Standalone.standaloneTargetDir   = standaloneTargetDir c
-      , Command.Standalone.standaloneTemplateDir = standaloneTemplateDir c
-      , Command.Standalone.standaloneFormat      = standaloneFormat c
-      , Command.Standalone.standalonePropFormat  = standalonePropFormat c
-      , Command.Standalone.standaloneTypeMapping = types
-      , Command.Standalone.standaloneFilename    = standaloneTarget c
-      , Command.Standalone.standalonePropVia     = standalonePropVia c
+    internalCommandOpts :: Command.Standalone.CommandOptions
+    internalCommandOpts = Command.Standalone.CommandOptions
+      { Command.Standalone.commandInputFile   = standaloneFileName c
+      , Command.Standalone.commandTargetDir   = standaloneTargetDir c
+      , Command.Standalone.commandTemplateDir = standaloneTemplateDir c
+      , Command.Standalone.commandFormat      = standaloneFormat c
+      , Command.Standalone.commandPropFormat  = standalonePropFormat c
+      , Command.Standalone.commandTypeMapping = types
+      , Command.Standalone.commandFilename    = standaloneTarget c
+      , Command.Standalone.commandPropVia     = standalonePropVia c
+      , Command.Standalone.commandExtraVars   = standaloneTemplateVars c
       }
 
     types :: [(String, String)]
@@ -159,6 +163,13 @@ commandOptsParser = CommandOpts
             <> help strStandalonePropViaDesc
             )
         )
+  <*> optional
+        ( strOption
+            (  long "template-vars"
+            <> metavar "FILENAME"
+            <> help strStandaloneTemplateVarsArgDesc
+            )
+        )
 
 -- | Target dir flag description.
 strStandaloneTargetDirDesc :: String
@@ -194,14 +205,7 @@ strStandalonePropViaDesc :: String
 strStandalonePropViaDesc =
   "Command to pre-process individual properties"
 
--- * Error codes
-
--- | Encoding of reasons why the command can fail.
---
--- The error code used is 1 for user error.
-type ErrorCode = Int
-
--- | Error: the specification file cannot be read due to the format being
--- unknown.
-ecSpecError :: ErrorCode
-ecSpecError = 2
+-- | Additional template variable file flag description.
+strStandaloneTemplateVarsArgDesc :: String
+strStandaloneTemplateVarsArgDesc =
+  "JSON file containing additional variables to expand in template"

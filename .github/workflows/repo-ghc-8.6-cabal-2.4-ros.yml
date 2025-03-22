@@ -12,9 +12,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        cabal: ["2.4"]
+        cabal: ["3.12"]
         ghc:
-          - "8.6"
+          - "9.10"
 
     steps:
 
@@ -29,26 +29,25 @@ jobs:
       run: |
         echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - uses: actions/checkout@v4
 
-    - name: Create sandbox
-      run: |
-        echo "$PWD/.cabal-sandbox/bin" >> $GITHUB_PATH
-        cabal v1-sandbox init
-
     - name: Install dependencies
       run: |
-        cabal v1-install alex happy
+        sudo apt-get install -y libbz2-dev libexpat-dev
+        cabal install --lib copilot copilot-c99 copilot-language copilot-theorem \
+          copilot-libraries copilot-interpreter
 
     - name: Install ogma
       run: |
-        cabal v1-install copilot ogma-**/ --constraint="copilot >= 3.19.1" --constraint="aeson >= 2.0.3.0"
+        cabal install ogma-cli:ogma
 
     - name: Generate ROS app
       run: |
-        ogma ros --app-target-dir demo --variable-db ogma-cli/examples/ros-copilot/vars-db --variable-file ogma-cli/examples/ros-copilot/variables --handlers-file ogma-cli/examples/ros-copilot/handlers
-        cabal v1-exec -- runhaskell ogma-cli/examples/ros-copilot/ROS.hs
-        find demo/
-        cd demo/
+        ogma ros --app-target-dir demo --input-file ogma-cli/examples/ros-copilot/document.json --input-format ogma-cli/examples/ros-copilot/json-format.cfg --prop-format literal --variable-db ogma-cli/examples/ros-copilot/vars-db.json
+        cd demo/copilot/src/
+        runhaskell Copilot.hs
+        cd ../../
+        find .
         docker build .

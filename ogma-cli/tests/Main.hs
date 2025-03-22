@@ -48,7 +48,7 @@ tests =
   , testCase "cli-cmd-standalone-fail" (runErrorCode ["standalone", "--incorrect-argument"] False)
     -- Should fail due to arguments being incorrect
 
-  , testCase "cli-cmd-standalone-fcs" (parseStandaloneFCS "examples/fcs-2.json" True)
+  , testCase "cli-cmd-standalone-fcs" (parseStandaloneFCS "tests/fcs-example1.json" True)
     -- Should pass
 
   , testCase "cli-cmd-standalone-file-not-found" (parseStandaloneFCS "tests/file-invalid.json" False)
@@ -130,7 +130,7 @@ parseStandaloneFCS file success = do
     args     = ["standalone", "--file-name", file]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
--- | Test standalone backend for FDB format and CoCoSpec.
+-- | Test standalone backend for FDB format and Lustre.
 --
 -- This test uses the standalone backend, so it generates a Copilot file. It
 -- may be convenient to run this action in a temporary directory.
@@ -150,7 +150,7 @@ parseStandaloneFDB file = do
     assertBool errorMsg (ec == ExitSuccess)
   where
     args     = [ "standalone", "--file-name", file, "--input-format", "fdb"
-               , "--prop-format", "cocospec"]
+               , "--prop-format", "lustre"]
     errorMsg = "Parsing file " ++ file ++ " failed"
 
 -- | Test ogma by running it and checking the error code.

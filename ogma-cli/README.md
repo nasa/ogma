@@ -58,22 +58,23 @@ verification framework that generates hard real-time C99 code.
 ## Pre-requisites
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-To install Ogma from source, users must have the tools GHC and cabal-install.
-At this time, we recommend GHC 8.6 and a version of cabal-install between 2.4
-and 3.2. (Ogma has been tested with GHC versions up to 9.2 and cabal-install
-versions up to 3.6, although the installation steps may vary slightly depending
-on the version of cabal-install being used.)
+To install Ogma from source, users must have the tools GHC and cabal-install,
+as well as the libraries `bz2` and `expat`. At this time, we recommend GHC 8.6
+and a version of cabal-install between 2.4 and 3.2. (Ogma has been tested with
+GHC versions up to 9.2 and cabal-install versions up to 3.6, although the
+installation steps may vary slightly depending on the version of cabal-install
+being used.)
 
-On Debian or Ubuntu Linux, both can be installed with:
+On Debian or Ubuntu Linux, these dependencies can be installed with:
 
 ```sh
-$ apt-get install ghc cabal-install
+$ apt-get install ghc cabal-install libbz2-dev libexpat-dev
 ```
 
 On Mac, they can be installed with:
 
 ```sh
-$ brew install ghc cabal-install
+$ brew install ghc cabal-install bzip2 expat
 ```
 
 ## Compilation
@@ -83,15 +84,15 @@ Once GHC and cabal are installed, the simplest way to install Ogma is with:
 ```sh
 $ git clone https://github.com/nasa/ogma.git
 $ cd ogma
-$ export PATH="$HOME/.cabal/bin/:$PATH"
-$ cabal v1-update
-$ cabal v1-install alex happy
-$ cabal v1-install BNFC copilot
-$ cabal v1-install ogma-*/
+$ export PATH="$HOME/.local/bin/:$PATH"
+$ cabal update
+$ cabal install --lib copilot copilot-c99 copilot-language copilot-theorem \
+    copilot-libraries copilot-interpreter
+$ cabal install ogma-cli:ogma
 ```
 
 After that, the `ogma` executable will be placed in the directory
-`$HOME/.cabal/bin/`, where `$HOME` represents your user's home directory.
+`$HOME/.local/bin/`, where `$HOME` represents your user's home directory.
 
 # Usage
 <sup>[(Back to top)](#table-of-contents)</sup>
@@ -124,20 +125,47 @@ necessary messages and make it available to Copilot. Ogma provides additional
 flags to customize the list of known variables, so that projects can maintain
 their own variable databases beyond what Ogma includes by default.
 
-cFS applications are generated using the Ogma command `cfs`, which receives
-four main arguments:
+cFS applications are generated using the Ogma command `cfs`, which accepts
+the following arguments:
+- `--input-file FILENAME`: location of the specification or source file for
+  which a cFS application is being generated.
 - `--app-target-dir DIR`: location where the cFS application files must be
   stored.
 - `--app-template-dir DIR`: location of the cFS application template to use.
-- `--variable-file FILENAME`: a file containing a list of variables that must
-be made available to the monitor.
+- `--variable-file FILENAME`: a file containing a list of variables to monitor
+in the cFS application.
 - `--variable-db FILENAME`: a file containing a database of known variables,
 and the message they are included with.
+- `--handlers-file FILENAME`: a file containing a list of known fault handlers
+  or triggers.
+- `--input-format FORMAT_NAME`: the name of a know input format description
+  file in JSON or XML. It can be a path to a file containing such description.
+- `--prop-format FORMAT_NAME`: the name of the format or language in which the
+  properties are encoded. For example, a file may contain a list of properties,
+  and each property may contain a field with a formula in SMV (`smv`) or
+  Copilot (`literal`).
+- `--parse-prop-via COMMAND`: a command in the `PATH` capable of translating
+  properties as listed in the specification file into properties in the target
+  property language. This external process may be a translation tool, or an LLM
+  capable of translating into the target language.
+- `--template-vars FILENAME`: a JSON file containing a list of additional
+  variables to expand in the template.
+
+> [!NOTE]
+> Ogma does not guarantee that the result of a translation carried out by
+> calling an external command or LLM with the flag `--parse-prop-via` is
+> correct. It is your responsibility as the user to check the output produced
+> by the auxiliary translation command for accuracy. Ogma will accept whatever
+> output the command produces as a replacement for the property's formula, and
+> use it without changes if the property format selected is `literal`, or try
+> to translate it into Copilot if a different property format has been
+> selected. This limitation applies even in the case where the subsequent
+> translation to Copilot succeeds.
 
 The following execution generates an initial cFS application for runtime
 monitoring using Copilot:
 ```
-$ ogma cfs --variable-db examples/cfs-variable-db --variable-file examples/cfs-variables
+$ ogma cfs --variable-db examples/cfs-variable-db.json --variable-file examples/cfs-variables --handlers-file examples/cfs-handlers
 ```
 
 The application generated by Ogma contains the following files:
@@ -155,15 +183,9 @@ copilot-cfs-demo/fsw/src/copilot_cfs.h
 ```
 
 Users are expected to modify `Properties.hs` to adjust the property being
-monitored. Although it is possible to adjust the file `copilot_cfs.c` to
-include property violation handlers, we recommend adding them in a separate C
-file and modifying the compilation scripts to include that additional file.
-That way, invoking Ogma again will not overwrite the changes made to the cFS
-application.
-
-In this particular example, the C code generated contains the following
-instruction to subscribe to an `ICAROUS_POSITION_MID` message to obtain
-the vehicle position:
+monitored. In this particular example, the C code generated contains the
+following instruction to subscribe to an `ICAROUS_POSITION_MID` message to
+obtain the vehicle position:
 ```c
     CFE_SB_Subscribe(ICAROUS_POSITION_MID, COPILOT_CommandPipe);
 ```
@@ -211,27 +233,62 @@ cFS application template. For example, assuming that the directory
 `my_template` contains a custom cFS application template, one can execute:
 
 ```
-$ ogma cfs --app-template-dir my_template/ --variable-db examples/cfs-variable-db --variable-file examples/cfs-variables
+$ ogma cfs --app-template-dir my_template/ --variable-db examples/cfs-variable-db.json --variable-file examples/cfs-variables
 ```
 
 Ogma will copy the files in that directory to the target path, filling in
 several holes with specific information:
 
-- `{{variablesS}}`: this will be replaced by a list of variable declarations,
-  one for each global variable that holds information read from the cFS
-software bus that must be made accessible to the monitoring code.
+- `{{variables}}`: list of variable declarations, one for each global variable
+  that holds information read from the cFS software bus that must be made
+accessible to the monitoring code. For each variable, a `{{varDeclName}}` and a
+`{{varDeclType}}` are defined.
 
-- `{{msgSubscriptionsS}}`: this will be replaced by a list of calls to
-  `CFE_SB_Subscribe`, subscribing to the necessary information coming in the
-software bus.
+- `{{msgIds}}`: list of message IDs containing information relevant for the
+  application, which presumably will be passed to `CFE_SB_Subscribe`, to
+subscribe to those messages in the software bus.
 
-- `{{msgCasesS}}`: this will be replaced by a switch case statements that match
-  the ID of an incoming message, to handle information being received that must
-be updated and would trigger a re-evaluation of the monitors.
+- `{{msgCases}}`: list of message IDs, together with the kind of information
+  they contain. For each item, a `{{msgInfoId}}` and a `{{msgInfoDesc}}` are
+available. This allows the cFS app to process incoming messages and delegate
+the processing to an auxiliary function.
 
-- `{{msgHandlerS}}`: this will be replaced by function definitions of the
-  functions that will be called to actually update the variables with
-information coming from the software bus, and re-evaluate the monitors.
+- `{{msgHandler}}`: list of messages received, together with the kind of data
+  they carry, and their names. For each item, a `{{msgDataDesc}}`,
+`{{msgDataVarName}}` and a `{{msgDataVarType}}` are defined.
+
+- `{{triggers}}`: list of monitors or fault triggers, which will be used by the
+  monitoring application to notify of faults or updates from the monitoring
+  system. For each monitor or trigger, the fields defined are:
+  - `{{triggerName}}`: name of the monitor.
+  - `{{triggerType}}`: type of the argument received by the monitor, if any.
+    This allows monitors to communicate additional data, or to use monitors for
+    data processing by making the monitor condition always true and passing a
+    result as an argument.
+  - `{{triggerMsgType}}`: corresponding type of cFS message to communicate the
+    additional data as a result, if any.
+
+Additionally, the `cfs` command accepts a file with a JSON object listing
+additional variables to be expanded in the template. To make use of this
+feature, we encourage users to modify the template to fit their needs, and pass
+the file as an argument via the flag `--template-vars`. Values passed to the
+template are also respected in file names; for example, if the JSON file
+contains an object key `"APP_NAME"` with the value `"Monitor"`, a file or
+directory in the template named `My_{{APP_NAME}}` will be expanded in the
+destination directory as `My_Monitor`.
+
+Using this flag, you can expand two more variables in the default template:
+
+- `{{impl_extra_header}}`: contains a list of lines to add at the top of the
+  CFS application implementation, after the default includes. The value
+assigned to this JSON key must be an array or list (each element will be
+expanded in a separate line).
+
+- `{{included_libraries}}`: contains a list of additional libraries that must
+  be included as dependencies in the `CMakeLists.txt` file for the moniroting
+application in order to be able to compile it. The value assigned this JSON key
+must be an array or list of dependencies, relative to the directory of the
+monitoring app).
 
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss
@@ -256,11 +313,13 @@ be made available to the monitor.
 and the topic they are included with.
 - `--handlers FILENAME`: a file containing a list of handlers used in the
   specification.
+- `--template-vars FILENAME`: a JSON file containing a list of additional
+  variables to expand in the template.
 
 The following execution generates an initial ROS application for runtime
 monitoring using Copilot:
 ```sh
-$ ogma ros --handlers filename --variable-file variables --variable-db ros-variable-db --app-target-dir ros_demo
+$ ogma ros --handlers filename --variable-file variables --variable-db ros-variable-db.json --app-target-dir ros_demo
 ```
 
 The application generated by Ogma contains the following files:
@@ -286,29 +345,71 @@ docker build .
 
 The argument variable DB passed to the ROS backend should contain a list of
 variables, together with their types and the corresponding ROS topic in which
-those variables are passed. Each line in that file has the format:
+those variables are passed.
+
+It does not matter if there are variables, topics or types that are not used
+for one particular specification, or property/requirement/monitor. The only
+thing that matters is that the variables used, their types, and their
+corresponding topics be listed in the file.
+
+For example, for an input variable called "temperature" of type 64-bit signed
+integer coming in a ROS topic called "/battery/temperature", the variable DB
+file should include the following definitions:
+
+```sh
+$ cat ros-variable-db.json
+{ "inputs":
+     [ { "name": "temperature"
+       , "type": "int64_t"
+       , "connections":
+           [ { "scope": "ros/message"
+             , "topic": "/battery/temperature"
+             }
+           ]
+       }
+     ]
+, "topics":
+     [ { "scope": "ros/message"
+       , "topic": "/battery/temperature"
+       , "type":  "std_msgs::msg::Int64"
+       }
+     ]
+, "types": []
+}
+```
+
+Ogma understands that, to communicate values that have type `int64_t` in C, it
+is necessary to use the type `std_msgs::msg::Int64` for the topic in the
+software bus in ROS 2, and that the corresponding type for plain values in C++
+is `std::uint64_t`. Ogma predefines several type mappings in an internal
+variable DB that includes the following under the `types` key:
 
 ```
-("<NAME>","<TYPE>","<TOPIC_NAME>","<RESERVED_FOR_FUTURE_USE>")
+... other keys ...
+, "types": [
+
+    ... other entries ...
+
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::int64_t"
+      , "toScope":   "C"
+      , "toType":    "int64_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Int64"
+      , "toScope":   "C"
+      , "toType":    "int64_t"
+      }
+
+    ... other entries ...
+    ]
 ```
 
-For example, an input variable called "temperature" of type 64-bit signed
-integer coming in a ROS topic called "/battery/temperature" should have a
-matching entry in the variable DB file like the following:
-
-```
-("temperature","int64_t","/battery/temperature","ignore")
-```
-
-There should never be two lines in the same file with the same variable name.
-Variables in the DB that are not not used in any of the properties being
-monitored and/or are not listed in the variable file passed as argument to the
-ROS command will be ignored.
-
-For a more concrete example, see the files in `ogma-cli/examples/ros-copilot/`
-and the last step of the script
-`.github/workflows/repo-ghc-8.6-cabal-2.4-ros.yml`, which generates a ROS
-monitor with multiple variables and compiles the resulting code.
+Users can add similar entries to a variable DB passed as argument to let Ogma
+know how to map types across languages and platforms. For a more concrete
+example, see the files in `ogma-cli/examples/ros-copilot/` and the last step of
+the script `.github/workflows/repo-ghc-8.6-cabal-2.4-ros.yml`, which generates
+a ROS monitor with multiple variables and compiles the resulting code.
 
 ### Template Customization
 
@@ -322,57 +423,31 @@ ROS 2 package template. For example, assuming that the directory `my_template`
 contains a custom ROS package template, one can execute:
 
 ```
-$ ogma ros --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db ros-variable-db --app-target-dir ros_demo
+$ ogma ros --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db ros-variable-db.json --app-target-dir ros_demo
 ```
 
 Ogma will copy the files in that directory to the target path, filling in
 several holes with specific information. For the monitoring node, the variables
 are:
 
-- `{{variablesS}}`: this will be replaced by a list of variable declarations,
-  one for each global variable that holds information read from the ROS
-software bus that must be made accessible to the monitoring code.
+- `{{variables}}`: list of variable declarations, one for each external data
+  source needed to be read from the ROS software bus and made accessible to the
+  monitoring code. For each variable declaration, the fields defined are:
+  - `{{varDeclName}}`: name of the variable.
+  - `{{varDeclType}}`: raw type of the variable.
+  - `{{varDeclId}}`: topic name from which this variable can be obtained.
+  - `{{varDeclMsgType}}`: type used to pack this variable in the software bus.
 
-- `{{msgSubscriptionsS}}`: this will be replaced by a list of calls to
-  `create_subscription`, subscribing to the necessary information coming in the
-software bus.
-
-- `{{msgPublisherS}}`: this will be replaced by a list of calls to
-  `create_publisher`, to create topics to report property violations on the
-software bus.
-
-- `{{msgHandlerInClassS}}`: this will be replaced by the functions that will be
-  called to report a property violation via one of the property violation
-topics (publishers).
-
-- `{{msgCallbacks}}`: this will be replaced by function definitions of the
-  functions that will be called to actually update the variables with
-information coming from the software bus, and re-evaluate the monitors.
-
-- `{{msgSubscriptionDeclrs}}`: this will be replaced by declarations of
-  subscriptions used in `{{msgSubscriptionsS}}`.
-
-- `{{msgPublisherDeclrs}}`: this will be replaced by declarations of publishers
-  used in `{{msgPublishersS}}`.
-
-- `{{msgHandlerGlobalS}}`: this will be replaced by top-level functions that
-  call the handlers from the single monitoring class instance (singleton).
-
-Ogma will also generate a logging node that can be used for debugging purposes,
-to print property violations to a log. This second node listens to the messages
-published by the monitoring node in the software bus. For that node, the
-variables used are:
-
-- `{{logMsgSubscriptionsS}}`: this will be replaced by a list of calls to
-  `create_subscription`, subscribing to the necessary information coming in the
-software bus.
-
-- `{{logMsgCallbacks}}`: this will be replaced by function definitions of the
-  functions called to report the violations in the log. These functions are
-used as handlers to incoming messages in the subscriptions.
-
-- `{{logMsgSubscriptionDeclrs}}`: this will be replaced by declarations of
-  subscriptions used in `{{logMsgSubscriptionsS}}`.
+- `{{monitors}}`: list of monitors or error handlers, which will be used by the
+  monitoring application to notify of faults or updates from the monitoring
+  system. For each monitor, the fields defined are:
+  - `{{monitorName}}`: name of the monitor.
+  - `{{monitorType}}`: type of the argument received by the monitor, if any.
+    This allows monitors to communicate additional data, or to use monitors for
+    data processing by making the monitor condition always true and passing a
+    result as an argument.
+  - `{{monitorMsgType}}`: corresponding type of ROS message to communicate the
+    additional data as a result, if any.
 
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss
@@ -383,9 +458,6 @@ how we could make the template expansion system more versatile.
 The user must place the code generated by Copilot monitors in two files,
 `ros_demo/src/monitor.h` and `ros_demo/src/monitor.c`. No Copilot or C code for
 the monitors is generated by default.
-
-The code generated by default assumes that handlers receive no arguments. The
-user must modify the handlers accordingly if that is not the case.
 
 Although the variable DB file is not mandatory, it is in practice required to
 monitor any requirement that uses any input data: no topic subscriptions will
@@ -412,11 +484,13 @@ be made available to the monitor.
 and their types.
 - `--handlers FILENAME`: a file containing a list of handlers used in the
   specification.
+- `--template-vars FILENAME`: a JSON file containing a list of additional
+  variables to expand in the template.
 
 The following execution generates an initial F' component for runtime
 monitoring using Copilot:
 ```sh
-$ ogma fprime --handlers filename --variable-file filename --variable-db fprime-variable-db --app-target-dir fprime_demo
+$ ogma fprime --handlers filename --variable-file filename --variable-db fprime-variable-db.json --app-target-dir fprime_demo
 ```
 
 The component generated by Ogma contains the following files:
@@ -451,12 +525,27 @@ that the variables used, and their types, be listed in the file. Continuing
 with the same example, we could have:
 
 ```sh
-$ cat fprime-variable-db
-("temperature", "uint8_t")
-("autopilot", "bool")
-("sensorLimitsExceeded", "bool")
-("pullup", "bool")
-("current_consumption", "float")
+$ cat fprime-variable-db.json
+{ "inputs":
+     [ { "name": "temperature"
+       , "type": "uint8_t"
+       }
+     , { "name": "autopilot"
+       , "type": "bool"
+       }
+     , { "name": "sensorLimitsExceeded"
+       , "type": "bool"
+       }
+     , { "name": "pullup"
+       , "type": "bool"
+       }
+     , { "name": "current_consumption"
+       , "type": "float"
+       }
+     ]
+, "topics": []
+, "types": []
+}
 ```
 
 In our example, we only care about the boolean variables; it is sufficient that
@@ -481,50 +570,31 @@ F' component specification template. For example, assuming that the directory
 `my_template` contains a custom F' component template, one can execute:
 
 ```
-$ ogma fprime --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db fprime-variable-db --app-target-dir fprime_demo
+$ ogma fprime --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db fprime-variable-db.json --app-target-dir fprime_demo
 ```
 
 Ogma will copy the files in that directory to the target path, filling in
-several holes with specific information. For the component interface, the
-variables are:
+several holes with specific information from template variables. The template
+variables available are:
 
-- {{{ifaceTypePorts}}}: Contain the type declarations for the types used by the
-  ports.
+- `{{variables}}`: list of inputs to monitor, one for each external data source
+  needed to be read from an F' component port and made accessible to the
+  monitoring code. For each variable, the fields defined are:
+  - `{{varDeclName}}`: name of the variable or input.
+  - `{{varDeclType}}`: raw type of the variable or input.
+  - `{{varDeclFPrimeType}}`: type in F' for ports carrying data of this type.
 
-- {{{ifaceInputPorts}}}: Contains the declarations of the `async input` port,
-  to provide information needed by the monitors.
-
-- {{{ifaceViolationEvents}}}: Contains the output port declarations, used to
-  emit property violations.
-
-For the monitor's header file, the variables are:
-
-- {{{hdrHandlers}}}: Contains the declarations of operations to execute when
-  new information is received in an input port, prior to re-evaluating the
-  monitors.
-
-For the monitor's implementation, the variables are:
-
-- {{{implInputs}}}: Contains the declarations of the variables with inputs
-  needed by the monitor.
-
-- {{{implMonitorResults}}}: Contains the declarations of boolean variables,
-  each holding the result of the evaluation of one of the monitors.
-
-- {{{implInputHandlers}}}: Contains the implementations of operations to
-  execute when new information is received in an input port, prior to
-  re-evaluating the monitors.
-
-- {{{implTriggerResultReset}}}: Contains instructions that reset the status of
-  the monitors.
-
-- {{{implTriggerChecks}}}: Contains instructions that check whether any monitor
-  has resulted in a violation and, if so, sends an event via the corresponding
-  port.
-
-- {{{implTriggers}}}: Contains the implementations of the functions that set
-  the result of a monitor evaluation to true when the Copilot implementation
-  finds a violation.
+- `{{monitors}}`: list of monitors or error handlers, which will be used by the
+  monitoring application to notify of faults or updates from the monitoring
+  system. For each monitor, the fields defined are:
+  - `{{monitorName}}`: name of the monitor.
+  - `{{monitorUC}}`: name of the monitor, in capital letters.
+  - `{{monitorType}}`: type of the argument received by the monitor, if any.
+    This allows monitors to communicate additional data, or to use monitors for
+    data processing by making the monitor condition always true and passing a
+    result as an argument.
+  - `{{monitorPortType}}`: corresponding type of port for the argument received
+    by the error handler, if any.
 
 We understand that this level of customization may be insufficient for your
 application. If that is the case, feel free to reach out to our team to discuss
@@ -536,9 +606,6 @@ The user must place the code generated by Copilot monitors in three files,
 `fprime_demo/src/copilot.h`, `fprime_demo/src/copilot_types.h` and
 `fprime_demo/src/copilot.c`. No Copilot or C code for the monitors is generated
 by default by the `fprime` command.
-
-The code generated by default assumes that handlers receive no arguments. The
-user must modify the handlers accordingly if that is not the case.
 
 ## Generating Monitors from Diagrams
 

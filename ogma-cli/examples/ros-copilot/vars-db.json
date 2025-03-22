@@ -1,0 +1,42 @@
+{ "inputs":
+     [ { "name": "input_signal"
+       , "type": "int64_t"
+       , "connections":
+           [ { "scope": "ros/message"
+             , "topic": "/demo/topic"
+             }
+           ]
+       }
+     , { "name": "input_signal_float"
+       , "type": "float"
+       , "connections":
+           [ { "scope": "ros/message"
+             , "topic": "/demo/topicf"
+             }
+           ]
+       }
+     , { "name": "input_signal_double"
+       , "type": "double"
+       , "connections":
+           [ { "scope": "ros/message"
+             , "topic": "/demo/topicd"
+             }
+           ]
+       }
+     ]
+, "topics":
+     [ { "scope": "ros/message"
+       , "topic": "/demo/topic"
+       , "type":  "std_msgs::msg::Int64"
+       }
+     , { "scope": "ros/message"
+       , "topic": "/demo/topicf"
+       , "type":  "std_msgs::msg::Float32"
+       }
+     , { "scope": "ros/message"
+       , "topic": "/demo/topicd"
+       , "type":  "std_msgs::msg::Float64"
+       }
+     ]
+, "types": []
+}

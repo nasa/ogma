@@ -1,5 +1,33 @@
 # Revision history for ogma-core
 
+## [1.7.0] - 2025-03-21
+
+* Version bump 1.7.0 (#268).
+* Import liftIO from Control.Monad.IO.Class (#215).
+* Remove references to old design of Ogma from hlint files (#220).
+* Bump upper version constraint on aeson, text (#225).
+* Remove extraneous EOL character (#224).
+* Make structured data available to cFS template (#229).
+* Update Copilot struct code generator to use new function names (#231).
+* Simplify Copilot struct definitions by using generics (#199).
+* Update cFS backend to process a handlers file (#234).
+* Update cFS backend to process a template variables file (#106).
+* Remove dependency on ICAROUS from generated cFS applications (#237).
+* Remove incorrect function declaration from template (#240).
+* Re-structure cFS backend to avoid nested conditions (#242).
+* Make structured data available to ROS template (#244).
+* Make structured data available to FPrime template (#246).
+* Equalize backends (#248).
+* Update ROS, FPrime, standalone backends to process template vars file (#250).
+* Make cFS backend accept spec as input (#252).
+* Make cFS, ROS, FPrime backends generate Copilot monitor (#107).
+* Standardize variable DB format across backends (#256).
+* Make backends accept additional data to be passed to handlers (#219).
+* Add support to read properties from CSV files (#261).
+* Add support to read properties from XLSX files (#263).
+* Add all auxiliary test files to distributable Cabal package (#258).
+* Update to support boolean expressions in the Lustre language (#267).
+
 ## [1.6.0] - 2025-01-21
 
 * Version bump 1.6.0 (#208).

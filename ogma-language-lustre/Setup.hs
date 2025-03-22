@@ -16,7 +16,7 @@ main :: IO ()
 main = defaultMainWithHooks $ simpleUserHooks
   { hookedPrograms = [ bnfcProgram ]
   , postConf       = \args flags packageDesc localBuildInfo -> do
-      _ <- system "bnfc --haskell -p Language.CoCoSpec -o src/ grammar/CoCoSpec.cf"
+      _ <- system "bnfc --haskell -p Language.Lustre -o src/ grammar/Lustre.cf"
       postConf simpleUserHooks args flags packageDesc localBuildInfo
   }
 

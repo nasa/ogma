@@ -1,4 +1,4 @@
--- Copyright 2020 United States Government as represented by the Administrator
+-- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -27,43 +27,56 @@
 -- PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW. RECIPIENT'S SOLE REMEDY
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
+
+cabal-version:       2.0
+build-type:          Simple
+
+name:                ogma-language-csv
+version:             1.7.0
+homepage:            https://github.com/nasa/ogma
+license:             OtherLicense
+license-file:        LICENSE.pdf
+author:              Ivan Perez, Alwyn Goodloe
+maintainer:          ivan.perezdominguez@nasa.gov
+category:            Aerospace
+extra-source-files:  CHANGELOG.md
+
+synopsis:            Ogma: Runtime Monitor translator: CSV Frontend
+
+description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
+                     other systems. Ogma extends
+                     <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
+                     verification framework that generates hard real-time C99 code.
+                     .
+                     This library contains a frontend to read specs from CSV files.
+
+-- Ogma packages should be uncurated so that only the official maintainers make
+-- changes.
 --
--- | Test CoCoSpec language library.
-module Main where
+-- Because this is a NASA project, we want to make sure that users obtain
+-- exactly what we publish, unmodified by anyone external to our project.
+x-curation: uncurated
 
--- External imports
-import Data.Either                          ( isLeft, isRight )
-import Test.Framework                       ( Test, defaultMainWithOpts )
-import Test.Framework.Providers.QuickCheck2 ( testProperty )
-import Test.QuickCheck                      ( Property )
-import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
+library
 
--- Internal imports
-import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
-                                                             pBoolSpec )
+  exposed-modules:
+    Language.CSVSpec.Parser
 
--- | Run all unit tests for the CoCoSpec parser.
-main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+  build-depends:
+      base       >= 4.11.0.0 && < 5
+    , bytestring >= 0.10.8.2 && < 0.13
+    , cassava    >= 0.5      && < 0.6
+    , mtl        >= 2.2.2    && < 2.4
+    , vector     >= 0.12.0.1 && < 0.14
+    , text       >= 1.2.3.1  && < 2.2
 
--- | All unit tests for the CoCoSpec parser.
-tests :: [Test.Framework.Test]
-tests =
-  [ testProperty "Parse CoCoSpec (correct case)"   propParseCoCoSpecOk
-  , testProperty "Parse CoCoSpec (incorrect case)" propParseCoCoSpecFail
-  ]
+    , ogma-spec  >= 1.7.0 && < 1.8
 
--- | Test the CoCoSpec parser on a well-formed boolean specification.
-propParseCoCoSpecOk :: Property
-propParseCoCoSpecOk = monadicIO $ do
-  content <- run $ readFile "tests/cocospec_good"
-  let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
-  assert (isRight program)
+  hs-source-dirs:
+    src
 
--- | Test the CoCoSpec parser on an incorrect boolean specification.
-propParseCoCoSpecFail :: Property
-propParseCoCoSpecFail = monadicIO $ do
-  content <- run $ readFile "tests/cocospec_bad"
-  let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
-  assert (isLeft program)
+  default-language:
+    Haskell2010
+
+  ghc-options:
+    -Wall

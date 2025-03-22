@@ -1,0 +1,19 @@
+{
+  "Example": {
+    "internal_variables": [],
+    "external_variables": [
+      {"name":"input_signal",        "type":"Int64",  "meaning": "InputI64"},
+      {"name":"input_signal_float",  "type":"Float",  "meaning": "InputF32"},
+      {"name":"input_signal_double", "type":"Double", "meaning": "InputF64"}
+    ],
+    "properties": [
+      {
+        "id":             "TestCopilot",
+        "formula":        "input_signal >= 5 && input_signal_float >= 5 && input_signal_double >= 5",
+        "text":           "All inputs are greater than or equal to 5",
+        "result_type":    "double",
+        "result_formula": "input_signal_double + 1"
+      }
+    ]
+  }
+}

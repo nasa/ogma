@@ -50,22 +50,23 @@ import Options.Applicative ( Parser, help, long, metavar, optional, short,
 import Command.Result ( Result )
 
 -- External imports: actions or commands supported
-import           Command.FPrimeApp (ErrorCode, fprimeApp)
+import           Command.FPrimeApp (ErrorCode)
 import qualified Command.FPrimeApp
 
 -- * Command
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppInputFile   :: Maybe String
-  , fprimeAppTarget      :: String
-  , fprimeAppTemplateDir :: Maybe String
-  , fprimeAppVarNames    :: Maybe String
-  , fprimeAppVarDB       :: Maybe String
-  , fprimeAppHandlers    :: Maybe String
-  , fprimeAppFormat      :: String
-  , fprimeAppPropFormat  :: String
-  , fprimeAppPropVia     :: Maybe String
+  { fprimeAppInputFile    :: Maybe String
+  , fprimeAppTarget       :: String
+  , fprimeAppTemplateDir  :: Maybe String
+  , fprimeAppVariables    :: Maybe String
+  , fprimeAppVarDB        :: Maybe String
+  , fprimeAppHandlers     :: Maybe String
+  , fprimeAppFormat       :: String
+  , fprimeAppPropFormat   :: String
+  , fprimeAppPropVia      :: Maybe String
+  , fprimeAppTemplateVars :: Maybe String
   }
 
 -- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
@@ -74,18 +75,20 @@ data CommandOpts = CommandOpts
 --
 -- This is just a wrapper around "Command.fprimeApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = fprimeApp (fprimeAppInputFile c) options
+command c = Command.FPrimeApp.command options
   where
     options =
-      Command.FPrimeApp.FPrimeAppOptions
-        { Command.FPrimeApp.fprimeAppTargetDir   = fprimeAppTarget c
-        , Command.FPrimeApp.fprimeAppTemplateDir = fprimeAppTemplateDir c
-        , Command.FPrimeApp.fprimeAppVarNames    = fprimeAppVarNames c
-        , Command.FPrimeApp.fprimeAppVariableDB  = fprimeAppVarDB c
-        , Command.FPrimeApp.fprimeAppHandlers    = fprimeAppHandlers c
-        , Command.FPrimeApp.fprimeAppFormat      = fprimeAppFormat c
-        , Command.FPrimeApp.fprimeAppPropFormat  = fprimeAppPropFormat c
-        , Command.FPrimeApp.fprimeAppPropVia     = fprimeAppPropVia c
+      Command.FPrimeApp.CommandOptions
+        { Command.FPrimeApp.commandInputFile   = fprimeAppInputFile c
+        , Command.FPrimeApp.commandTargetDir   = fprimeAppTarget c
+        , Command.FPrimeApp.commandTemplateDir = fprimeAppTemplateDir c
+        , Command.FPrimeApp.commandVariables   = fprimeAppVariables c
+        , Command.FPrimeApp.commandVariableDB  = fprimeAppVarDB c
+        , Command.FPrimeApp.commandHandlers    = fprimeAppHandlers c
+        , Command.FPrimeApp.commandFormat      = fprimeAppFormat c
+        , Command.FPrimeApp.commandPropFormat  = fprimeAppPropFormat c
+        , Command.FPrimeApp.commandPropVia     = fprimeAppPropVia c
+        , Command.FPrimeApp.commandExtraVars   = fprimeAppTemplateVars c
         }
 
 -- * CLI
@@ -163,6 +166,13 @@ commandOptsParser = CommandOpts
             <> help strFPrimeAppPropViaDesc
             )
         )
+  <*> optional
+        ( strOption
+            (  long "template-vars"
+            <> metavar "FILENAME"
+            <> help strFPrimeAppTemplateVarsArgDesc
+            )
+        )
 
 -- | Argument target directory to FPrime component generation command
 strFPrimeAppDirArgDesc :: String
@@ -205,3 +215,8 @@ strFPrimeAppPropFormatDesc = "Format of temporal or boolean properties"
 strFPrimeAppPropViaDesc :: String
 strFPrimeAppPropViaDesc =
   "Command to pre-process individual properties"
+
+-- | Additional template variable file flag description.
+strFPrimeAppTemplateVarsArgDesc :: String
+strFPrimeAppTemplateVarsArgDesc =
+  "JSON file containing additional variables to expand in template"

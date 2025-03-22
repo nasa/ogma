@@ -66,17 +66,19 @@ import Language.XMLSpec.PrintTrees (pretty, flattenDoc)
 -- must be found in the first string of the three and replaced with the result
 -- of evaluating the expression.
 data XMLFormat = XMLFormat
-    { specInternalVars    :: Maybe String
-    , specInternalVarId   :: (String, Maybe (String, String))
-    , specInternalVarExpr :: (String, Maybe (String, String))
-    , specInternalVarType :: Maybe (String, Maybe (String, String))
-    , specExternalVars    :: Maybe String
-    , specExternalVarId   :: (String, Maybe (String, String))
-    , specExternalVarType :: Maybe (String, Maybe (String, String))
-    , specRequirements    :: (String, Maybe (String, String))
-    , specRequirementId   :: (String, Maybe (String, String))
-    , specRequirementDesc :: Maybe (String, Maybe (String, String))
-    , specRequirementExpr :: (String, Maybe (String, String))
+    { specInternalVars          :: Maybe String
+    , specInternalVarId         :: (String, Maybe (String, String))
+    , specInternalVarExpr       :: (String, Maybe (String, String))
+    , specInternalVarType       :: Maybe (String, Maybe (String, String))
+    , specExternalVars          :: Maybe String
+    , specExternalVarId         :: (String, Maybe (String, String))
+    , specExternalVarType       :: Maybe (String, Maybe (String, String))
+    , specRequirements          :: (String, Maybe (String, String))
+    , specRequirementId         :: (String, Maybe (String, String))
+    , specRequirementDesc       :: Maybe (String, Maybe (String, String))
+    , specRequirementExpr       :: (String, Maybe (String, String))
+    , specRequirementResultType :: Maybe (String, Maybe (String, String))
+    , specRequirementResultExpr :: Maybe (String, Maybe (String, String))
     }
   deriving (Show, Read)
 
@@ -185,10 +187,24 @@ parseXMLSpec parseExpr defA xmlFormat value = runExceptT $ do
                      (\e -> liftIO $ fromMaybe "" . listToMaybe <$> executeXPath e def)
                      (xfiRequirementDesc xmlFormatInternal)
 
+        reqResType <- case xfiRequirementResultType xmlFormatInternal of
+                        Nothing -> return Nothing
+                        Just e  -> liftIO $ listToMaybe <$> executeXPath e def
+
+        reqResExpr <- case xfiRequirementResultExpr xmlFormatInternal of
+                        Nothing -> return Nothing
+                        Just e  -> liftIO $ listToMaybe <$> executeXPath e def
+
+        reqResExpr' <- maybe (return Nothing)
+                         (fmap Just . ExceptT . parseExpr . textUnescape)
+                         reqResExpr
+
         return $ Requirement
                    { requirementName        = reqId
                    , requirementExpr        = reqExpr'
                    , requirementDescription = reqDesc
+                   , requirementResultType  = reqResType
+                   , requirementResultExpr  = reqResExpr'
                    }
 
   requirements <- mapM requirementDef reqStrings
@@ -198,17 +214,19 @@ parseXMLSpec parseExpr defA xmlFormat value = runExceptT $ do
 
 -- | Internal representation of an XML Format specification.
 data XMLFormatInternal = XMLFormatInternal
-  { xfiInternalVars    :: Maybe XPathExpr
-  , xfiInternalVarId   :: XPathExpr
-  , xfiInternalVarExpr :: XPathExpr
-  , xfiInternalVarType :: Maybe XPathExpr
-  , xfiExternalVars    :: Maybe XPathExpr
-  , xfiExternalVarId   :: XPathExpr
-  , xfiExternalVarType :: Maybe XPathExpr
-  , xfiRequirements    :: XPathExpr
-  , xfiRequirementId   :: XPathExpr
-  , xfiRequirementDesc :: Maybe XPathExpr
-  , xfiRequirementExpr :: [XPathExpr]
+  { xfiInternalVars          :: Maybe XPathExpr
+  , xfiInternalVarId         :: XPathExpr
+  , xfiInternalVarExpr       :: XPathExpr
+  , xfiInternalVarType       :: Maybe XPathExpr
+  , xfiExternalVars          :: Maybe XPathExpr
+  , xfiExternalVarId         :: XPathExpr
+  , xfiExternalVarType       :: Maybe XPathExpr
+  , xfiRequirements          :: XPathExpr
+  , xfiRequirementId         :: XPathExpr
+  , xfiRequirementDesc       :: Maybe XPathExpr
+  , xfiRequirementExpr       :: [XPathExpr]
+  , xfiRequirementResultType :: Maybe XPathExpr
+  , xfiRequirementResultExpr :: Maybe XPathExpr
   }
 
 -- | Internal representation of an XPath expression.
@@ -286,18 +304,26 @@ parseXMLFormat xmlFormat file = do
 
   xfi12 <- resolveIndirectly' file $ specRequirementExpr xmlFormat
 
+  xfi13 <- swapMaybeExceptT $
+             resolveIndirectly file <$> specRequirementResultType xmlFormat
+
+  xfi14 <- swapMaybeExceptT $
+             resolveIndirectly file <$> specRequirementResultExpr xmlFormat
+
   return $ XMLFormatInternal
-             { xfiInternalVars    = xfi2
-             , xfiInternalVarId   = xfi3
-             , xfiInternalVarExpr = xfi4
-             , xfiInternalVarType = xfi5
-             , xfiExternalVars    = xfi6
-             , xfiExternalVarId   = xfi7
-             , xfiExternalVarType = xfi8
-             , xfiRequirements    = xfi9
-             , xfiRequirementId   = xfi10
-             , xfiRequirementDesc = xfi11
-             , xfiRequirementExpr = xfi12
+             { xfiInternalVars          = xfi2
+             , xfiInternalVarId         = xfi3
+             , xfiInternalVarExpr       = xfi4
+             , xfiInternalVarType       = xfi5
+             , xfiExternalVars          = xfi6
+             , xfiExternalVarId         = xfi7
+             , xfiExternalVarType       = xfi8
+             , xfiRequirements          = xfi9
+             , xfiRequirementId         = xfi10
+             , xfiRequirementDesc       = xfi11
+             , xfiRequirementExpr       = xfi12
+             , xfiRequirementResultType = xfi13
+             , xfiRequirementResultExpr = xfi14
              }
 
 -- | Execute an XPath query in an XML string, returning the list of strings

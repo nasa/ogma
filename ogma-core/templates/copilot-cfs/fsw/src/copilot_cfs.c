@@ -16,12 +16,18 @@
 #include "copilot_cfs_msg.h"
 #include "copilot_cfs_events.h"
 #include "copilot_cfs_version.h"
-#include "Icarous_msgids.h"
-#include "Icarous_msg.h"
+{{#impl_extra_header}}
+{{{.}}}
+{{/impl_extra_header}}
+{{#copilot}}
+#include "{{{copilot.specName}}}_types.h"
+#include "{{{copilot.specName}}}.h"
+#include "{{{copilot.specName}}}.c"
+{{/copilot}}
 
-{{variablesS}}
-void split(void);
-void step(void);
+{{#variables}}
+{{varDeclType}} {{varDeclName}};
+{{/variables}}
 
 /*
 ** global data
@@ -98,7 +104,10 @@ void COPILOT_AppInit(void)
     **  messages
     */
     CFE_SB_CreatePipe(&COPILOT_CommandPipe, COPILOT_PIPE_DEPTH,"COPILOT_CMD_PIPE");
-{{msgSubscriptionsS}}
+    {{#msgIds}}
+    CFE_SB_Subscribe({{.}}, COPILOT_CommandPipe);
+    {{/msgIds}}
+
 
     CFE_EVS_SendEvent (COPILOT_STARTUP_INF_EID, CFE_EVS_INFORMATION,
                "COPILOT App Initialized. Version %d.%d.%d.%d",
@@ -125,7 +134,13 @@ void COPILOT_ProcessCommandPacket(void)
 
     switch (MsgId)
     {
-{{ msgCasesS }}
+        {{#msgCases}}
+        case {{msgInfoId}}:
+            COPILOT_Process{{msgInfoDesc}}();
+            break;
+
+        {{/msgCases}}
+
         default:
             COPILOT_HkTelemetryPkt.copilot_command_error_count++;
             CFE_EVS_SendEvent(COPILOT_COMMAND_ERR_EID,CFE_EVS_ERROR,
@@ -137,12 +152,34 @@ void COPILOT_ProcessCommandPacket(void)
 
 } /* End COPILOT_ProcessCommandPacket */
 
-{{msgHandlerS}}
+{{#msgHandlers}}
+/**
+* Make received data available to Copilot and run monitors.
+*/
+void COPILOT_Process{{msgDataDesc}}(void)
+{
+    {{msgDataVarType}}* msg;
+    msg = ({{msgDataVarType}}*) COPILOTMsgPtr;
+    {{msgDataVarName}} = *msg;
 
+    // Run all copilot monitors.
+    step();
+}
+
+{{/msgHandlers}}
+
+
+{{#triggers}}
 /**
  * Report copilot property violations.
  */
-void split(void) {
+{{#triggerType}}
+void {{triggerName}}({{.}} arg) {
+{{/triggerType}}
+{{^triggerType}}
+void {{triggerName}}(void) {
+{{/triggerType}}
     CFE_EVS_SendEvent(COPILOT_COMMANDCPVIOL_INF_EID, CFE_EVS_ERROR,
-        "COPILOT: violation");
+        "COPILOT: violation: {{triggerName}}");
 }
+{{/triggers}}

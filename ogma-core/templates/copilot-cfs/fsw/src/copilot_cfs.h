@@ -41,7 +41,9 @@
 void COPILOT_AppMain(void);
 void COPILOT_AppInit(void);
 void COPILOT_ProcessCommandPacket(void);
-void COPILOT_ProcessIcarousPosition(void);
+{{#msgCases}}
+void COPILOT_Process{{msgInfoDesc}}(void);
+{{/msgCases}}
 void COPILOT_ResetCounters(void);
 
 boolean COPILOT_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 ExpectedLength);

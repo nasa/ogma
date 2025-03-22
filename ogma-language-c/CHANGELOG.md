@@ -1,5 +1,12 @@
 # Revision history for ogma-language-c
 
+## [1.7.0] - 2025-03-21
+
+* Version bump 1.7.0 (#269).
+* Bump upper version constraint on Cabal (#213).
+* Remove extraneous EOL character (#224).
+* Specify tools needed using build-tool-depends (#149).
+
 ## [1.6.0] - 2025-01-21
 
 * Version bump 1.6.0 (#208).

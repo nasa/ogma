@@ -1,0 +1,154 @@
+{ "inputs":
+    [
+    ]
+, "topics":
+    [
+    ]
+, "types":
+    [ { "fromScope": "fprime/port"
+      , "fromType":  "U8"
+      , "toScope":   "C"
+      , "toType":    "uint8_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "U16"
+      , "toScope":   "C"
+      , "toType":    "uint16_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "U32"
+      , "toScope":   "C"
+      , "toType":    "uint32_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "U64"
+      , "toScope":   "C"
+      , "toType":    "uint64_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "I8"
+      , "toScope":   "C"
+      , "toType":    "int8_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "I16"
+      , "toScope":   "C"
+      , "toType":    "int16_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "I32"
+      , "toScope":   "C"
+      , "toType":    "int32_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "I64"
+      , "toScope":   "C"
+      , "toType":    "int64_t"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "F32"
+      , "toScope":   "C"
+      , "toType":    "float"
+      }
+    , { "fromScope": "fprime/port"
+      , "fromType":  "F64"
+      , "toScope":   "C"
+      , "toType":    "double"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::uint8_t"
+      , "toScope":   "C"
+      , "toType":    "uint8_t"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::uint16_t"
+      , "toScope":   "C"
+      , "toType":    "uint16_t"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::uint32_t"
+      , "toScope":   "C"
+      , "toType":    "uint32_t"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::uint64_t"
+      , "toScope":   "C"
+      , "toType":    "uint64_t"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::int8_t"
+      , "toScope":   "C"
+      , "toType":    "int8_t"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::int16_t"
+      , "toScope":   "C"
+      , "toType":    "int16_t"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::int32_t"
+      , "toScope":   "C"
+      , "toType":    "int32_t"
+      }
+    , { "fromScope": "ros/variable"
+      , "fromType":  "std::int64_t"
+      , "toScope":   "C"
+      , "toType":    "int64_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Bool"
+      , "toScope":   "C"
+      , "toType":    "bool"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::UInt8"
+      , "toScope":   "C"
+      , "toType":    "uint8_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::UInt16"
+      , "toScope":   "C"
+      , "toType":    "uint16_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::UInt32"
+      , "toScope":   "C"
+      , "toType":    "uint32_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::UInt64"
+      , "toScope":   "C"
+      , "toType":    "uint64_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Int8"
+      , "toScope":   "C"
+      , "toType":    "int8_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Int16"
+      , "toScope":   "C"
+      , "toType":    "int16_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Int32"
+      , "toScope":   "C"
+      , "toType":    "int32_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Int64"
+      , "toScope":   "C"
+      , "toType":    "int64_t"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Float32"
+      , "toScope":   "C"
+      , "toType":    "float"
+      }
+    , { "fromScope": "ros/message"
+      , "fromType":  "std_msgs::msg::Float64"
+      , "toScope":   "C"
+      , "toType":    "double"
+      }
+    ]
+}

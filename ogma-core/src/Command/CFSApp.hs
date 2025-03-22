@@ -1,4 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE MultiWayIf                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -40,129 +43,193 @@
 
 {- HLINT ignore "Functor law" -}
 module Command.CFSApp
-    ( cFSApp
+    ( command
+    , CommandOptions(..)
     , ErrorCode
     )
   where
 
 -- External imports
-import qualified Control.Exception         as E
-import           Data.Aeson                (decode, object, (.=))
-import           Data.List                 (find)
-import           Data.Text                 (Text)
-import           Data.Text.Lazy            (pack, unpack)
-import           System.FilePath           ( (</>) )
+import           Control.Applicative    ( liftA2 )
+import qualified Control.Exception      as E
+import           Control.Monad.Except   ( ExceptT (..), liftEither )
+import           Data.Aeson             ( ToJSON (..) )
+import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
+import           GHC.Generics           ( Generic )
+
+-- External imports: auxiliary
+import qualified Command.Standalone
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
-import Data.Location          ( Location (..) )
+import Data.List.Extra        ( stripSuffix )
+import Data.String.Extra      ( pascalCase )
 import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
-import Paths_ogma_core ( getDataDir )
+import Command.Common
+import Command.Errors     (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
+                           VariableDB, findConnection, findInput, findTopic,
+                           findType, findTypeByType)
 
 -- | Generate a new CFS application connected to Copilot.
-cFSApp :: FilePath       -- ^ Target directory where the application
-                         --   should be created.
-       -> Maybe FilePath -- ^ Directory where the template is to be found.
-       -> FilePath       -- ^ File containing a list of variables to make
-                         --   available to Copilot.
-       -> Maybe FilePath -- ^ File containing a list of known variables
-                         --   with their types and the message IDs they
-                         --   can be obtained from.
-       -> IO (Result ErrorCode)
-cFSApp targetDir mTemplateDir varNameFile varDBFile = do
+command :: CommandOptions
+        -> IO (Result ErrorCode)
+command options = processResult $ do
+    -- Obtain template dir
+    templateDir <- locateTemplateDir mTemplateDir "copilot-cfs"
 
-  -- We first try to open the two files we need to fill in details in the CFS
-  -- app template.
-  --
-  -- The variable DB is optional, so this check only fails if the filename
-  -- provided does not exist or if the file cannot be opened or parsed (wrong
-  -- format).
-  varDBE <- E.try $
-                case varDBFile of
-                  Nothing -> return knownVars
-                  Just fn -> fmap read <$> lines <$> readFile fn
+    templateVars <- parseTemplateVarsFile templateVarsF
 
-  case varDBE of
-    Left  e     -> return $ cannotOpenDB varDBFile e
-    Right varDB -> do
+    appData <- command' options functions
 
-      -- The variable list is mandatory. This check fails if the filename
-      -- provided does not exist or if the file cannot be opened. The condition
-      -- on the result also checks that the list of variables in the file is
-      -- not empty (otherwise, we do not know when to call Copilot).
-      varNamesE <- E.try $ lines <$> readFile varNameFile
+    let subst = mergeObjects (toJSON appData) templateVars
 
-      case varNamesE of
-        Left e         -> return $ cannotOpenVarFile varNameFile e
-        Right []       -> return $ cannotEmptyVarList varNameFile
-        Right varNames -> do
-
-          -- Obtain template dir
-          templateDir <- case mTemplateDir of
-                           Just x  -> return x
-                           Nothing -> do
-                             dataDir <- getDataDir
-                             return $ dataDir </> "templates" </> "copilot-cfs"
-
-          E.handle (return . cannotCopyTemplate) $ do
-
-            let f n o@(oVars, oIds, oInfos, oDatas) =
-                  case variableMap varDB n of
-                    Nothing -> o
-                    Just (vars, ids, infos, datas) ->
-                      (vars : oVars, ids : oIds, infos : oInfos, datas : oDatas)
-
-            -- This is a Data.List.unzip4
-            let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
-
-            let (variablesS, msgSubscriptionS, msgCasesS, msgHandlerS) =
-                  appComponents vars ids infos datas
-                subst = object $
-                          [ "variablesS"        .= pack variablesS
-                          , "msgSubscriptionsS" .= pack msgSubscriptionS
-                          , "msgCasesS"         .= pack msgCasesS
-                          , "msgHandlerS"       .= pack msgHandlerS
-                          ]
-
-            -- Expand template
-            copyTemplate templateDir subst targetDir
-
-            return Success
-
--- | Predefined list of Icarous variables that are known to Ogma
-knownVars :: [(String, String, String, String)]
-knownVars =
-  [ ("position", "position_t", "ICAROUS_POSITION_MID", "IcarousPosition") ]
-
--- | Return the variable information needed to generate declarations
--- and subscriptions for a given variable name and variable database.
-variableMap :: [(String, String, String, String)]
-            -> String
-            -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
-variableMap varDB varName =
-    csvToVarMap <$> find (sameName varName) varDB
+    -- Expand template
+    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+      copyTemplate templateDir subst targetDir
 
   where
 
-    -- True if the given variable and db entry have the same name
-    sameName :: String
-             -> (String, String, String, String)
-             -> Bool
-    sameName n (vn, _, _, _) = n == vn
+    targetDir     = commandTargetDir options
+    mTemplateDir  = commandTemplateDir options
+    functions     = exprPair (commandPropFormat options)
+    templateVarsF = commandExtraVars options
 
-    -- Convert a DB row into Variable info needed to generate the CFS file
-    csvToVarMap :: (String, String, String, String)
-                -> (VarDecl, String, MsgInfo, MsgData)
-    csvToVarMap (nm, ty, mid, mn) =
-      (VarDecl nm ty, mid, MsgInfo mid mn, MsgData mn nm ty)
+command' :: CommandOptions
+         -> ExprPair
+         -> ExceptT ErrorTriplet IO AppData
+command' options (ExprPair exprT) = do
+    -- Open files needed to fill in details in the template.
+    vs    <- parseVariablesFile varNameFile
+    rs    <- parseRequirementsListFile handlersFile
+    varDB <- openVarDBFilesWithDefault varDBFile
+
+    spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
+
+    liftEither $ checkArguments spec vs rs
+
+    copilotM <- sequenceA $ liftA2 processSpec spec fp
+
+    let varNames = fromMaybe (specExtractExternalVariables spec) vs
+        monitors = maybe
+                     (specExtractHandlers spec)
+                     (map (\x -> (x, Nothing)))
+                     rs
+
+    let appData   = commandLogic varDB varNames monitors' copilotM
+        monitors' = mapMaybe (monitorMap varDB) monitors
+
+    return appData
+
+  where
+
+    fp             = commandInputFile options
+    varNameFile    = commandVariables options
+    varDBFile      = maybeToList $ commandVariableDB options
+    handlersFile   = commandHandlers options
+    formatName     = commandFormat options
+    propFormatName = commandPropFormat options
+    propVia        = commandPropVia options
+
+    parseInputFile' f =
+      parseInputFile f formatName propFormatName propVia exprT
+
+    processSpec spec' fp' =
+      Command.Standalone.commandLogic fp' "copilot" [] exprT spec'
+
+-- | Generate a variable substitution map for a cFS application.
+commandLogic :: VariableDB
+             -> [String]
+             -> [Trigger]
+             -> Maybe Command.Standalone.AppData
+             -> AppData
+commandLogic varDB varNames handlers copilotM =
+    AppData vars ids infos datas handlers copilotM
+  where
+
+    -- This is a Data.List.unzip4
+    (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
+
+    f n o@(oVars, oIds, oInfos, oDatas) =
+      case variableMap varDB n of
+        Nothing -> o
+        Just (vars, ids, infos, datas) ->
+          (vars : oVars, ids : oIds, infos : oInfos, datas : oDatas)
+
+-- ** Argument processing
+
+-- | Options used to customize the conversion of specifications to ROS
+-- applications.
+data CommandOptions = CommandOptions
+  { commandInputFile   :: Maybe FilePath -- ^ Input specification file.
+  , commandTargetDir   :: FilePath       -- ^ Target directory where the
+                                         -- application should be created.
+  , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
+                                         -- to be found.
+  , commandVariables   :: Maybe FilePath -- ^ File containing a list of
+                                         -- variables to make available to
+                                         -- Copilot.
+  , commandVariableDB  :: Maybe FilePath -- ^ File containing a list of known
+                                         -- variables with their types and the
+                                         -- message IDs they can be obtained
+                                         -- from.
+  , commandHandlers    :: Maybe FilePath -- ^ File containing a list of
+                                         -- handlers used in the Copilot
+                                         -- specification. The handlers are
+                                         -- assumed to receive no arguments.
+  , commandFormat      :: String         -- ^ Format of the input file.
+  , commandPropFormat  :: String         -- ^ Format used for input properties.
+  , commandPropVia     :: Maybe String   -- ^ Use external command to
+                                         -- pre-process system properties.
+  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
+                                         -- variables to make available to the
+                                         -- template.
+  }
+
+-- | Return the variable information needed to generate declarations
+-- and subscriptions for a given variable name and variable database.
+variableMap :: VariableDB
+            -> String
+            -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
+variableMap varDB varName = do
+    inputDef  <- findInput varDB varName
+    mid       <- connectionTopic <$> findConnection inputDef "cfs"
+    topicDef  <- findTopic varDB "cfs" mid
+    let typeVar' = fromMaybe
+                     (topicType topicDef)
+                     (typeToType <$> findType varDB varName "cfs" "C")
+
+    -- Pick name for the function to process a message ID.
+    let mn = pascalCase $ stripSuffix "_MID" mid
+
+    return ( VarDecl varName typeVar'
+           , mid
+           , MsgInfo mid mn
+           , MsgData mn varName typeVar'
+           )
+  where
+
+-- | Return the monitor information needed to generate declarations and
+-- publishers for the given monitor info, and variable database.
+monitorMap :: VariableDB
+           -> (String, Maybe String)
+           -> Maybe Trigger
+monitorMap varDB (monitorName, Nothing) =
+  Just $ Trigger monitorName Nothing Nothing
+monitorMap varDB (monitorName, Just ty) = do
+  let tyCFS = typeFromType <$> findTypeByType varDB "cfs" "C" ty
+  return $ Trigger monitorName (Just ty) tyCFS
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
-  { varDeclName :: String
-  , varDeclType :: String
-  }
+    { varDeclName :: String
+    , varDeclType :: String
+    }
+  deriving (Generic)
+
+instance ToJSON VarDecl
 
 -- | The message ID to subscribe to.
 type MsgInfoId = String
@@ -170,129 +237,44 @@ type MsgInfoId = String
 -- | A message ID to subscribe to and the name associated to it. The name is
 -- used to generate a suitable name for the message handler.
 data MsgInfo = MsgInfo
-  { msgInfoId   :: MsgInfoId
-  , msgInfoDesc :: String
-  }
+    { msgInfoId   :: MsgInfoId
+    , msgInfoDesc :: String
+    }
+  deriving (Generic)
+
+instance ToJSON MsgInfo
 
 -- | Information on the data provided by a message with a given description,
 -- and the type of the data it carries.
 data MsgData = MsgData
-  { msgDataDesc    :: String
-  , msgDataVarName :: String
-  , msgDataVarType :: String
+    { msgDataDesc    :: String
+    , msgDataVarName :: String
+    , msgDataVarType :: String
+    }
+  deriving (Generic)
+
+instance ToJSON MsgData
+
+-- | The message ID to subscribe to.
+data Trigger = Trigger
+    { triggerName    :: String
+    , triggerType    :: Maybe String
+    , triggerMsgType :: Maybe String
+    }
+  deriving (Generic)
+
+instance ToJSON Trigger
+
+-- | Data that may be relevant to generate a cFS monitoring application.
+data AppData = AppData
+  { variables   :: [VarDecl]
+  , msgIds      :: [MsgInfoId]
+  , msgCases    :: [MsgInfo]
+  , msgHandlers :: [MsgData]
+  , triggers    :: [Trigger]
+  , copilot     :: Maybe Command.Standalone.AppData
   }
+  deriving (Generic)
 
--- | Return the components that are customized in a cFS application.
-appComponents :: [VarDecl] -> [MsgInfoId] -> [MsgInfo] -> [MsgData]
-              -> (String, String, String, String)
-appComponents variables msgIds msgNames msgDatas = cfsFileContents
-  where
-    variablesS = unlines $ map toVarDecl variables
-    toVarDecl varDecl = varDeclType varDecl ++ " " ++ varDeclName varDecl ++ ";"
+instance ToJSON AppData
 
-    msgSubscriptionS     = unlines $ map toMsgSubscription msgIds
-    toMsgSubscription nm =
-      "    CFE_SB_Subscribe(" ++ nm ++ ", COPILOT_CommandPipe);"
-
-    msgCasesS = unlines $ map toMsgCase msgNames
-    toMsgCase msgInfo = unlines
-      [ "        case " ++ msgInfoId msgInfo ++ ":"
-      , "            COPILOT_Process" ++ msgInfoDesc msgInfo ++ "();"
-      , "            break;"
-      ]
-
-    msgHandlerS = unlines $ map toMsgHandler msgDatas
-    toMsgHandler msgData =
-      unlines [ "/**"
-              , "* Make ICAROUS data available to Copilot and run monitors."
-              , "*/"
-              , "void COPILOT_Process" ++ msgDataDesc msgData ++ "(void)"
-              , "{"
-              , "    " ++ msgDataVarType msgData ++ "* msg;"
-              , "    msg = (" ++ msgDataVarType msgData ++ "*) COPILOTMsgPtr;"
-              , "    " ++ msgDataVarName msgData ++ " = *msg;"
-              , ""
-              , "    // Run all copilot monitors."
-              , "    step();"
-              , "}"
-              ]
-
-    cfsFileContents =
-      ( variablesS
-      , msgSubscriptionS
-      , msgCasesS
-      , msgHandlerS
-      )
-
--- * Exception handlers
-
--- | Exception handler to deal with the case in which the variable DB cannot be
--- opened.
-cannotOpenDB :: Maybe FilePath -> E.SomeException -> Result ErrorCode
-cannotOpenDB Nothing _e =
-    Error ecCannotOpenDBCritical msg LocationNothing
-  where
-    msg =
-      "cannotOpenDB: this is a bug. Please notify the developers"
-cannotOpenDB (Just file) _e =
-    Error ecCannotOpenDBUser msg (LocationFile file)
-  where
-    msg =
-      "cannot open variable DB file " ++ file
-
--- | Exception handler to deal with the case in which the variable file
--- provided by the user cannot be opened.
-cannotOpenVarFile :: FilePath -> E.SomeException -> Result ErrorCode
-cannotOpenVarFile file _e =
-    Error ecCannotOpenVarFile  msg (LocationFile file)
-  where
-    msg =
-      "cannot open variable list file " ++ file
-
--- | Exception handler to deal with the case of the variable file provided
--- containing an empty list.
-cannotEmptyVarList :: FilePath -> Result ErrorCode
-cannotEmptyVarList file =
-    Error ecCannotEmptyVarList msg (LocationFile file)
-  where
-    msg =
-      "variable list in file " ++ file ++ " is empty"
-
--- | Exception handler to deal with the case of files that cannot be
--- copied/generated due lack of space or permissions or some I/O error.
-cannotCopyTemplate :: E.SomeException -> Result ErrorCode
-cannotCopyTemplate _e =
-    Error ecCannotCopyTemplate msg LocationNothing
-  where
-    msg =
-      "CFS app generation failed during copy/write operation. Check that"
-      ++ " there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory."
-
--- * Error codes
-
--- | Encoding of reasons why the command can fail.
---
--- The error codes used are 1 for user error, and 2 for internal bug.
-type ErrorCode = Int
-
--- | Internal error: Variable DB cannot be opened.
-ecCannotOpenDBCritical :: ErrorCode
-ecCannotOpenDBCritical = 2
-
--- | Error: the variable DB provided by the user cannot be opened.
-ecCannotOpenDBUser :: ErrorCode
-ecCannotOpenDBUser = 1
-
--- | Error: the variable file provided by the user cannot be opened.
-ecCannotOpenVarFile :: ErrorCode
-ecCannotOpenVarFile = 1
-
--- | Error: the variable file provided contains an empty list.
-ecCannotEmptyVarList :: ErrorCode
-ecCannotEmptyVarList = 1
-
--- | Error: the files cannot be copied/generated due lack of space or
--- permissions or some I/O error.
-ecCannotCopyTemplate :: ErrorCode
-ecCannotCopyTemplate = 1

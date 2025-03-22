@@ -1,5 +1,27 @@
 # Revision history for ogma-cli
 
+## [1.7.0] - 2025-03-21
+
+* Version bump 1.7.0 (#269).
+* Add all auxiliary test files to distributable Cabal package (#216).
+* Remove extraneous EOL character (#224).
+* Update installation instructions to use cabal install (#149).
+* Update README with new cFS template variables (#229).
+* Expose handlers-file argument to cFS backend (#234).
+* Expose template-vars argument to cFS backend (#106).
+* Document new template variables in README (#237).
+* Fix formatting of template variables in README (#222).
+* Update README with new ROS template variables (#244).
+* Update README with new FPrime template variables (#246).
+* Adjust CLI to match new backend API (#248).
+* Expose template-vars argument to ROS, FPrime, standalone backends (#250).
+* Expose spec processing arguments to cFS backend in CLI (#252).
+* Use new sample spec with ROS backend in CI job (#107).
+* Update examples, Github Actions, README to use new variable DB format (#256).
+* Update README, ROS example with ability to pass data to handlers (#219).
+* Update README, Github Actions with new dependencies (#263).
+* Update to support boolean expressions in the Lustre language (#267).
+
 ## [1.6.0] - 2025-01-21
 
 * Version bump 1.6.0 (#208).

@@ -15,7 +15,7 @@
 -- ANY OTHER APPLICATIONS RESULTING FROM USE OF THE SUBJECT SOFTWARE. FURTHER,
 -- GOVERNMENT AGENCY DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING
 -- THIRD-PARTY SOFTWARE, IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES
--- IT "AS IS." 
+-- IT "AS IS."
 --
 -- Waiver and Indemnity: RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
 -- THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS
@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.6.0
+version:             1.7.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
@@ -41,6 +41,13 @@ author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
+                     tests/commands-fcs-error-parsing-failed-1.json
+                     tests/commands-fcs-error-parsing-failed-2.json
+                     tests/commands-fcs-error-parsing-failed-3.json
+                     tests/fcs_good.json
+                     tests/fdb-example1.json
+                     tests/reduced_geofence_msgs_bad.h
+                     tests/reduced_geofence_msgs.h
 
 synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
 
@@ -65,6 +72,7 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/ros/copilot/CMakeLists.txt
                      templates/ros/copilot/src/copilot_logger.cpp
                      templates/ros/copilot/src/copilot_monitor.cpp
+                     templates/ros/copilot/src/Copilot.hs
                      templates/ros/copilot/package.xml
                      templates/diagram/Copilot.hs
                      templates/fprime/CMakeLists.txt
@@ -75,13 +83,14 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/fprime/instance-copilot
                      templates/standalone/Copilot.hs
                      data/formats/fcs_smv
-                     data/formats/fcs_cocospec
+                     data/formats/fcs_lustre
                      data/formats/fdb_smv
-                     data/formats/fdb_cocospec
-                     data/formats/xml-md_cocospec
+                     data/formats/fdb_lustre
+                     data/formats/xml-md_lustre
                      data/formats/xml-md_smv
-                     data/formats/xml-reqif_cocospec
+                     data/formats/xml-reqif_lustre
                      data/formats/xml-reqif_smv
+                     data/variable-db.json
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -109,22 +118,25 @@ library
 
     Data.Location
 
-    Language.Trans.CoCoSpec2Copilot
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
     Language.Trans.CStructs2MsgHandlers
+    Language.Trans.Lustre2Copilot
     Language.Trans.Spec2Copilot
     Language.Trans.SMV2Copilot
 
   other-modules:
     Paths_ogma_core
+    Command.Common
+    Command.Errors
+    Command.VariableDB
 
   autogen-modules:
     Paths_ogma_core
 
   build-depends:
       base                    >= 4.11.0.0 && < 5
-    , aeson                   >= 2.0.0.0  && < 2.2
+    , aeson                   >= 2.0.0.0  && < 2.3
     , bytestring              >= 0.10.8.2 && < 0.13
     , containers              >= 0.5      && < 0.8
     , directory               >= 1.3.1.5  && < 1.4
@@ -133,16 +145,18 @@ library
     , megaparsec              >= 8.0.0    && < 9.10
     , mtl                     >= 2.2.2    && < 2.4
     , process                 >= 1.6      && < 1.7
-    , text                    >= 1.2.3.1  && < 2.1
+    , text                    >= 1.2.3.1  && < 2.2
 
-    , ogma-extra              >= 1.6.0 && < 1.7
-    , ogma-language-c         >= 1.6.0 && < 1.7
-    , ogma-language-cocospec  >= 1.6.0 && < 1.7
-    , ogma-language-copilot   >= 1.6.0 && < 1.7
-    , ogma-language-jsonspec  >= 1.6.0 && < 1.7
-    , ogma-language-smv       >= 1.6.0 && < 1.7
-    , ogma-language-xmlspec   >= 1.6.0 && < 1.7
-    , ogma-spec               >= 1.6.0 && < 1.7
+    , ogma-extra              >= 1.7.0 && < 1.8
+    , ogma-language-c         >= 1.7.0 && < 1.8
+    , ogma-language-copilot   >= 1.7.0 && < 1.8
+    , ogma-language-csv       >= 1.7.0 && < 1.8
+    , ogma-language-jsonspec  >= 1.7.0 && < 1.8
+    , ogma-language-lustre    >= 1.7.0 && < 1.8
+    , ogma-language-smv       >= 1.7.0 && < 1.8
+    , ogma-language-xlsx      >= 1.7.0 && < 1.8
+    , ogma-language-xmlspec   >= 1.7.0 && < 1.8
+    , ogma-spec               >= 1.7.0 && < 1.8
 
   hs-source-dirs:
     src

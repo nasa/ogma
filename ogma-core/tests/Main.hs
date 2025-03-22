@@ -10,7 +10,7 @@ import System.Directory               ( getTemporaryDirectory )
 -- Internal imports
 import Command.CStructs2Copilot (cstructs2Copilot)
 import Command.Result           (isSuccess)
-import Command.Standalone       (StandaloneOptions (..), standalone)
+import Command.Standalone       (CommandOptions (..), command)
 
 -- | Run all unit tests on ogma-core.
 main :: IO ()
@@ -50,7 +50,7 @@ tests =
       )
     -- Should fail because a field is missing in an internal variable
 
-  , testCase "standalone-reqs-db-cocospec"
+  , testCase "standalone-reqs-db-lustre"
       (testStandaloneFDB "tests/fdb-example1.json" True)
     -- Should pass
 
@@ -102,16 +102,18 @@ testStandaloneFCS :: FilePath  -- ^ Path to a input file
                   -> IO ()
 testStandaloneFCS file success = do
     targetDir <- getTemporaryDirectory
-    let opts = StandaloneOptions
-                 { standaloneFormat      = "fcs"
-                 , standalonePropFormat  = "smv"
-                 , standaloneTypeMapping = [("int", "Int64"), ("real", "Float")]
-                 , standaloneFilename    = "monitor"
-                 , standaloneTargetDir   = targetDir
-                 , standaloneTemplateDir = Nothing
-                 , standalonePropVia     = Nothing
+    let opts = CommandOptions
+                 { commandInputFile   = file
+                 , commandFormat      = "fcs"
+                 , commandPropFormat  = "smv"
+                 , commandTypeMapping = [("int", "Int64"), ("real", "Float")]
+                 , commandFilename    = "monitor"
+                 , commandTargetDir   = targetDir
+                 , commandTemplateDir = Nothing
+                 , commandPropVia     = Nothing
+                 , commandExtraVars   = Nothing
                  }
-    result <- standalone file opts
+    result <- command opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.
@@ -124,7 +126,7 @@ testStandaloneFCS file success = do
 
 -- | Test standalone backend with FDB format.
 --
--- This test uses the standalone backend with the FDB format and the CoCoSpec
+-- This test uses the standalone backend with the FDB format and the Lustre
 -- property format.
 --
 -- This IO action fails if any of the following are true:
@@ -137,16 +139,18 @@ testStandaloneFDB :: FilePath  -- ^ Path to input file
                   -> IO ()
 testStandaloneFDB file success = do
     targetDir <- getTemporaryDirectory
-    let opts = StandaloneOptions
-                 { standaloneFormat      = "fdb"
-                 , standalonePropFormat  = "cocospec"
-                 , standaloneTypeMapping = []
-                 , standaloneFilename    = "monitor"
-                 , standaloneTargetDir   = targetDir
-                 , standaloneTemplateDir = Nothing
-                 , standalonePropVia     = Nothing
+    let opts = CommandOptions
+                 { commandInputFile   = file
+                 , commandFormat      = "fdb"
+                 , commandPropFormat  = "lustre"
+                 , commandTypeMapping = []
+                 , commandFilename    = "monitor"
+                 , commandTargetDir   = targetDir
+                 , commandTemplateDir = Nothing
+                 , commandPropVia     = Nothing
+                 , commandExtraVars   = Nothing
                  }
-    result <- standalone file opts
+    result <- command opts
 
     -- True if success is expected and detected, or niether expected nor
     -- detected.

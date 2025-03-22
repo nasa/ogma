@@ -12,15 +12,21 @@
 extern "C" {
 #endif
 
-#include "copilot.h"
-#include "copilot_types.h"
+{{#copilot}}
+#include "{{{copilot.specName}}}_types.h"
+#include "{{{copilot.specName}}}.h"
+{{/copilot}}
 
 #ifdef __cplusplus
 }
 #endif
 
-{{{implInputs}}}
-{{{implMonitorResults}}}
+{{#variables}}
+{{varDeclType}} {{varDeclName}};
+{{/variables}}
+{{#monitors}}
+bool {{monitorName}}_result;
+{{/monitors}}
 
 namespace Ref {
 
@@ -55,8 +61,17 @@ namespace Ref {
   // Handler implementations for user-defined typed input ports
   // ----------------------------------------------------------------------
 
-{{{implInputHandlers}}}
+{{#variables}}
+  void Copilot ::
+    {{varDeclName}}In_handler(
+        const NATIVE_INT_TYPE portNum,
+        {{varDeclType}} value
+    )
+  {
+    {{varDeclName}} = ({{varDeclType}}) value;
+  }
 
+{{/variables}}
   // ----------------------------------------------------------------------
   // Command handler implementations
   // ----------------------------------------------------------------------
@@ -67,12 +82,29 @@ namespace Ref {
         const U32 cmdSeq
     )
   {
-{{{implTriggerResultReset}}}
+{{#monitors}}
+    {{monitorName}}_result = false;
+{{/monitors}}
     step();
     this->cmdResponse_out(opCode,cmdSeq,Fw::CmdResponse::OK);
-{{{implTriggerChecks}}}
+{{#monitors}}
+    if ({{monitorName}}_result) {
+       this->log_ACTIVITY_HI_{{monitorUC}}_VIOLATION();
+    }
+{{/monitors}}
   }
 
 } // end namespace Ref
+{{#monitors}}
 
-{{{implTriggers}}}
+{{#monitorType}}
+void {{monitorName}}({{.}} arg) {
+  {{monitorName}}_result = true;
+}
+{{/monitorType}}
+{{^monitorType}}
+void {{monitorName}}() {
+  {{monitorName}}_result = true;
+}
+{{/monitorType}}
+{{/monitors}}

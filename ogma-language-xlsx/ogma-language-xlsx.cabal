@@ -1,4 +1,4 @@
--- Copyright 2020 United States Government as represented by the Administrator
+-- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
 -- Disclaimers
@@ -29,32 +29,26 @@
 -- AGREEMENT.
 
 cabal-version:       2.0
-build-type:          Custom
+build-type:          Simple
 
-name:                ogma-language-cocospec
-version:             1.6.0
+name:                ogma-language-xlsx
+version:             1.7.0
 homepage:            https://github.com/nasa/ogma
-bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
 license-file:        LICENSE.pdf
 author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
 extra-source-files:  CHANGELOG.md
-                     grammar/CoCoSpec.cf
-                     src/.keep
-                     tests/cocospec_good
-                     tests/cocospec_bad
 
-synopsis:            Ogma: Runtime Monitor translator: CoCoSpec Language Frontend
+synopsis:            Ogma: Runtime Monitor translator: XLSX Frontend
 
 description:         Ogma is a tool to facilitate the integration of safe runtime monitors into
                      other systems. Ogma extends
                      <https://github.com/Copilot-Language/copilot Copilot>, a high-level runtime
                      verification framework that generates hard real-time C99 code.
                      .
-                     This library contains a frontend to read CoCoSpec Boolean expressions, used by
-                     the tool FRET to capture requirement specifications.
+                     This library contains a frontend to read specs from Excel files.
 
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
@@ -63,60 +57,22 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
 -- exactly what we publish, unmodified by anyone external to our project.
 x-curation: uncurated
 
-source-repository head
-  type:     git
-  location: git@github.com:nasa/ogma.git
-  subdir:   ogma-language-cocospec
-
-custom-setup
-  setup-depends:
-      base    >= 4.11.0.0 && < 5
-    , Cabal   >= 2.0 && < 3.9
-    , process >= 1.6      && < 1.7
-    , BNFC    >= 2.9.1    && < 2.10
-
 library
 
   exposed-modules:
-    -- Automatically generated
-    Language.CoCoSpec.AbsCoCoSpec
-    Language.CoCoSpec.LexCoCoSpec
-    Language.CoCoSpec.ParCoCoSpec
-    Language.CoCoSpec.PrintCoCoSpec
-
-  autogen-modules:
-    Language.CoCoSpec.AbsCoCoSpec
-    Language.CoCoSpec.LexCoCoSpec
-    Language.CoCoSpec.ParCoCoSpec
-    Language.CoCoSpec.PrintCoCoSpec
+    Language.XLSXSpec.Parser
 
   build-depends:
-      base  >= 4.11.0.0 && < 5
-    , array >= 0.5.2.0  && < 0.6
+      base       >= 4.11.0.0 && < 5
+    , bytestring >= 0.10.8.2 && < 0.13
+    , text       >= 1.2.3.1  && < 2.2
+    , xlsx       >= 1.1.0    && < 1.2
+
+    , ogma-spec >= 1.7.0 && < 1.8
+
 
   hs-source-dirs:
     src
-
-  default-language:
-    Haskell2010
-
-test-suite unit-tests
-  type:
-    exitcode-stdio-1.0
-
-  main-is:
-    Main.hs
-
-  build-depends:
-      base                       >= 4.11.0.0 && < 5
-    , QuickCheck                 >= 2.8.2    && < 2.16
-    , test-framework             >= 0.8.2    && < 0.9
-    , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4
-
-    , ogma-language-cocospec
-
-  hs-source-dirs:
-    tests
 
   default-language:
     Haskell2010

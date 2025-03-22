@@ -39,7 +39,9 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get install -y libbz2-dev libexpat-dev
         cabal v1-install alex happy
+        cabal v1-install BNFC
 
     - name: Install ogma
       run: |

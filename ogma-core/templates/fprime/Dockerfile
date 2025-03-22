@@ -12,6 +12,11 @@ RUN apt-get install -y git cmake gcc python3 pip default-jre
 RUN git clone https://github.com/nasa/fprime
 RUN pip install -r fprime/requirements.txt
 
+RUN apt-get install ghc cabal-install alex happy pkg-config libz-dev
+RUN cabal update
+RUN cabal install --lib copilot copilot-c99 copilot-language copilot-theorem \
+    copilot-libraries copilot-interpreter
+
 WORKDIR fprime/Ref
 
 # Add all the monitoring app files.
@@ -20,9 +25,12 @@ ADD CMakeLists.txt Copilot/
 ADD Copilot.fpp Copilot/
 ADD Copilot.cpp Copilot/
 ADD Copilot.hpp Copilot/
-ADD copilot.c Copilot/
-ADD copilot.h Copilot/
-ADD copilot_types.h Copilot/
+ADD Copilot.hs Copilot/
+
+WORKDIR Copilot/
+RUN runhaskell Copilot.hs
+
+WORKDIR ..
 
 # Enable Copilot app (add it after SignalGen).
 RUN sed -i -e '/^add_fprime_subdirectory.*SignalGen.*/a add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}\/Copilot\/")' CMakeLists.txt
