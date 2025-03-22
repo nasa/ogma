@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-03-21
+## [1.7.0] - 2025-03-21
 
+* Version bump 1.7.0 (#268).
 * Import liftIO from Control.Monad.IO.Class (#215).
 * Remove references to old design of Ogma from hlint files (#220).
 * Bump upper version constraint on aeson, text (#225).
