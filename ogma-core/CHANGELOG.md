@@ -24,6 +24,7 @@
 * Make backends accept additional data to be passed to handlers (#219).
 * Add support to read properties from CSV files (#261).
 * Add support to read properties from XLSX files (#263).
+* Add all auxiliary test files to distributable Cabal package (#258).
 
 ## [1.6.0] - 2025-01-21
 
