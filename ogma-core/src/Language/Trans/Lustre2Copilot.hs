@@ -28,20 +28,20 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Transform a CoCoSpec TL specification into a Copilot specification.
+-- | Transform a Lustre specification, extended with temporal logic operators,
+-- into a Copilot specification.
 --
 -- Normally, this module would be implemented as a conversion between ASTs,
 -- but we want to add comments to the generated code, which are not
 -- representable in the abstract syntax tree.
-module Language.Trans.CoCoSpec2Copilot (boolSpec2Copilot, boolSpecNames) where
+module Language.Trans.Lustre2Copilot (boolSpec2Copilot, boolSpecNames) where
 
 -- Internal imports
-import Language.CoCoSpec.AbsCoCoSpec ( BoolConst (..), BoolNumOp (..),
-                                       BoolSpec (..), Ident (..), NumExpr (..),
-                                       NumOp2In (..), Op1Pre (..), Op2In (..),
-                                       Op2Pre (..) )
+import Language.Lustre.AbsLustre (BoolConst (..), BoolNumOp (..), BoolSpec (..),
+                                  Ident (..), NumExpr (..), NumOp2In (..),
+                                  Op1Pre (..), Op2In (..), Op2Pre (..))
 
--- | Return the Copilot representation of a CoCoSpec 'BoolSpec'.
+-- | Return the Copilot representation of a Lustre 'BoolSpec'.
 --
 -- This function returns the temporal property only. The string does not
 -- contain any top-level names, any imports, or auxiliary definitions that
@@ -88,7 +88,7 @@ boolSpec2Copilot b = case b of
                                              ++ " " ++ boolSpec2Copilot spec1
                                              ++ " " ++ boolSpec2Copilot spec2
 
--- | Return the Copilot representation of a CoCoSpec numeric
+-- | Return the Copilot representation of a Lustre numeric
 -- expression.
 --
 -- This function returns the expression only. The string does not contain any
@@ -102,14 +102,14 @@ numExpr2Copilot expr = case expr of
                                        ++ numExpr2Copilot iExpr2 ++ ")"
   NumExprId i                   -> ident2Copilot i
 
--- | Return the Copilot representation of a numeric CoCoSpec arithmetic
+-- | Return the Copilot representation of a numeric Lustre arithmetic
 -- operator.
 numOpTwoIn2Copilot :: NumOp2In -> String
 numOpTwoIn2Copilot NumOp2Plus  = "+"
 numOpTwoIn2Copilot NumOp2Minus = "-"
 numOpTwoIn2Copilot NumOp2Mult  = "*"
 
--- | Return the Copilot representation of a numeric CoCoSpec comparison
+-- | Return the Copilot representation of a numeric Lustre comparison
 -- operator.
 opTwoNum2Copilot :: BoolNumOp -> String
 opTwoNum2Copilot BoolNumOp2Eq = "=="
@@ -119,14 +119,14 @@ opTwoNum2Copilot BoolNumOp2Lt = "<"
 opTwoNum2Copilot BoolNumOp2Gt = ">="
 opTwoNum2Copilot BoolNumOp2Ge = ">"
 
--- | Return the Copilot representation of a CoCoSpec boolean
+-- | Return the Copilot representation of a Lustre boolean
 -- constant.
 const2Copilot :: BoolConst -> String
 const2Copilot BoolConstTrue  = "true"
 const2Copilot BoolConstFalse = "false"
 const2Copilot BoolConstFTP   = "ftp"
 
--- | Return the Copilot representation of a CoCoSpec logical
+-- | Return the Copilot representation of a Lustre logical
 -- operator.
 opOnePre2Copilot :: Op1Pre -> String
 opOnePre2Copilot Op1Pre    = "pre"
@@ -138,7 +138,7 @@ opOnePre2Copilot Op1Y      = "PTLTL.previous"
 opOnePre2Copilot Op1Not    = "not"
 opOnePre2Copilot Op1Bang   = "not"
 
--- | Return the Copilot representation of a CoCoSpec logical
+-- | Return the Copilot representation of a Lustre logical
 -- operator.
 opTwoIn2Copilot :: Op2In -> String
 opTwoIn2Copilot Op2Amp   = "&&"
@@ -149,13 +149,13 @@ opTwoIn2Copilot Op2InPre = "pre"
 opTwoIn2Copilot (Op2NumOp n) = numOpTwoIn2Copilot n
 opTwoIn2Copilot (Op2NumCmp n) = opTwoNum2Copilot n
 
--- | Return the Copilot representation of a CoCoSpec logical
+-- | Return the Copilot representation of a Lustre logical
 -- operator.
 opTwoPre2Copilot :: Op2Pre -> String
 opTwoPre2Copilot Op2SI = "since"
 opTwoPre2Copilot Op2OT = "ot"
 
--- | Return the Copilot representation of a CoCoSpec identifier.
+-- | Return the Copilot representation of a Lustre identifier.
 ident2Copilot :: Ident -> String
 ident2Copilot (Ident "FTP") = "ftp"
 ident2Copilot (Ident s)     = s
@@ -185,7 +185,7 @@ numExprNames (NumExprOp2In expr1 _op expr2) =
   numExprNames expr1 ++ numExprNames expr2
 numExprNames (NumExprId (Ident i))          = [i]
 
--- | Return the Copilot representation of a CoCoSpec literal.
+-- | Return the Copilot representation of a Lustre literal.
 lit2Copilot :: BoolSpec -> String
 lit2Copilot b = case b of
     BoolSpecConstI bc -> show bc
@@ -194,7 +194,7 @@ lit2Copilot b = case b of
     BoolSpecSignal i  -> ident2Copilot i
     _                 -> ":error converting literal:"
   where
-    -- | Return the Copilot representation of a CoCoSpec boolean
+    -- | Return the Copilot representation of a Lustre boolean
     -- constant.
     litConst2Copilot :: BoolConst -> String
     litConst2Copilot BoolConstTrue  = "True"

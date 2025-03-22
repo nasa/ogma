@@ -130,7 +130,7 @@ parseStandaloneFCS file success = do
     args     = ["standalone", "--file-name", file]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
--- | Test standalone backend for FDB format and CoCoSpec.
+-- | Test standalone backend for FDB format and Lustre.
 --
 -- This test uses the standalone backend, so it generates a Copilot file. It
 -- may be convenient to run this action in a temporary directory.
@@ -150,7 +150,7 @@ parseStandaloneFDB file = do
     assertBool errorMsg (ec == ExitSuccess)
   where
     args     = [ "standalone", "--file-name", file, "--input-format", "fdb"
-               , "--prop-format", "cocospec"]
+               , "--prop-format", "lustre"]
     errorMsg = "Parsing file " ++ file ++ " failed"
 
 -- | Test ogma by running it and checking the error code.

@@ -83,12 +83,12 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/fprime/instance-copilot
                      templates/standalone/Copilot.hs
                      data/formats/fcs_smv
-                     data/formats/fcs_cocospec
+                     data/formats/fcs_lustre
                      data/formats/fdb_smv
-                     data/formats/fdb_cocospec
-                     data/formats/xml-md_cocospec
+                     data/formats/fdb_lustre
+                     data/formats/xml-md_lustre
                      data/formats/xml-md_smv
-                     data/formats/xml-reqif_cocospec
+                     data/formats/xml-reqif_lustre
                      data/formats/xml-reqif_smv
                      data/variable-db.json
 
@@ -118,10 +118,10 @@ library
 
     Data.Location
 
-    Language.Trans.CoCoSpec2Copilot
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
     Language.Trans.CStructs2MsgHandlers
+    Language.Trans.Lustre2Copilot
     Language.Trans.Spec2Copilot
     Language.Trans.SMV2Copilot
 
@@ -149,10 +149,10 @@ library
 
     , ogma-extra              >= 1.6.0 && < 1.7
     , ogma-language-c         >= 1.6.0 && < 1.7
-    , ogma-language-cocospec  >= 1.6.0 && < 1.7
     , ogma-language-copilot   >= 1.6.0 && < 1.7
     , ogma-language-csv       >= 1.6.0 && < 1.7
     , ogma-language-jsonspec  >= 1.6.0 && < 1.7
+    , ogma-language-lustre    >= 1.6.0 && < 1.7
     , ogma-language-smv       >= 1.6.0 && < 1.7
     , ogma-language-xlsx      >= 1.6.0 && < 1.7
     , ogma-language-xmlspec   >= 1.6.0 && < 1.7

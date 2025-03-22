@@ -28,7 +28,7 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Test CoCoSpec language library.
+-- | Test Lustre language library.
 module Main where
 
 -- External imports
@@ -39,31 +39,30 @@ import Test.QuickCheck                      ( Property )
 import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 
 -- Internal imports
-import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
-                                                             pBoolSpec )
+import qualified Language.Lustre.ParLustre as Lustre ( myLexer, pBoolSpec )
 
--- | Run all unit tests for the CoCoSpec parser.
+-- | Run all unit tests for the Lustre parser.
 main :: IO ()
 main =
   defaultMainWithOpts tests mempty
 
--- | All unit tests for the CoCoSpec parser.
+-- | All unit tests for the Lustre parser.
 tests :: [Test.Framework.Test]
 tests =
-  [ testProperty "Parse CoCoSpec (correct case)"   propParseCoCoSpecOk
-  , testProperty "Parse CoCoSpec (incorrect case)" propParseCoCoSpecFail
+  [ testProperty "Parse Lustre (correct case)"   propParseLustreOk
+  , testProperty "Parse Lustre (incorrect case)" propParseLustreFail
   ]
 
--- | Test the CoCoSpec parser on a well-formed boolean specification.
-propParseCoCoSpecOk :: Property
-propParseCoCoSpecOk = monadicIO $ do
-  content <- run $ readFile "tests/cocospec_good"
-  let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
+-- | Test the Lustre parser on a well-formed boolean specification.
+propParseLustreOk :: Property
+propParseLustreOk = monadicIO $ do
+  content <- run $ readFile "tests/lustre_good"
+  let program = Lustre.pBoolSpec $ Lustre.myLexer content
   assert (isRight program)
 
--- | Test the CoCoSpec parser on an incorrect boolean specification.
-propParseCoCoSpecFail :: Property
-propParseCoCoSpecFail = monadicIO $ do
-  content <- run $ readFile "tests/cocospec_bad"
-  let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
+-- | Test the Lustre parser on an incorrect boolean specification.
+propParseLustreFail :: Property
+propParseLustreFail = monadicIO $ do
+  content <- run $ readFile "tests/lustre_bad"
+  let program = Lustre.pBoolSpec $ Lustre.myLexer content
   assert (isLeft program)

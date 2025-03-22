@@ -28,7 +28,7 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- Simplified grammar of CoCoSpec boolean expressions.
+-- Simplified grammar of Lustre boolean expressions.
 
 entrypoints BoolSpec;
 

@@ -83,8 +83,8 @@ import Data.ByteString.Extra  as B ( safeReadFile )
 import System.Directory.Extra ( copyTemplate )
 
 -- External imports: parsing expressions.
-import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec (myLexer, pBoolSpec)
-import qualified Language.SMV.ParSMV           as SMV (myLexer, pBoolSpec)
+import qualified Language.Lustre.ParLustre as Lustre (myLexer, pBoolSpec)
+import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
 import Command.Result  (Result (..))
@@ -92,11 +92,11 @@ import Data.Location   (Location (..))
 import Paths_ogma_core (getDataDir)
 
 -- Internal imports: language ASTs, transformers
-import           Language.SMV.Substitution       (substituteBoolExpr)
-import qualified Language.Trans.CoCoSpec2Copilot as CoCoSpec (boolSpec2Copilot,
-                                                              boolSpecNames)
-import           Language.Trans.SMV2Copilot      as SMV (boolSpec2Copilot,
-                                                         boolSpecNames)
+import           Language.SMV.Substitution     (substituteBoolExpr)
+import qualified Language.Trans.Lustre2Copilot as Lustre (boolSpec2Copilot,
+                                                          boolSpecNames)
+import           Language.Trans.SMV2Copilot    as SMV (boolSpec2Copilot,
+                                                       boolSpecNames)
 
 -- | Generate a new Copilot monitor that implements a state machine described
 -- in a diagram given as an input file.
@@ -198,7 +198,7 @@ data DiagramFormat = Mermaid
   deriving (Eq, Show)
 
 -- | Property formats supported.
-data DiagramPropFormat = CoCoSpec
+data DiagramPropFormat = Lustre
                        | Inputs
                        | Literal
                        | SMV
@@ -258,22 +258,22 @@ data ExprPair = forall a . ExprPair
 -- | Return a handler depending on the format used for edge or transition
 -- properties.
 exprPair :: DiagramPropFormat -> ExprPair
-exprPair CoCoSpec = ExprPair (CoCoSpec.pBoolSpec . CoCoSpec.myLexer)
-                             (\_ -> id)
-                             CoCoSpec.boolSpec2Copilot
-                             CoCoSpec.boolSpecNames
-exprPair Inputs   = ExprPair ((Right . read) :: String -> Either String Int)
-                             (\_ -> id)
-                             (\x -> "input == " ++ show x)
-                             (const [])
-exprPair Literal  = ExprPair Right
-                             (\_ -> id)
-                             id
-                             (const [])
-exprPair SMV      = ExprPair (SMV.pBoolSpec . SMV.myLexer)
-                             substituteBoolExpr
-                             SMV.boolSpec2Copilot
-                             SMV.boolSpecNames
+exprPair Lustre  = ExprPair (Lustre.pBoolSpec . Lustre.myLexer)
+                            (\_ -> id)
+                            Lustre.boolSpec2Copilot
+                            Lustre.boolSpecNames
+exprPair Inputs  = ExprPair ((Right . read) :: String -> Either String Int)
+                            (\_ -> id)
+                            (\x -> "input == " ++ show x)
+                            (const [])
+exprPair Literal = ExprPair Right
+                            (\_ -> id)
+                            id
+                            (const [])
+exprPair SMV     = ExprPair (SMV.pBoolSpec . SMV.myLexer)
+                            substituteBoolExpr
+                            SMV.boolSpec2Copilot
+                            SMV.boolSpecNames
 
 -- | Parse and print a value using an auxiliary Expression Pair.
 --
