@@ -147,6 +147,7 @@ library
     , ogma-language-csv       >= 1.6.0 && < 1.7
     , ogma-language-jsonspec  >= 1.6.0 && < 1.7
     , ogma-language-smv       >= 1.6.0 && < 1.7
+    , ogma-language-xlsx      >= 1.6.0 && < 1.7
     , ogma-language-xmlspec   >= 1.6.0 && < 1.7
     , ogma-spec               >= 1.6.0 && < 1.7
 
