@@ -1,7 +1,8 @@
 # Revision history for ogma-language-copilot
 
-## [1.X.Y] - 2025-02-01
+## [1.7.0] - 2025-03-21
 
+* Version bump 1.7.0 (#269).
 * Remove extraneous EOL character (#224).
 
 ## [1.6.0] - 2025-01-21
