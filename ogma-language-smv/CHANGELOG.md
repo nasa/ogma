@@ -1,7 +1,8 @@
 # Revision history for ogma-language-smv
 
-## [1.X.Y] - 2025-02-01
+## [1.7.0] - 2025-03-21
 
+* Version bump 1.7.0 (#269).
 * Remove references to old design of Ogma from documentation (#220).
 * Bump upper version constraint on Cabal (#213).
 * Remove extraneous EOL character (#224).

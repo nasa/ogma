@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-language-xlsx
-version:             1.6.0
+version:             1.7.0
 homepage:            https://github.com/nasa/ogma
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -68,7 +68,7 @@ library
     , text       >= 1.2.3.1  && < 2.2
     , xlsx       >= 1.1.0    && < 1.2
 
-    , ogma-spec >= 1.6.0 && < 1.7
+    , ogma-spec >= 1.7.0 && < 1.8
 
 
   hs-source-dirs:
