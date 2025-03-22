@@ -19,6 +19,7 @@
 * Update examples, Github Actions, README to use new variable DB format (#256).
 * Update README, ROS example with ability to pass data to handlers (#219).
 * Update README, Github Actions with new dependencies (#263).
+* Update to support boolean expressions in the Lustre language (#267).
 
 ## [1.6.0] - 2025-01-21
 
