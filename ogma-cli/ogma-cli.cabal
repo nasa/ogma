@@ -142,6 +142,7 @@ executable ogma
     CLI.CommandCStructs2MsgHandlers
     CLI.CommandDiagram
     CLI.CommandFPrimeApp
+    CLI.CommandReport
     CLI.CommandROSApp
     CLI.CommandStandalone
     CLI.CommandTop
@@ -149,8 +150,12 @@ executable ogma
 
   build-depends:
       base                 >= 4.11.0.0 && < 5
+    , aeson                >= 2.0.0.0  && < 2.3
+    , microstache          >= 1.0      && < 1.1
     , optparse-applicative >= 0.14     && < 0.19
-    , ogma-core            >= 1.7.0 && < 1.8
+    , text                 >= 1.2.3.1  && < 2.2
+
+    , ogma-core            >= 1.7.0    && < 1.8
 
   hs-source-dirs:
     src
