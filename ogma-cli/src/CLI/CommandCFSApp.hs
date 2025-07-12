@@ -57,7 +57,8 @@ import qualified Command.CFSApp
 
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
-  { cFSAppInputFile    :: Maybe String
+  { cFSAppConditionExpr  :: Maybe String
+  , cFSAppInputFile    :: Maybe String
   , cFSAppTarget       :: String
   , cFSAppTemplateDir  :: Maybe String
   , cFSAppVarNames     :: Maybe String
@@ -78,7 +79,8 @@ command :: CommandOpts -> IO (Result ErrorCode)
 command c = Command.CFSApp.command options
   where
     options = Command.CFSApp.CommandOptions
-                { Command.CFSApp.commandInputFile   = cFSAppInputFile c
+                { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
+                , Command.CFSApp.commandInputFile   = cFSAppInputFile c
                 , Command.CFSApp.commandTargetDir   = cFSAppTarget c
                 , Command.CFSApp.commandTemplateDir = cFSAppTemplateDir c
                 , Command.CFSApp.commandVariables   = cFSAppVarNames c
@@ -101,6 +103,13 @@ commandDesc = "Generate a complete cFS/Copilot application"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> optional
+        ( strOption
+            (  long "condition-expr"
+            <> metavar "EXPRESSION"
+            <> help strCFSAppConditionExprArgDesc
+            )
+        )
+  <*> optional
         ( strOption
             (  long "input-file"
             <> metavar "FILENAME"
@@ -181,6 +190,11 @@ strCFSAppDirArgDesc = "Target directory"
 strCFSAppTemplateDirArgDesc :: String
 strCFSAppTemplateDirArgDesc =
   "Directory holding cFS application source template"
+
+-- | Argument expression to CFS app generation command.
+strCFSAppConditionExprArgDesc :: String
+strCFSAppConditionExprArgDesc =
+  "Expression used as guard or trigger condition"
 
 -- | Argument input file to CFS app generation command
 strCFSAppFileNameArgDesc :: String
