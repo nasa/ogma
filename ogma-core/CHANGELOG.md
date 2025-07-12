@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2025-07-09
+
+* Introduce overview command (#272).
+
 ## [1.7.0] - 2025-03-21
 
 * Version bump 1.7.0 (#268).
