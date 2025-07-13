@@ -1,8 +1,9 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-07-09
+## [1.X.Y] - 2025-07-12
 
 * Introduce overview command (#272).
+* Extend code backends to accept expressions to monitor as arguments (#121).
 
 ## [1.7.0] - 2025-03-21
 
