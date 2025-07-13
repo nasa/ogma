@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-07-12
+## [1.8.0] - 2025-07-13
 
+* Version bump 1.8.0 (#275).
 * Introduce overview command (#272).
 * Extend code backends to accept expressions to monitor as arguments (#121).
 
