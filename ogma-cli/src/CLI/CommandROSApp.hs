@@ -57,7 +57,8 @@ import qualified Command.ROSApp
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppInputFile    :: Maybe String
+  { rosAppConditionExpr  :: Maybe String
+  , rosAppInputFile    :: Maybe String
   , rosAppTarget       :: String
   , rosAppTemplateDir  :: Maybe String
   , rosAppVarNames     :: Maybe String
@@ -78,7 +79,8 @@ command :: CommandOpts -> IO (Result ErrorCode)
 command c = Command.ROSApp.command options
   where
     options = Command.ROSApp.CommandOptions
-                { Command.ROSApp.commandInputFile   = rosAppInputFile c
+                { Command.ROSApp.commandConditionExpr = rosAppConditionExpr c
+                , Command.ROSApp.commandInputFile   = rosAppInputFile c
                 , Command.ROSApp.commandTargetDir   = rosAppTarget c
                 , Command.ROSApp.commandTemplateDir = rosAppTemplateDir c
                 , Command.ROSApp.commandVariables   = rosAppVarNames c
@@ -101,6 +103,13 @@ commandDesc = "Generate a ROS 2 monitoring package"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> optional
+        ( strOption
+            (  long "condition-expr"
+            <> metavar "EXPRESSION"
+            <> help strROSAppConditionExprArgDesc
+            )
+        )
+  <*> optional
         ( strOption
             (  long "input-file"
             <> metavar "FILENAME"
@@ -181,6 +190,10 @@ strROSAppDirArgDesc = "Target directory"
 strROSAppTemplateDirArgDesc :: String
 strROSAppTemplateDirArgDesc =
   "Directory holding ROS application source template"
+
+-- | Argument expression to ROS app generation command.
+strROSAppConditionExprArgDesc :: String
+strROSAppConditionExprArgDesc = "Expression used as guard or trigger condition"
 
 -- | Argument input file to ROS app generation command
 strROSAppFileNameArgDesc :: String

@@ -57,7 +57,8 @@ import qualified Command.FPrimeApp
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppInputFile    :: Maybe String
+  { fprimeAppConditionExpr  :: Maybe String
+  , fprimeAppInputFile    :: Maybe String
   , fprimeAppTarget       :: String
   , fprimeAppTemplateDir  :: Maybe String
   , fprimeAppVariables    :: Maybe String
@@ -79,7 +80,8 @@ command c = Command.FPrimeApp.command options
   where
     options =
       Command.FPrimeApp.CommandOptions
-        { Command.FPrimeApp.commandInputFile   = fprimeAppInputFile c
+        { Command.FPrimeApp.commandConditionExpr = fprimeAppConditionExpr c
+        , Command.FPrimeApp.commandInputFile   = fprimeAppInputFile c
         , Command.FPrimeApp.commandTargetDir   = fprimeAppTarget c
         , Command.FPrimeApp.commandTemplateDir = fprimeAppTemplateDir c
         , Command.FPrimeApp.commandVariables   = fprimeAppVariables c
@@ -102,6 +104,13 @@ commandDesc = "Generate a complete F' monitoring component"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> optional
+        ( strOption
+            (  long "condition-expr"
+            <> metavar "EXPRESSION"
+            <> help strFPrimeAppConditionExprArgDesc
+            )
+        )
+  <*> optional
         ( strOption
             (  long "input-file"
             <> metavar "FILENAME"
@@ -182,6 +191,10 @@ strFPrimeAppDirArgDesc = "Target directory"
 strFPrimeAppTemplateDirArgDesc :: String
 strFPrimeAppTemplateDirArgDesc =
   "Directory holding F' component source template"
+
+-- | Argument expression to FPrime app generation command.
+strFPrimeAppConditionExprArgDesc :: String
+strFPrimeAppConditionExprArgDesc = "Expression used as guard or trigger condition"
 
 -- | Argument input file to FPrime component generation command
 strFPrimeAppFileNameArgDesc :: String

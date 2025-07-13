@@ -34,7 +34,8 @@
 --
 -- | Shared functions across multiple backends.
 module Command.Common
-    ( parseInputFile
+    ( parseInputExpr
+    , parseInputFile
     , parseVariablesFile
     , parseRequirementsListFile
     , openVarDBFiles
@@ -72,7 +73,8 @@ import Data.ByteString.Extra as B (safeReadFile)
 import Data.String.Extra     (sanitizeLCIdentifier, sanitizeUCIdentifier)
 
 -- External imports: ogma
-import Data.OgmaSpec            (Spec, externalVariableName, externalVariables,
+import Data.OgmaSpec            (Requirement (..), Spec (..),
+                                 externalVariableName, externalVariables,
                                  requirementName, requirementResultType,
                                  requirements)
 import Language.CSVSpec.Parser  (parseCSVSpec)
@@ -101,6 +103,30 @@ import Command.Errors  (ErrorTriplet(..), ErrorCode)
 import Command.Result  (Result (..))
 import Data.Location   (Location (..))
 import Paths_ogma_core (getDataDir)
+
+-- | Process input specification from a single expression and return its
+-- abstract representation.
+parseInputExpr :: String
+               -> String
+               -> Maybe String
+               -> ExprPairT a
+               -> ExceptT ErrorTriplet IO (Spec a)
+parseInputExpr expr propFormatName propVia exprT =
+  ExceptT $ do
+    let ExprPairT parse replace print ids def = exprT
+
+    let wrapper = wrapVia propVia parse
+
+    result <- wrapper expr
+
+    let spec = do
+          expr' <- result
+          let req = Requirement "triggerCondition" expr' "" Nothing Nothing
+          return $ Spec [] [] [ req ]
+
+    case spec of
+      Left e  -> return $ Left $ cannotReadConditionExpr expr e
+      Right s -> return $ Right s
 
 -- | Process input specification, if available, and return its abstract
 -- representation.
@@ -348,6 +374,16 @@ wrongArguments =
       "the arguments provided are insufficient: you must provide an input "
       ++ "specification, or both a variables and a handlers file."
 
+-- | Exception handler to deal with the case in which the trigger expression
+-- cannot be understood.
+cannotReadConditionExpr :: String -> String -> ErrorTriplet
+cannotReadConditionExpr expr errorMsg =
+    ErrorTriplet ecCannotReadConditionExpr msg LocationNothing
+  where
+    msg =
+      "cannot parse condition or trigger expression " ++ show expr ++ ":"
+      ++ errorMsg
+
 -- | Exception handler to deal with the case in which the input file cannot be
 -- opened.
 cannotOpenInputFile :: FilePath -> ErrorTriplet
@@ -427,6 +463,10 @@ cannotCopyTemplate =
 -- | Error: wrong arguments provided.
 ecWrongArguments :: ErrorCode
 ecWrongArguments = 1
+
+-- | Error: the trigger expression provided by the user cannot be parsed.
+ecCannotReadConditionExpr :: ErrorCode
+ecCannotReadConditionExpr = 1
 
 -- | Error: the input specification provided by the user cannot be opened.
 ecCannotOpenInputFile :: ErrorCode
