@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-07-09
+## [1.X.Y] - 2025-07-12
 
 * Expose overview command (#272).
+* Extend code commands to accept expressions to monitor as CLI arguments (#121).
 
 ## [1.7.0] - 2025-03-21
 
