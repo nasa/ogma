@@ -60,7 +60,8 @@ import qualified Command.Standalone
 data CommandOpts = CommandOpts
   { standaloneTargetDir    :: FilePath
   , standaloneTemplateDir  :: Maybe FilePath
-  , standaloneFileName     :: FilePath
+  , standaloneConditionExpr  :: Maybe String
+  , standaloneFileName     :: Maybe FilePath
   , standaloneFormat       :: String
   , standalonePropFormat   :: String
   , standaloneTypes        :: [String]
@@ -76,7 +77,8 @@ command c =
   where
     internalCommandOpts :: Command.Standalone.CommandOptions
     internalCommandOpts = Command.Standalone.CommandOptions
-      { Command.Standalone.commandInputFile   = standaloneFileName c
+      { Command.Standalone.commandConditionExpr = standaloneConditionExpr c
+      , Command.Standalone.commandInputFile   = standaloneFileName c
       , Command.Standalone.commandTargetDir   = standaloneTargetDir c
       , Command.Standalone.commandTemplateDir = standaloneTemplateDir c
       , Command.Standalone.commandFormat      = standaloneFormat c
@@ -121,10 +123,19 @@ commandOptsParser = CommandOpts
             <> help strStandaloneTemplateDirArgDesc
             )
         )
-  <*> strOption
-        (  long "file-name"
-        <> metavar "FILENAME"
-        <> help strStandaloneFilenameDesc
+  <*> optional
+        ( strOption
+          (  long "condition-expr"
+          <> metavar "FILENAME"
+          <> help strStandaloneConditionExprDesc
+          )
+        )
+  <*> optional
+        ( strOption
+          (  long "file-name"
+          <> metavar "FILENAME"
+          <> help strStandaloneFilenameDesc
+          )
         )
   <*> strOption
         (  long "input-format"
@@ -178,6 +189,11 @@ strStandaloneTargetDirDesc = "Target directory"
 -- | Template dir flag description.
 strStandaloneTemplateDirArgDesc :: String
 strStandaloneTemplateDirArgDesc = "Directory holding standalone source template"
+
+-- | Condition flag description.
+strStandaloneConditionExprDesc :: String
+strStandaloneConditionExprDesc =
+  "Condition upon which the monitor will fire or notify"
 
 -- | Filename flag description.
 strStandaloneFilenameDesc :: String

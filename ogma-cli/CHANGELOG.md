@@ -1,5 +1,11 @@
 # Revision history for ogma-cli
 
+## [1.8.0] - 2025-07-13
+
+* Version bump 1.8.0 (#275).
+* Expose overview command (#272).
+* Extend code commands to accept expressions to monitor as CLI arguments (#121).
+
 ## [1.7.0] - 2025-03-21
 
 * Version bump 1.7.0 (#269).
