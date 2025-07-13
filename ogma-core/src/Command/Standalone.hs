@@ -44,6 +44,7 @@ module Command.Standalone
   where
 
 -- External imports
+import Control.Applicative  ((<|>))
 import Control.Exception    as E
 import Control.Monad.Except (ExceptT (..), liftEither)
 import Data.Aeson           (ToJSON (..))
@@ -112,29 +113,44 @@ command' options (ExprPair exprT) = do
 
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
-    input <- parseInputFile fp formatName propFormatName propVia exprT
-    commandLogic fp name typeMaps exprT input
+    specT <- maybe (return Nothing) (\e -> Just <$> parseInputExpr' e) triggerExprM
+    specF <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fpM
+    let spec = specT <|> specF
+
+    case spec of
+      Nothing    -> liftEither $ Left $ commandMissingSpec
+      Just spec' -> commandLogic triggerExprM fpM name typeMaps exprT spec'
+
   where
-    fp             = commandInputFile options
+    triggerExprM   = commandConditionExpr options
+    fpM            = commandInputFile options
     name           = commandFilename options
     typeMaps       = typeToCopilotTypeMapping (commandTypeMapping options)
     formatName     = commandFormat options
     propFormatName = commandPropFormat options
     propVia        = commandPropVia options
 
+    parseInputExpr' e =
+      parseInputExpr e propFormatName propVia exprT
+
+    parseInputFile' f =
+      parseInputFile f formatName propFormatName propVia exprT
+
+
 -- | Generate the data of a new standalone Copilot monitor that implements the
 -- spec, using a subexpression handler.
-commandLogic :: FilePath
+commandLogic :: Maybe String
+             -> Maybe FilePath
              -> String
              -> [(String, String)]
              -> ExprPairT a
              -> Spec a
              -> ExceptT ErrorTriplet IO AppData
-commandLogic fp name typeMaps exprT input = do
+commandLogic expr fp name typeMaps exprT input = do
     let spec = addMissingIdentifiers ids input
     -- Analyze the spec for incorrect identifiers and convert it to Copilot.
     -- If there is an error, we change the error to a message we control.
-    let appData = mapLeft (commandIncorrectSpec fp) $ do
+    let appData = mapLeft commandIncorrectSpec' $ do
           spec' <- specAnalyze spec
           res   <- spec2Copilot name typeMaps replace print spec'
 
@@ -147,6 +163,11 @@ commandLogic fp name typeMaps exprT input = do
 
   where
 
+    commandIncorrectSpec' = case (expr, fp) of
+      (Nothing,    Just fp') -> commandIncorrectSpecF fp'
+      (Just expr', _)        -> commandIncorrectSpecE expr'
+      (_, _)                 -> error "Both expression and file are missing"
+
     ExprPairT parse replace print ids def = exprT
 
 -- ** Argument processing
@@ -154,7 +175,8 @@ commandLogic fp name typeMaps exprT input = do
 -- | Options used to customize the conversion of specifications to Copilot
 -- code.
 data CommandOptions = CommandOptions
-  { commandInputFile   :: FilePath           -- ^ Input specification file.
+  { commandConditionExpr :: Maybe String
+  , commandInputFile   :: Maybe FilePath     -- ^ Input specification file.
   , commandTargetDir   :: FilePath           -- ^ Target directory where the
                                              -- application should be created.
   , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
@@ -197,15 +219,35 @@ data AppData = AppData
 
 instance ToJSON AppData
 
+-- | Error message associated to not having a spec of any kind.
+commandMissingSpec :: ErrorTriplet
+commandMissingSpec =
+    ErrorTriplet ecMissingSpec msg LocationNothing
+  where
+    msg =
+      "No input specification has been provided."
+
 -- | Error message associated to not being able to formalize the input spec.
-commandIncorrectSpec :: String -> String -> ErrorTriplet
-commandIncorrectSpec file e =
+commandIncorrectSpecF :: String -> String -> ErrorTriplet
+commandIncorrectSpecF file e =
     ErrorTriplet ecIncorrectSpec msg (LocationFile file)
   where
     msg =
       "The input specification " ++ file ++ " canbot be formalized: " ++ e
 
+-- | Error message associated to not being able to formalize the input spec.
+commandIncorrectSpecE :: String -> String -> ErrorTriplet
+commandIncorrectSpecE expr e =
+    ErrorTriplet ecIncorrectSpec msg LocationNothing
+  where
+    msg =
+      "The input specification " ++ show expr ++ " cannot be formalized: " ++ e
+
 -- ** Error codes
+
+-- | Error: there is no input argument.
+ecMissingSpec :: ErrorCode
+ecMissingSpec = 1
 
 -- | Error: the input specification cannot be formalized.
 ecIncorrectSpec :: ErrorCode
