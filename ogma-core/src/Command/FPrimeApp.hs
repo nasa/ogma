@@ -45,7 +45,7 @@ module Command.FPrimeApp
   where
 
 -- External imports
-import           Control.Applicative    ( liftA2 )
+import           Control.Applicative    ( liftA2, (<|>) )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT(..), liftEither )
 import           Data.Aeson             ( ToJSON, toJSON )
@@ -100,11 +100,14 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
+    specT <- maybe (return Nothing) (\e -> Just <$> parseInputExpr' e) cExpr
+    specF <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
+
+    let spec = specT <|> specF
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ liftA2 processSpec spec fp
+    copilotM <- sequenceA $ (\spec' -> processSpec spec' fp cExpr) <$> spec
 
     let varNames = fromMaybe (specExtractExternalVariables spec) vs
         monitors = maybe
@@ -120,6 +123,7 @@ command' options (ExprPair exprT) = do
 
   where
 
+    cExpr          = commandConditionExpr options
     fp             = commandInputFile options
     varNameFile    = commandVariables options
     varDBFile      = maybeToList $ commandVariableDB options
@@ -128,18 +132,22 @@ command' options (ExprPair exprT) = do
     propFormatName = commandPropFormat options
     propVia        = commandPropVia options
 
+    parseInputExpr' e =
+      parseInputExpr e propFormatName propVia exprT
+
     parseInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-    processSpec spec' fp' =
-      Command.Standalone.commandLogic fp' "copilot" [] exprT spec'
+    processSpec spec' expr' fp' =
+      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
 
 -- ** Argument processing
 
 -- | Options used to customize the conversion of specifications to F'
 -- applications.
 data CommandOptions = CommandOptions
-  { commandInputFile   :: Maybe FilePath -- ^ Input specification file.
+  { commandConditionExpr :: Maybe String   -- ^ Trigger condition.
+  , commandInputFile   :: Maybe FilePath -- ^ Input specification file.
   , commandTargetDir   :: FilePath       -- ^ Target directory where the
                                          -- component should be created.
   , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
