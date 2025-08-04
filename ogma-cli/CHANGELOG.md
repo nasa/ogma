@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2025-08-03
+
+* Extend ROS command with flags to control testing package (#280).
+
 ## [1.8.0] - 2025-07-13
 
 * Version bump 1.8.0 (#275).
