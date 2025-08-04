@@ -1,5 +1,9 @@
 # Revision history for ogma-extra
 
+## [1.X.Y] - 2025-08-04
+
+* Remove deprecated functions from System.Directory.Extra (#278).
+
 ## [1.8.0] - 2025-07-13
 
 * Version bump 1.8.0 (#275).
