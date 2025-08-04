@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2025-08-03
+
+* Extend ROS backend to generate testing package (#280).
+
 ## [1.8.0] - 2025-07-13
 
 * Version bump 1.8.0 (#275).
