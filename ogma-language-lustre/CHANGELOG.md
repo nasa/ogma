@@ -1,5 +1,9 @@
 # Revision history for ogma-language-lustre
 
+## [1.9.0] - 2025-08-06
+
+* Version bump 1.9.0 (#284).
+
 ## [1.8.0] - 2025-07-13
 
 * Version bump 1.8.0 (#275).

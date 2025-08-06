@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-language-csv
-version:             1.8.0
+version:             1.9.0
 homepage:            https://github.com/nasa/ogma
 license:             OtherLicense
 license-file:        LICENSE.pdf
@@ -70,7 +70,7 @@ library
     , vector     >= 0.12.0.1 && < 0.14
     , text       >= 1.2.3.1  && < 2.2
 
-    , ogma-spec  >= 1.8.0 && < 1.9
+    , ogma-spec  >= 1.9.0 && < 1.10
 
   hs-source-dirs:
     src
