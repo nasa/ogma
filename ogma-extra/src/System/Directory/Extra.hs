@@ -31,70 +31,24 @@
 --
 -- | Auxiliary functions for working with directories.
 module System.Directory.Extra
-    ( copyDirectoryRecursive
-    , copyFile'
-    , copyTemplate
+    ( copyTemplate
     )
   where
 
 -- External imports
 import           Control.Monad             ( filterM, forM_ )
-import qualified Control.Exception         as E
 import           Data.Aeson                ( Value (..) )
 import qualified Data.ByteString.Lazy      as B
 import           Data.Text.Lazy            ( pack, unpack )
 import           Data.Text.Lazy.Encoding   ( encodeUtf8 )
 import           Distribution.Simple.Utils ( getDirectoryContentsRecursive )
-import           System.Directory          ( copyFile,
-                                             createDirectoryIfMissing,
+import           System.Directory          ( createDirectoryIfMissing,
                                              doesFileExist )
-import           System.Exit               ( ExitCode (ExitFailure), exitWith )
 import           System.FilePath           ( makeRelative, splitFileName,
                                              takeDirectory, (</>) )
-import           System.IO                 ( hPutStrLn, stderr )
 import           Text.Microstache          ( compileMustacheFile,
                                              compileMustacheText,
                                              renderMustache )
-
-{-# DEPRECATED copyDirectoryRecursive "This function is deprecated in ogma-extra-1.6.0." #-}
--- | Copy all files from one directory to another.
-copyDirectoryRecursive :: FilePath  -- ^ Source directory
-                       -> FilePath  -- ^ Target directory
-                       -> IO ()
-copyDirectoryRecursive sourceDir targetDir =
-  E.handle (copyDirectoryRecursiveErrorHandler sourceDir targetDir) $ do
-    -- Obtain files in source directory
-    files <- getDirectoryContentsRecursive sourceDir
-
-    -- Determine the actual source and destination path for a file.
-    let sourceAndDest file = (src, dest)
-          where
-            src  = sourceDir </> file
-            dest = targetDir </> file
-
-    -- Copy all the files, replacing the top directory.
-    mapM_ (copyFile' . sourceAndDest) files
-
-{-# DEPRECATED copyFile' "This function is deprecated in ogma-extra-1.6.0." #-}
--- | Copy file origin to dest, creating the target directory if it does not
--- exist.
-copyFile' :: (FilePath, FilePath) -> IO ()
-copyFile' (origin, dest) = do
-  createDirectoryIfMissing True (takeDirectory dest)
-  copyFile origin dest
-
--- | Handle the case in which the source directory cannot be copied or the
--- target directory cannot be created/written.
-copyDirectoryRecursiveErrorHandler :: FilePath
-                                   -> FilePath
-                                   -> E.SomeException
-                                   -> IO ()
-copyDirectoryRecursiveErrorHandler sourceDir targetDir _exception = do
-  hPutStrLn stderr $
-    "ogma: error: cannot copy " ++ sourceDir ++ " to " ++ targetDir
-  exitWith (ExitFailure 1)
-
--- * Generic template handling
 
 -- | Copy a template directory into a target location, expanding variables
 -- provided in a map in a JSON value, both in the file contents and in the
