@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-08-03
+## [1.X.Y] - 2025-08-05
 
 * Extend ROS command with flags to control testing package (#280).
+* Bump upper version constraint on optparse-applicative (#279).
 
 ## [1.8.0] - 2025-07-13
 
