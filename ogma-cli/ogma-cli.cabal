@@ -152,7 +152,7 @@ executable ogma
   build-depends:
       base                 >= 4.11.0.0 && < 5
     , aeson                >= 2.0.0.0  && < 2.3
-    , optparse-applicative >= 0.14     && < 0.19
+    , optparse-applicative >= 0.14     && < 0.20
     , microstache          >= 1.0      && < 1.1
     , text                 >= 1.2.3.1  && < 2.2
 
