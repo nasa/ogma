@@ -43,7 +43,7 @@ module CLI.CommandROSApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, short,
+import Options.Applicative ( Parser, help, long, metavar, many, optional, short,
                              showDefault, strOption, value )
 
 -- External imports: command results
@@ -68,6 +68,8 @@ data CommandOpts = CommandOpts
   , rosAppPropFormat   :: String
   , rosAppPropVia      :: Maybe String
   , rosAppTemplateVars :: Maybe String
+  , rosAppTestingApps  :: [String]
+  , rosAppTestingVars  :: [String]
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -90,7 +92,16 @@ command c = Command.ROSApp.command options
                 , Command.ROSApp.commandPropFormat  = rosAppPropFormat c
                 , Command.ROSApp.commandPropVia     = rosAppPropVia c
                 , Command.ROSApp.commandExtraVars   = rosAppTemplateVars c
+                , Command.ROSApp.commandTestingApps = appNames
+                , Command.ROSApp.commandTestingVars = rosAppTestingVars c
                 }
+
+    -- Turn the qualified app names into tuples of package and node name.
+    appNames = map splitAppName $ rosAppTestingApps c
+
+    splitAppName name = Command.ROSApp.Node package (drop 1 nodeT)
+      where
+        (package, nodeT) = break (== ':') name
 
 -- * CLI
 
@@ -181,6 +192,19 @@ commandOptsParser = CommandOpts
             <> help strROSAppTemplateVarsArgDesc
             )
         )
+  <*> many (strOption
+              (  long "testing-app"
+              <> metavar "package:node"
+              <> help strROSAppROSNodesTestingListArgDesc
+              )
+           )
+  <*> many (strOption
+              (  long "testing-vars"
+              <> metavar "variable_name"
+              <> showDefault
+              <> help strROSAppHandlerListArgDesc
+              )
+           )
 
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
@@ -232,3 +256,13 @@ strROSAppPropViaDesc =
 strROSAppTemplateVarsArgDesc :: String
 strROSAppTemplateVarsArgDesc =
   "JSON file containing additional variables to expand in template"
+
+-- | Argument packages to tested list to ROS app generation command
+strROSAppROSNodesTestingListArgDesc :: String
+strROSAppROSNodesTestingListArgDesc =
+  "Turn on ROS2 package node during testing"
+
+-- | Argument variables to be tested list to ROS app generation command
+strROSAppVarsTestingListArgDesc :: String
+strROSAppVarsTestingListArgDesc =
+  "Limit random input generation to these variables"

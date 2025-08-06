@@ -32,7 +32,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.8.0
+version:             1.9.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             OtherLicense
@@ -69,11 +69,15 @@ data-files:          templates/copilot-cfs/CMakeLists.txt
                      templates/copilot-cfs/fsw/src/copilot_cfs.h
                      templates/copilot-cfs/fsw/src/copilot_cfs_events.h
                      templates/ros/Dockerfile
+                     templates/ros/screenrc
                      templates/ros/copilot/CMakeLists.txt
                      templates/ros/copilot/src/copilot_logger.cpp
                      templates/ros/copilot/src/copilot_monitor.cpp
                      templates/ros/copilot/src/Copilot.hs
                      templates/ros/copilot/package.xml
+                     templates/ros/test_requirements/CMakeLists.txt
+                     templates/ros/test_requirements/src/test_requirements.cpp
+                     templates/ros/test_requirements/package.xml
                      templates/diagram/Copilot.hs
                      templates/fprime/CMakeLists.txt
                      templates/fprime/Copilot.cpp
@@ -148,16 +152,16 @@ library
     , process                 >= 1.6      && < 1.7
     , text                    >= 1.2.3.1  && < 2.2
 
-    , ogma-extra              >= 1.8.0 && < 1.9
-    , ogma-language-c         >= 1.8.0 && < 1.9
-    , ogma-language-copilot   >= 1.8.0 && < 1.9
-    , ogma-language-csv       >= 1.8.0 && < 1.9
-    , ogma-language-jsonspec  >= 1.8.0 && < 1.9
-    , ogma-language-lustre    >= 1.8.0 && < 1.9
-    , ogma-language-smv       >= 1.8.0 && < 1.9
-    , ogma-language-xlsx      >= 1.8.0 && < 1.9
-    , ogma-language-xmlspec   >= 1.8.0 && < 1.9
-    , ogma-spec               >= 1.8.0 && < 1.9
+    , ogma-extra              >= 1.9.0 && < 1.10
+    , ogma-language-c         >= 1.9.0 && < 1.10
+    , ogma-language-copilot   >= 1.9.0 && < 1.10
+    , ogma-language-csv       >= 1.9.0 && < 1.10
+    , ogma-language-jsonspec  >= 1.9.0 && < 1.10
+    , ogma-language-lustre    >= 1.9.0 && < 1.10
+    , ogma-language-smv       >= 1.9.0 && < 1.10
+    , ogma-language-xlsx      >= 1.9.0 && < 1.10
+    , ogma-language-xmlspec   >= 1.9.0 && < 1.10
+    , ogma-spec               >= 1.9.0 && < 1.10
 
   hs-source-dirs:
     src
