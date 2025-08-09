@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2025-08-09
+
+* Add to ROS 2 template handling methods for triggers with no args (#287).
+
 ## [1.9.0] - 2025-08-06
 
 * Version bump 1.9.0 (#284).
