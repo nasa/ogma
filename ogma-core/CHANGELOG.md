@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2025-08-09
 
 * Add to ROS 2 template handling methods for triggers with no args (#287).
+* Install packages locally in ROS 2 dockerfile (#288).
 
 ## [1.9.0] - 2025-08-06
 
