@@ -1,0 +1,15 @@
+{
+  "ROS2Example": {
+    "internal_variables": [],
+    "external_variables": [
+      {"name": "input_value", "type": "Int32", "meaning": "InputI32"}
+    ],
+    "properties": [
+      {
+        "id":      "TestOgma",
+        "formula": "input_value > 0",
+        "text":    "input_value is greater than zero"
+      }
+    ]
+  }
+}

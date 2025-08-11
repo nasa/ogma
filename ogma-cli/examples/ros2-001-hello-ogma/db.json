@@ -1,0 +1,18 @@
+{ "inputs":
+     [ { "name": "input_value"
+       , "type": "int32_t"
+       , "connections":
+           [ { "scope": "ros/message"
+             , "topic": "/ros2/example1"
+             }
+           ]
+       }
+     ]
+, "topics":
+     [ { "scope": "ros/message"
+       , "topic": "/ros2/example1"
+       , "type":  "std_msgs::msg::Int32"
+       }
+     ]
+, "types": []
+}
