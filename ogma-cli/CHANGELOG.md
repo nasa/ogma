@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2025-08-10
+
+* Add example demonstrating the basics of ROS 2 backend (#289).
+
 ## [1.9.0] - 2025-08-06
 
 * Version bump 1.9.0 (#284).
