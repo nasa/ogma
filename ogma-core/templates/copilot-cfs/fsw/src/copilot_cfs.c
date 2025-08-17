@@ -158,9 +158,20 @@ void COPILOT_ProcessCommandPacket(void)
 */
 void COPILOT_Process{{msgDataDesc}}(void)
 {
+    {{#msgDataFromType}}
+    {{msgDataFromType}}* msg;
+    msg = ({{.}}*) COPILOTMsgPtr;
+    {{/msgDataFromType}}
+    {{^msgDataFromType}}
     {{msgDataVarType}}* msg;
     msg = ({{msgDataVarType}}*) COPILOTMsgPtr;
+    {{/msgDataFromType}}
+    {{#msgDataFromField}}
+    {{msgDataVarName}} = msg->{{.}};
+    {{/msgDataFromField}}
+    {{^msgDataFromField}}
     {{msgDataVarName}} = *msg;
+    {{/msgDataFromField}}
 
     // Run all copilot monitors.
     step();
