@@ -1,0 +1,26 @@
+{ "inputs":
+     [ { "name": "input_value"
+       , "type": "int32_t"
+       , "connections":
+           [ { "scope": "cfs"
+             , "topic": "SAMPLE_MID"
+             , "field": "payload"
+             }
+           ]
+       }
+     ]
+, "topics":
+     [ { "scope": "cfs"
+       , "topic": "SAMPLE_MID"
+       , "type":  "sample_msg_t"
+       }
+     ]
+, "types": [
+       { "fromScope": "cfs"
+       , "fromType":  "sample_msg_t"
+       , "fromField": "payload"
+       , "toScope":   "C"
+       , "toType":    "int32_t"
+       }
+     ]
+}
