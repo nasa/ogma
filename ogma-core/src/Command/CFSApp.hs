@@ -205,9 +205,13 @@ variableMap varDB varName = do
     inputDef  <- findInput varDB varName
     mid       <- connectionTopic <$> findConnection inputDef "cfs"
     topicDef  <- findTopic varDB "cfs" mid
-    let typeVar' = fromMaybe
-                     (topicType topicDef)
-                     (typeToType <$> findType varDB varName "cfs" "C")
+
+    let typeDef = findType varDB varName "cfs" "C"
+
+    let typeMsgFromType  = typeFromType <$> typeDef
+        typeMsgFromField = typeFromField =<< typeDef
+
+    let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
 
     -- Pick name for the function to process a message ID.
     let mn = pascalCase $ stripSuffix "_MID" mid
@@ -215,8 +219,9 @@ variableMap varDB varName = do
     return ( VarDecl varName typeVar'
            , mid
            , MsgInfo mid mn
-           , MsgData mn varName typeVar'
+           , MsgData mn typeMsgFromType typeMsgFromField varName typeVar'
            )
+
   where
 
 -- | Return the monitor information needed to generate declarations and
@@ -255,9 +260,11 @@ instance ToJSON MsgInfo
 -- | Information on the data provided by a message with a given description,
 -- and the type of the data it carries.
 data MsgData = MsgData
-    { msgDataDesc    :: String
-    , msgDataVarName :: String
-    , msgDataVarType :: String
+    { msgDataDesc      :: String
+    , msgDataFromType  :: Maybe String
+    , msgDataFromField :: Maybe String
+    , msgDataVarName   :: String
+    , msgDataVarType   :: String
     }
   deriving (Generic)
 
