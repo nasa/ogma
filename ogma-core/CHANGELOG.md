@@ -1,11 +1,12 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2025-08-20
+## [1.X.Y] - 2025-08-28
 
 * Add to ROS 2 template handling methods for triggers with no args (#287).
 * Install packages locally in ROS 2 dockerfile (#288).
 * Fix handling of message fields in cFS template (#296).
 * Avoid unnecessary recompilation of generated cFS app (#299).
+* Remove tabs from cFS template code (#294).
 
 ## [1.9.0] - 2025-08-06
 

@@ -144,7 +144,7 @@ void COPILOT_ProcessCommandPacket(void)
         default:
             COPILOT_HkTelemetryPkt.copilot_command_error_count++;
             CFE_EVS_SendEvent(COPILOT_COMMAND_ERR_EID,CFE_EVS_ERROR,
-			"COPILOT: invalid command packet,MID = 0x%x", MsgId);
+              "COPILOT: invalid command packet,MID = 0x%x", MsgId);
             break;
     }
 
