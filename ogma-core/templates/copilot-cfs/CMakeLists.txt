@@ -12,7 +12,12 @@ include_directories(fsw/platform_inc)
 aux_source_directory(fsw/src APP_SRC_FILES)
 
 # Create the app module
-add_cfe_app(copilot_cfs ${APP_SRC_FILES})
+add_cfe_app(copilot_cfs
+  ${APP_SRC_FILES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/copilot.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/copilot.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/copilot_types.h
+)
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/fsw/src/cabal.sandbox.config

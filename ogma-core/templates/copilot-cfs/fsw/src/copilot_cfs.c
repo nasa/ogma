@@ -22,7 +22,6 @@
 {{#copilot}}
 #include "{{{copilot.specName}}}_types.h"
 #include "{{{copilot.specName}}}.h"
-#include "{{{copilot.specName}}}.c"
 {{/copilot}}
 
 {{#variables}}
