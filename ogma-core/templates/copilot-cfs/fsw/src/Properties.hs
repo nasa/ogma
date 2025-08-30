@@ -38,7 +38,9 @@ spec = do
 {{{copilot.triggers}}}
 
 main :: IO ()
-main = reify spec >>= compile "{{{copilot.specName}}}"
+main = reify spec >>= compileWith settings "{{{copilot.specName}}}"
+  where
+    settings = mkDefaultCSettings { cSettingsStepFunctionName = "copilot_step" }
 {{/copilot}}
 {{^copilot}}
 -- No specification provided. Place your specification in this file.

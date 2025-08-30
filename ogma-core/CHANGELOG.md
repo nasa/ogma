@@ -8,6 +8,7 @@
 * Avoid unnecessary recompilation of generated cFS app (#299).
 * Remove tabs from cFS template code (#294).
 * Fix duplicate linkage of Copilot code in generated cFS app (#297).
+* Use alternate name for Copilot's step function in cFS template (#303).
 
 ## [1.9.0] - 2025-08-06
 

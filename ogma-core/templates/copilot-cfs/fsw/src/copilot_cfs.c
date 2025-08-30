@@ -173,7 +173,7 @@ void COPILOT_Process{{msgDataDesc}}(void)
     {{/msgDataFromField}}
 
     // Run all copilot monitors.
-    step();
+    copilot_step();
 }
 
 {{/msgHandlers}}
