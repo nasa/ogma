@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-08-10
+## [1.X.Y] - 2025-08-31
 
 * Add example demonstrating the basics of ROS 2 backend (#289).
+* Add example demonstrating the basics of cFS backend (#305).
 
 ## [1.9.0] - 2025-08-06
 
