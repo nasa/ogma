@@ -1,0 +1,98 @@
+name: cfs-ghc-8.6-cabal-2.4
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  cabal:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cabal: ["2.4"]
+        ghc:
+          - "8.6"
+
+    steps:
+
+    - uses: haskell-actions/setup@main
+      id: setup-haskell-cabal
+      name: Setup Haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
+    - name: Prepare environment
+      run: |
+        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+
+    - uses: actions/checkout@v4
+
+    - name: Create sandbox
+      run: |
+        echo "$PWD/.cabal-sandbox/bin" >> $GITHUB_PATH
+        cabal v1-sandbox init
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y libbz2-dev libexpat-dev cmake make psmisc
+        cabal v1-install alex happy
+        cabal v1-install BNFC
+
+    - name: Install ogma
+      run: |
+        cabal v1-install ogma-**/ --constraint="aeson >= 2.0.3.0"
+
+    - name: Generate and enable cFS app
+      run: |
+
+        # Clone standard cFS
+        git clone --recursive -b v6.7.0a https://github.com/nasa/cfs.git
+
+        # Generate cFS app with Ogma
+        ogma cfs --app-target-dir cfs/apps/copilot \
+                 --input-file ogma-cli/examples/cfs-001-hello-ogma/expressions.json \
+                 --input-format ogma-cli/examples/cfs-001-hello-ogma/json-format.cfg \
+                 --prop-format literal \
+                 --variable-db ogma-cli/examples/cfs-001-hello-ogma/db.json \
+                 --template-vars ogma-cli/examples/cfs-001-hello-ogma/extra-vars.json
+        cp ogma-cli/examples/cfs-001-hello-ogma/extra.h cfs/apps/copilot/fsw/src/
+
+        # Copy default settings for cFS
+        cd cfs/
+        cp cfe/cmake/Makefile.sample Makefile
+        cp -r cfe/cmake/sample_defs .
+
+        # Enable Ogma-generated cFS app in cFS
+        sed -i -e 's/\(SET(TGT1_APPLIST.*\))/\1 copilot)/g' sample_defs/targets.cmake
+        sed -i -e '0,/^!/s//CFE_APP, \/cf\/copilot_cfs.so, COPILOT_AppMain, COPILOT_APP, 50, 16384, 0x0, 0;\n&/' sample_defs/cpu1_cfe_es_startup.scr
+
+    - name: Compile cFS app and ground station
+      run: |
+        cd cfs/
+
+        # Compile cFS
+        make SIMULATION=native prep
+        make install
+
+        # Compile ground station
+        make -C tools/cFS-GroundSystem/Subsystems/cmdUtil/
+
+    - name: Run cFS app
+      run: |
+        cd cfs/
+
+        # Send two messages to the cFS app after 10 and 15 seconds. One of them
+        # should trigger the monitor.
+        setsid --fork bash -c 'sleep 10; tools/cFS-GroundSystem/Subsystems/cmdUtil/cmdUtil --host=localhost --port=1234 --endian LE --pktid=0x1878 -C 0 --long=0'
+        setsid --fork bash -c 'sleep 15; tools/cFS-GroundSystem/Subsystems/cmdUtil/cmdUtil --host=localhost --port=1234 --endian LE --pktid=0x1878 -C 0 --long=5'
+
+        # Gracefully stop cFS after 20 seconds
+        setsid --fork bash -c 'sleep 20; sudo killall -SIGINT core-cpu1'
+
+        # Start cFS
+        cd build/exe/cpu1/
+        sudo ./core-cpu1 && echo "Success"
