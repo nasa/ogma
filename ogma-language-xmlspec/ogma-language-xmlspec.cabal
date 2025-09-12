@@ -34,8 +34,8 @@ build-type:          Simple
 name:                ogma-language-xmlspec
 version:             1.9.0
 homepage:            http://nasa.gov
-license:             OtherLicense
-license-file:        LICENSE.pdf
+license:             Apache-2.0
+license-file:        LICENSE
 author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
