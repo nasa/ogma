@@ -34,8 +34,8 @@ name:                ogma-language-c
 version:             1.9.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
-license:             OtherLicense
-license-file:        LICENSE.pdf
+license:             Apache-2.0
+license-file:        LICENSE
 author:              Ivan Perez, Alwyn Goodloe
 maintainer:          ivan.perezdominguez@nasa.gov
 category:            Aerospace
