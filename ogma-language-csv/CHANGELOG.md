@@ -1,7 +1,8 @@
 # Revision history for ogma-language-csv
 
-## [1.X.Y] - 2025-09-20
+## [1.10.0] - 2025-09-21
 
+* Version bump 1.10.0 (#310).
 * Replace NOSA license with Apache license (#293).
 
 ## [1.9.0] - 2025-08-06
