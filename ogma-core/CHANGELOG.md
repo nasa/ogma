@@ -1,5 +1,17 @@
 # Revision history for ogma-core
 
+## [1.10.0] - 2025-09-21
+
+* Version bump 1.10.0 (#310).
+* Add to ROS 2 template handling methods for triggers with no args (#287).
+* Install packages locally in ROS 2 dockerfile (#288).
+* Fix handling of message fields in cFS template (#296).
+* Avoid unnecessary recompilation of generated cFS app (#299).
+* Remove tabs from cFS template code (#294).
+* Fix duplicate linkage of Copilot code in generated cFS app (#297).
+* Use alternate name for Copilot's step function in cFS template (#303).
+* Replace NOSA license with Apache license (#293).
+
 ## [1.9.0] - 2025-08-06
 
 * Version bump 1.9.0 (#284).

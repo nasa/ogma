@@ -65,6 +65,11 @@ class CopilotRV : public rclcpp::Node {
     }
     {{/monitorType}}
     {{^monitorType}}
+    // Report (publish) monitor violations.
+    void {{monitorName}}() {
+      auto output = std_msgs::msg::Empty();
+      {{monitorName}}_publisher_->publish(output);
+    }
     {{/monitorType}}
 
 {{/monitors}}

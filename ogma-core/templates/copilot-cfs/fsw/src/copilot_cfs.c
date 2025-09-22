@@ -22,7 +22,6 @@
 {{#copilot}}
 #include "{{{copilot.specName}}}_types.h"
 #include "{{{copilot.specName}}}.h"
-#include "{{{copilot.specName}}}.c"
 {{/copilot}}
 
 {{#variables}}
@@ -144,7 +143,7 @@ void COPILOT_ProcessCommandPacket(void)
         default:
             COPILOT_HkTelemetryPkt.copilot_command_error_count++;
             CFE_EVS_SendEvent(COPILOT_COMMAND_ERR_EID,CFE_EVS_ERROR,
-			"COPILOT: invalid command packet,MID = 0x%x", MsgId);
+              "COPILOT: invalid command packet,MID = 0x%x", MsgId);
             break;
     }
 
@@ -158,12 +157,23 @@ void COPILOT_ProcessCommandPacket(void)
 */
 void COPILOT_Process{{msgDataDesc}}(void)
 {
+    {{#msgDataFromType}}
+    {{msgDataFromType}}* msg;
+    msg = ({{.}}*) COPILOTMsgPtr;
+    {{/msgDataFromType}}
+    {{^msgDataFromType}}
     {{msgDataVarType}}* msg;
     msg = ({{msgDataVarType}}*) COPILOTMsgPtr;
+    {{/msgDataFromType}}
+    {{#msgDataFromField}}
+    {{msgDataVarName}} = msg->{{.}};
+    {{/msgDataFromField}}
+    {{^msgDataFromField}}
     {{msgDataVarName}} = *msg;
+    {{/msgDataFromField}}
 
     // Run all copilot monitors.
-    step();
+    copilot_step();
 }
 
 {{/msgHandlers}}

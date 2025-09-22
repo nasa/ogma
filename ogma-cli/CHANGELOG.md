@@ -1,5 +1,13 @@
 # Revision history for ogma-cli
 
+## [1.10.0] - 2025-09-21
+
+* Version bump 1.10.0 (#310).
+* Add example demonstrating the basics of ROS 2 backend (#289).
+* Add example demonstrating the basics of cFS backend (#305).
+* Add CI job to test cFS backend (#307).
+* Replace NOSA license with Apache license (#293).
+
 ## [1.9.0] - 2025-08-06
 
 * Version bump 1.9.0 (#284).
