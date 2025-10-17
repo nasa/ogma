@@ -32,6 +32,11 @@
 #include "{{app_name_lc}}_tbl.h"
 #include "{{app_name_lc}}_version.h"
 
+{{#copilot}}
+#include "{{{copilot.specName}}}_types.h"
+#include "{{{copilot.specName}}}.h"
+{{/copilot}}
+
 /*
 ** global data
 */
@@ -170,6 +175,21 @@ CFE_Status_t {{app_name_uc}}_Init(void)
         }
     }
 
+    {{#msgIds}}
+    if (status == CFE_SUCCESS)
+    {
+        /*
+        ** Subscribe to sources of monitored properties
+        */
+        status = CFE_SB_Subscribe({{.}}, {{app_name_uc}}_Data.CommandPipe);
+        if (status != CFE_SUCCESS)
+        {
+            CFE_EVS_SendEvent({{app_name_uc}}_SUB_CMD_ERR_EID, CFE_EVS_EventType_ERROR,
+                              "Sample App: Error Subscribing to Commands, RC = 0x%08lX", (unsigned long)status);
+        }
+    }
+
+    {{/msgIds}}
     if (status == CFE_SUCCESS)
     {
         /*

@@ -141,9 +141,58 @@ void {{app_name_uc}}_TaskPipe(const CFE_SB_Buffer_t *SBBufPtr)
             {{app_name_uc}}_SendHkCmd((const {{app_name_uc}}_SendHkCmd_t *)SBBufPtr);
             break;
 
+        {{#msgCases}}
+        case {{msgInfoId}}:
+            COPILOT_Process{{msgInfoDesc}}();
+            break;
+
+        {{/msgCases}}
         default:
             CFE_EVS_SendEvent({{app_name_uc}}_MID_ERR_EID, CFE_EVS_EventType_ERROR,
                               "SAMPLE: invalid command packet,MID = 0x%x", (unsigned int)CFE_SB_MsgIdToValue(MsgId));
             break;
     }
 }
+
+{{#msgHandlers}}
+/**
+* Make received data available to Copilot and run monitors.
+*/
+void COPILOT_Process{{msgDataDesc}}(void)
+{
+    {{#msgDataFromType}}
+    {{msgDataFromType}}* msg;
+    msg = ({{.}}*) COPILOTMsgPtr;
+    {{/msgDataFromType}}
+    {{^msgDataFromType}}
+    {{msgDataVarType}}* msg;
+    msg = ({{msgDataVarType}}*) COPILOTMsgPtr;
+    {{/msgDataFromType}}
+    {{#msgDataFromField}}
+    {{msgDataVarName}} = msg->{{.}};
+    {{/msgDataFromField}}
+    {{^msgDataFromField}}
+    {{msgDataVarName}} = *msg;
+    {{/msgDataFromField}}
+
+    // Run all copilot monitors.
+    copilot_step();
+}
+
+{{/msgHandlers}}
+
+
+{{#triggers}}
+/**
+ * Report copilot property violations.
+ */
+{{#triggerType}}
+void {{triggerName}}({{.}} arg) {
+{{/triggerType}}
+{{^triggerType}}
+void {{triggerName}}(void) {
+{{/triggerType}}
+    CFE_EVS_SendEvent(COPILOT_COMMANDCPVIOL_INF_EID, CFE_EVS_ERROR,
+        "COPILOT: violation: {{triggerName}}");
+}
+{{/triggers}}
