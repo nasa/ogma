@@ -31,6 +31,15 @@
 #include "{{app_name_lc}}_msgids.h"
 #include "{{app_name_lc}}_msg.h"
 
+{{#impl_extra_header}}
+{{{.}}}
+{{/impl_extra_header}}
+
+{{#copilot}}
+#include "{{{copilot.specName}}}_types.h"
+#include "{{{copilot.specName}}}.h"
+{{/copilot}}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
 /*                                                                            */
 /* Verify command packet length                                               */
@@ -143,7 +152,7 @@ void {{app_name_uc}}_TaskPipe(const CFE_SB_Buffer_t *SBBufPtr)
 
         {{#msgCases}}
         case {{msgInfoId}}:
-            COPILOT_Process{{msgInfoDesc}}();
+            COPILOT_Process{{msgInfoDesc}}(SBBufPtr);
             break;
 
         {{/msgCases}}
@@ -158,15 +167,15 @@ void {{app_name_uc}}_TaskPipe(const CFE_SB_Buffer_t *SBBufPtr)
 /**
 * Make received data available to Copilot and run monitors.
 */
-void COPILOT_Process{{msgDataDesc}}(void)
+void COPILOT_Process{{msgDataDesc}}(const CFE_SB_Buffer_t *SBBufPtr)
 {
     {{#msgDataFromType}}
     {{msgDataFromType}}* msg;
-    msg = ({{.}}*) COPILOTMsgPtr;
+    msg = ({{.}}*) (&SBBufPtr->Msg);
     {{/msgDataFromType}}
     {{^msgDataFromType}}
     {{msgDataVarType}}* msg;
-    msg = ({{msgDataVarType}}*) COPILOTMsgPtr;
+    msg = ({{msgDataVarType}}*) (&SBBufPtr->Msg);
     {{/msgDataFromType}}
     {{#msgDataFromField}}
     {{msgDataVarName}} = msg->{{.}};
@@ -192,7 +201,7 @@ void {{triggerName}}({{.}} arg) {
 {{^triggerType}}
 void {{triggerName}}(void) {
 {{/triggerType}}
-    CFE_EVS_SendEvent(COPILOT_COMMANDCPVIOL_INF_EID, CFE_EVS_ERROR,
+    CFE_EVS_SendEvent({{app_name_uc}}_PROP_VIOLATION_EID, CFE_EVS_EventType_ERROR,
         "COPILOT: violation: {{triggerName}}");
 }
 {{/triggers}}

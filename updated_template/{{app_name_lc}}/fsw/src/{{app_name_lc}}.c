@@ -32,6 +32,10 @@
 #include "{{app_name_lc}}_tbl.h"
 #include "{{app_name_lc}}_version.h"
 
+{{#impl_extra_header}}
+{{{.}}}
+{{/impl_extra_header}}
+
 {{#copilot}}
 #include "{{{copilot.specName}}}_types.h"
 #include "{{{copilot.specName}}}.h"
@@ -181,7 +185,7 @@ CFE_Status_t {{app_name_uc}}_Init(void)
         /*
         ** Subscribe to sources of monitored properties
         */
-        status = CFE_SB_Subscribe({{.}}, {{app_name_uc}}_Data.CommandPipe);
+        status = CFE_SB_Subscribe(CFE_SB_ValueToMsgId({{.}}), {{app_name_uc}}_Data.CommandPipe);
         if (status != CFE_SUCCESS)
         {
             CFE_EVS_SendEvent({{app_name_uc}}_SUB_CMD_ERR_EID, CFE_EVS_EventType_ERROR,

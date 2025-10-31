@@ -35,4 +35,17 @@ void {{app_name_uc}}_TaskPipe(const CFE_SB_Buffer_t *SBBufPtr);
 void {{app_name_uc}}_ProcessGroundCommand(const CFE_SB_Buffer_t *SBBufPtr);
 bool {{app_name_uc}}_VerifyCmdLength(const CFE_MSG_Message_t *MsgPtr, size_t ExpectedLength);
 
+{{#msgHandlers}}
+void COPILOT_Process{{msgDataDesc}}(const CFE_SB_Buffer_t *SBBufPtr);
+{{/msgHandlers}}
+
+{{#triggers}}
+{{#triggerType}}
+void {{triggerName}}({{.}} arg);
+{{/triggerType}}
+{{^triggerType}}
+void {{triggerName}}(void);
+{{/triggerType}}
+{{/triggers}}
+
 #endif /* {{app_name_uc}}_DISPATCH_H */

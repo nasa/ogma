@@ -25,18 +25,19 @@
 #ifndef {{app_name_uc}}_EVENTS_H
 #define {{app_name_uc}}_EVENTS_H
 
-#define {{app_name_uc}}_RESERVED_EID      0
-#define {{app_name_uc}}_INIT_INF_EID      1
-#define {{app_name_uc}}_CC_ERR_EID        2
-#define {{app_name_uc}}_NOOP_INF_EID      3
-#define {{app_name_uc}}_RESET_INF_EID     4
-#define {{app_name_uc}}_MID_ERR_EID       5
-#define {{app_name_uc}}_CMD_LEN_ERR_EID   6
-#define {{app_name_uc}}_PIPE_ERR_EID      7
-#define {{app_name_uc}}_VALUE_INF_EID     8
-#define {{app_name_uc}}_CR_PIPE_ERR_EID   9
-#define {{app_name_uc}}_SUB_HK_ERR_EID    10
-#define {{app_name_uc}}_SUB_CMD_ERR_EID   11
-#define {{app_name_uc}}_TABLE_REG_ERR_EID 12
+#define {{app_name_uc}}_RESERVED_EID       0
+#define {{app_name_uc}}_INIT_INF_EID       1
+#define {{app_name_uc}}_CC_ERR_EID         2
+#define {{app_name_uc}}_NOOP_INF_EID       3
+#define {{app_name_uc}}_RESET_INF_EID      4
+#define {{app_name_uc}}_MID_ERR_EID        5
+#define {{app_name_uc}}_CMD_LEN_ERR_EID    6
+#define {{app_name_uc}}_PIPE_ERR_EID       7
+#define {{app_name_uc}}_VALUE_INF_EID      8
+#define {{app_name_uc}}_CR_PIPE_ERR_EID    9
+#define {{app_name_uc}}_SUB_HK_ERR_EID     10
+#define {{app_name_uc}}_SUB_CMD_ERR_EID    11
+#define {{app_name_uc}}_TABLE_REG_ERR_EID  12
+#define {{app_name_uc}}_PROP_VIOLATION_EID 13
 
 #endif /* {{app_name_uc}}_EVENTS_H */
