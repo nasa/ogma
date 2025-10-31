@@ -40,6 +40,10 @@
 #include "{{{copilot.specName}}}.h"
 {{/copilot}}
 
+{{#variables}}
+{{varDeclType}} {{varDeclName}};
+{{/variables}}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
 /*                                                                            */
 /* Verify command packet length                                               */
