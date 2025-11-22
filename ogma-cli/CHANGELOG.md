@@ -1,7 +1,8 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-11-21
+## [1.11.0] - 2025-11-21
 
+* Version bump 1.11.0 (#325).
 * Add missing dependency to installation instructions in README (#314).
 * Add example demonstrating the basics of diagram backend (#323).
 
