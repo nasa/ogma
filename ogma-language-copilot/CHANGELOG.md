@@ -1,5 +1,9 @@
 # Revision history for ogma-language-copilot
 
+## [1.11.0] - 2025-11-21
+
+* Version bump 1.11.0 (#325).
+
 ## [1.10.0] - 2025-09-21
 
 * Version bump 1.10.0 (#310).
