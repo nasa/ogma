@@ -35,16 +35,17 @@ type StateMachineGF = ( Word8, Word8, Stream Bool, [(Word8, Stream Bool, Word8)]
 stateMachineGF :: StateMachineGF -> Stream Word8
 stateMachineGF (initialState, finalState, noInputData, transitions, badState) = state
   where
-    state = [initialState] ++ ifThenElses transitions
+    state         = ifThenElses transitions
+    previousState = [initialState] ++ state
 
     ifThenElses :: [(Word8, Stream Bool, Word8)] -> Stream Word8
     ifThenElses [] =
-      ifThenElse (state == constant finalState && noInputData)
+      ifThenElse (previousState == constant finalState && noInputData)
         (constant finalState)
         (constant badState)
 
     ifThenElses ((s1,i,s2):ss) =
-      ifThenElse (state == constant s1 && i) (constant s2) (ifThenElses ss)
+      ifThenElse (previousState == constant s1 && i) (constant s2) (ifThenElses ss)
 
 -- | True when the given input stream does hold any of the values in the given
 -- list.
