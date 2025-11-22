@@ -406,7 +406,7 @@ diagramToCopilot diag mode = (machine, arguments)
 
     -- Elements of the spec.
     propExpr     = case mode of
-                     CheckState   -> "stateMachine1 == externalState"
+                     CheckState   -> "stateMachine1 /= externalState"
                      ComputeState -> "true"
                      CheckMoves   -> "true"
     initialState = minimum states
