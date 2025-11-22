@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2025-11-21
+
+* Add missing dependency to installation instructions in README (#314).
+
 ## [1.10.0] - 2025-09-21
 
 * Version bump 1.10.0 (#310).
