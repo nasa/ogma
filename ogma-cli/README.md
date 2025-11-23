@@ -68,7 +68,7 @@ being used.)
 On Debian or Ubuntu Linux, these dependencies can be installed with:
 
 ```sh
-$ apt-get install ghc cabal-install libbz2-dev libexpat-dev
+$ apt-get install ghc cabal-install libz-dev libbz2-dev libexpat-dev
 ```
 
 On Mac, they can be installed with:

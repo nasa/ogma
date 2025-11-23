@@ -1,5 +1,11 @@
 # Revision history for ogma-core
 
+## [1.11.0] - 2025-11-21
+
+* Version bump 1.11.0 (#325).
+* Make state machine code return the current state (#317).
+* Negate condition in state machine monitor (#318).
+
 ## [1.10.0] - 2025-09-21
 
 * Version bump 1.10.0 (#310).
