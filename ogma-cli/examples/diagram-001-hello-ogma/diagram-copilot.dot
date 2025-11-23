@@ -1,0 +1,15 @@
+digraph g{
+   rankdir="LR";
+   edge[splines="curved"]
+   0 -> 0 [label = "input >= 120 && input <= 180"];
+
+   0 -> 1 [label = "input > 180"];
+   1 -> 0 [label = "input <= 180"];
+
+   1 -> 1 [label = "input > 180"];
+
+   0 -> 2 [label = "input < 120"];
+   2 -> 0 [label = "input >= 120"];
+
+   2 -> 2 [label = "input < 120"];
+}
