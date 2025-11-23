@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2025-11-21
 
 * Make state machine code return the current state (#317).
+* Negate condition in state machine monitor (#318).
 
 ## [1.10.0] - 2025-09-21
 
