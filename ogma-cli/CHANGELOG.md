@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-05-28
+## [1.X.Y] - 2026-06-04
 
 * Fix typo in README (#428).
+* Update README with new capabilities (#212).
 
 ## [1.14.0] - 2026-05-21
 
