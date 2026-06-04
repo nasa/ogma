@@ -16,11 +16,21 @@ verification framework that generates hard real-time C99 code.
 - Generating [F' (FPrime)](https://github.com/nasa/fprime/) runtime monitoring
   components.
 
+- Generating standalone Copilot monitors from requirements in multiple
+  formats (e.g., JSON, YAML, CSV, XLSX, XML), with properties expressed in
+multiple languages (e.g., SMV, Lustre/CoCoSpec).
+
 - Generating message handlers for NASA Core Flight System applications to make
   external data in structs available to a Copilot monitor.
 
 - Generating monitors from diagrams in diagrammatic formats (e.g.,
   DOT/Graphviz, mermaid).
+
+- Analyzing specifications and detecting requirements that are always true,
+  always false, or mutually inconsistent.
+
+- Generating reports with detailed information about the requirements in a
+  specification.
 
 - Generating the glue code necessary to work with C structs in Copilot.
 
