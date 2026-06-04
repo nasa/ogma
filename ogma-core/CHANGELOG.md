@@ -1,10 +1,11 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-05-31
+## [1.X.Y] - 2026-06-04
 
 * Remove commented code from `Data.Spec.Parser` (#430).
 * Remove redundant `where` block (#432).
 * Fix incorrect Haddock comment syntax (#434).
+* Provide detailed error messages when template expansion fails (#390).
 
 ## [1.14.0] - 2026-05-21
 
