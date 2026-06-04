@@ -40,12 +40,13 @@ import System.Directory.Extra (copyTemplate)
 -- Internal imports
 import           Command.Common              (InputFile (..),
                                               cannotCopyTemplate,
-                                              locateTemplateDir, makeLeftE,
+                                              locateTemplateDir,
                                               parseInputFile, processResult)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
 import           Data.Diagram.Analysis       (AnalysisResult (..),
                                               analyzeDiagram)
+import           Data.Either.Extra           (mapLeft)
 import           Data.ExprPair               (ExprPair (..), ExprPairT (..),
                                               exprPair)
 import           Data.Location               (Location (..))
@@ -72,7 +73,7 @@ command options = processResult $ do
     reportData <- command' options functions
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplate) $ E.try $
       copyTemplate templateDir (toJSON reportData) targetDir
 
   where

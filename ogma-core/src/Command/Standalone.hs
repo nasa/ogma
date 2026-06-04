@@ -76,7 +76,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplate) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where

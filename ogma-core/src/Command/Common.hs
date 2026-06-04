@@ -48,8 +48,9 @@ import           Data.Aeson             (Value (Null, Object), eitherDecode,
 import           System.FilePath        ((</>))
 
 -- External imports: auxiliary
-import Data.ByteString.Extra as B (safeReadFile)
-import Data.String.Extra     (sanitizeLCIdentifier, sanitizeUCIdentifier)
+import Data.ByteString.Extra   as B (safeReadFile)
+import Data.String.Extra       (sanitizeLCIdentifier, sanitizeUCIdentifier)
+import System.Directory.Extra  (CopyTemplateError (..))
 
 -- External imports: ogma
 import Data.OgmaSpec (Requirement (..), Spec (..), externalVariableName,
@@ -313,15 +314,51 @@ cannotReadObjectTemplateVars file =
       "Cannot open file with additional template variables: " ++ file
 
 -- | Exception handler to deal with the case of files that cannot be
--- copied/generated due lack of space or permissions or some I/O error.
-cannotCopyTemplate :: ErrorTriplet
-cannotCopyTemplate =
-    ErrorTriplet ecCannotCopyTemplate msg LocationNothing
+-- copied/generated due to a problem with the template or the target
+-- location.
+cannotCopyTemplate :: E.SomeException -> ErrorTriplet
+cannotCopyTemplate e =
+    ErrorTriplet ecCannotCopyTemplate msg location
   where
-    msg =
-      "Generation failed during copy/write operation. Check that"
-      ++ " there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory."
+    (msg, location) = case E.fromException e of
+      Just (CopyTemplateListError dir reason) ->
+        ( "Generation failed because the template directory " ++ dir
+          ++ " cannot be read: " ++ reason
+        , LocationFile dir
+        )
+
+      Just (CopyTemplateReadError file reason) ->
+        ( "Generation failed because the template file " ++ file
+          ++ " cannot be read: " ++ reason
+        , LocationFile file
+        )
+
+      Just (CopyTemplateDecodeError file reason) ->
+        ( "Generation failed because the template file " ++ file
+          ++ " is not a valid UTF-8 text file: " ++ reason
+        , LocationFile file
+        )
+
+      Just (CopyTemplateParseError file reason) ->
+        ( "Generation failed because the template file " ++ file
+          ++ " cannot be parsed: " ++ reason
+        , LocationFile file
+        )
+
+      Just (CopyTemplateWriteError file reason) ->
+        ( "Generation failed because the file " ++ file
+          ++ " cannot be written. Check that there's free space in the disk"
+          ++ " and that you have the necessary permissions to write in the"
+          ++ " destination directory: " ++ reason
+        , LocationFile file
+        )
+
+      Nothing ->
+        ( "Generation failed during copy/write operation. Check that"
+          ++ " there's free space in the disk and that you have the necessary"
+          ++ " permissions to write in the destination directory: " ++ show e
+        , LocationNothing
+        )
 
 -- ** Error codes
 
@@ -349,8 +386,8 @@ ecCannotOpenTemplateVarsFile = 1
 ecCannotReadObjectTemplateVarsFile :: ErrorCode
 ecCannotReadObjectTemplateVarsFile = 1
 
--- | Error: the files cannot be copied/generated due lack of space or
--- permissions or some I/O error.
+-- | Error: the files cannot be copied/generated due to a problem with the
+-- template or the target location.
 ecCannotCopyTemplate :: ErrorCode
 ecCannotCopyTemplate = 1
 

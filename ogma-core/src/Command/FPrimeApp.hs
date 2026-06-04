@@ -54,6 +54,7 @@ import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (InputDef (..), TypeDef (..), VariableDB, findInput,
                            findType, findTypeByType)
 import Data.Aeson.Extra   (mergeObjects)
+import Data.Either.Extra  (mapLeft)
 import Data.ExprPair      (ExprPair(..), exprPair)
 import Data.Location      (Location (..))
 import Data.Spec.Parser   (readInputExpr)
@@ -72,7 +73,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplate) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where
