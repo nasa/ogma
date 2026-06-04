@@ -49,6 +49,7 @@ verification framework that generates hard real-time C99 code.
   - [Standalone Monitor Generation](#standalone-monitor-generation)
   - [Generating Monitors from Diagrams](#generating-monitors-from-diagrams)
   - [Checking Specifications](#checking-specifications)
+  - [Report Generation](#report-generation)
   - [Struct Interface Generation](#struct-interface-generation)
 - [Contributions](#contributions)
 - [Acknowledgements](#acknowledgements)
@@ -986,6 +987,63 @@ The `overview` command supports the following arguments:
 
 - `--input-file FILENAME`: File with the properties or requirements being
   analyzed.
+- `-f,--input-format FORMAT_NAME`: Name of the input format, or path to a
+  custom format specification file. See [Input Specification
+Formats](#input-specification-formats) for details.
+- `-p,--prop-format FORMAT_NAME`: Format for the temporal or boolean
+  properties in the specification. See [Property Specification
+Formats](#property-specification-formats) for details.
+- `--parse-prop-via COMMAND`: External command to pre-process individual
+  properties, which can be used to support additional property languages.
+
+## Report Generation
+
+Ogma's `report` command produces a document with detailed information about
+the contents of a specification, including the results of the same analyses
+performed by the `overview` command, reported for each individual
+requirement.
+
+The following command generates a report for the specification discussed in
+the previous section:
+
+```sh
+$ ogma report --file-name ogma-cli/examples/analysis/expressions.json --input-format ogma-cli/examples/analysis/json-format.cfg --prop-format literal
+```
+
+By default, the report is placed in a directory `report`, which contains a
+file `Report.md` in Markdown format. For the specification above, the
+generated report starts with the following summary:
+
+```markdown
+# Requirements
+
+## Summary
+
+The project has 3 requirements in total.
+
+Of these requirements:
+
+- 1 requirements are constantly or always true.
+
+- 1 requirements are constantly or always false.
+
+The requirements are not mutually consistent: there is no way for all
+requirements to be true at the same time.
+```
+
+followed by a detailed list with the results of the analysis of each
+individual requirement.
+
+The `report` command supports the following arguments:
+
+- `--target-dir DIR`: Use this argument to provide a target directory for the
+  files generated (default: "report").
+- `--template-dir DIR`: Use this argument to provide a custom template for the
+  report being generated. See the files under `ogma-core/templates/report/`,
+as well as other commands supporting template customization, to understand how
+to customize the template.
+- `--file-name FILENAME`: File with the properties, requirements or diagram
+  that the report is about.
 - `-f,--input-format FORMAT_NAME`: Name of the input format, or path to a
   custom format specification file. See [Input Specification
 Formats](#input-specification-formats) for details.
