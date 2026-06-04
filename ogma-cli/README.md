@@ -48,6 +48,7 @@ verification framework that generates hard real-time C99 code.
   - [F' Component Generation](#f-component-generation)
   - [Standalone Monitor Generation](#standalone-monitor-generation)
   - [Generating Monitors from Diagrams](#generating-monitors-from-diagrams)
+  - [Checking Specifications](#checking-specifications)
   - [Struct Interface Generation](#struct-interface-generation)
 - [Contributions](#contributions)
 - [Acknowledgements](#acknowledgements)
@@ -925,6 +926,74 @@ would be three booleans, indicating, respectively, if transitioning to state 0
 would be legal, if transitioning to state 1 would be legal, and if
 transitioning to state 2 would be legal. In this mode, the machine uses the
 externally provided state to determine which state it's actually in.
+
+## Checking Specifications
+
+Ogma provides a command `overview` that summarizes the contents of a
+specification and analyzes its requirements, indicating whether any
+requirements are always true (and therefore unnecessary), are always false
+(and therefore cannot be implemented), or conflict with one another.
+
+For example, the file `ogma-cli/examples/analysis/expressions.json`, included
+with the Ogma distribution, contains three requirements over a single
+external variable `input_value`, with the properties written as literal
+Copilot expressions:
+
+```json
+{
+  "internal_variables": [],
+  "external_variables": [
+    {"name": "input_value", "type": "Int32", "meaning": "InputI32"}
+  ],
+  "properties": [
+    {
+      "id":      "ReqUseful",
+      "formula": "input_value <= 0",
+      "text":    "input_value shall always be lower than or equal to zero"
+    },
+    {
+      "id":      "ReqAlwaysTrue",
+      "formula": "input_value == input_value",
+      "text":    "input_value shall always be equal to itself"
+    },
+    {
+      "id":      "ReqAlwaysFalse",
+      "formula": "input_value /= input_value",
+      "text":    "input_value shall never be equal to itself"
+    }
+  ]
+}
+```
+
+The following command prints an overview of that specification, together with
+the results of the analysis of its requirements:
+
+```sh
+$ ogma overview --input-file ogma-cli/examples/analysis/expressions.json --input-format ogma-cli/examples/analysis/json-format.cfg --prop-format literal
+The requirements file has:
+ - 1 external variables.
+ - 0 internal variables.
+ - 3 requirements.
+   - 1 requirements are constantly or always true.
+   - 1 requirements are constantly or always false.
+   - The requirements are not mutually consistent.
+```
+
+When the input file contains a diagram, the overview instead reports the
+number of states of the state machine and whether it is deterministic.
+
+The `overview` command supports the following arguments:
+
+- `--input-file FILENAME`: File with the properties or requirements being
+  analyzed.
+- `-f,--input-format FORMAT_NAME`: Name of the input format, or path to a
+  custom format specification file. See [Input Specification
+Formats](#input-specification-formats) for details.
+- `-p,--prop-format FORMAT_NAME`: Format for the temporal or boolean
+  properties in the specification. See [Property Specification
+Formats](#property-specification-formats) for details.
+- `--parse-prop-via COMMAND`: External command to pre-process individual
+  properties, which can be used to support additional property languages.
 
 ## Struct Interface Generation
 
