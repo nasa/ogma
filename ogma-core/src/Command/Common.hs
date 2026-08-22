@@ -98,7 +98,7 @@ combineInputFiles xs
     mergeSpecs :: Spec a -> Spec a -> Spec a
     mergeSpecs s1 s2 = Spec
       { internalVariables = internalVariables s1 ++ internalVariables s2
-      , externalVariables = externalVariables s2 ++ externalVariables s2
+      , externalVariables = externalVariables s1 ++ externalVariables s2
       , requirements      = requirements s1 ++ requirements s2
       }
 
