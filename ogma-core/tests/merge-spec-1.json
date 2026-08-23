@@ -1,0 +1,16 @@
+{
+  "Spec1": {
+    "Internal_variables": [],
+    "Other_variables": [
+      {"name": "sensor_a", "type": "real"}
+    ],
+    "Requirements": [
+      {
+        "name": "propA",
+        "CoCoSpecCode": "sensor_a > 0.0",
+        "ptLTL": "sensor_a > 0.0",
+        "fretish": "sensor_a shall always be positive"
+      }
+    ]
+  }
+}
