@@ -1,0 +1,15 @@
+JSONFormat
+   { specInternalVars          = Just "..auxiliary_defs[*]"
+   , specInternalVarId         = ".name"
+   , specInternalVarExpr       = ".meaning"
+   , specInternalVarType       = Just ".type"
+   , specExternalVars          = Just "..inputs[*]"
+   , specExternalVarId         = ".name"
+   , specExternalVarType       = Just ".type"
+   , specRequirements          = "..properties[*]"
+   , specRequirementId         = ".id"
+   , specRequirementDesc       = Just ".description"
+   , specRequirementExpr       = ".formula"
+   , specRequirementResultType = Nothing
+   , specRequirementResultExpr = Nothing
+   }

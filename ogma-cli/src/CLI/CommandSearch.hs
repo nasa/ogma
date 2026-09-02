@@ -195,7 +195,7 @@ searchFileOptsParser = SearchFile
         <> metavar "FORMAT_NAME"
         <> help strSearchFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"

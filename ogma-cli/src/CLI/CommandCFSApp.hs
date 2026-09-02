@@ -214,7 +214,7 @@ commandOptsParser = CommandOpts
         <> metavar "FORMAT_NAME"
         <> help strCFSAppFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"

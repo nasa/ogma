@@ -211,7 +211,7 @@ overviewFileOptsParser = OverviewFile
         <> metavar "FORMAT_NAME"
         <> help strOverviewFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"

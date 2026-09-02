@@ -15,6 +15,7 @@
 * Add missing argument to `docker run` in Turtlesim tutorial (#571).
 * Fix container name in call to `docker exec` in Turtlesim example (#573).
 * Update package index before installing dependencies in CI jobs (#577).
+* Update commands to use new input file format by default (#575).
 
 ## [1.15.0] - 2026-07-21
 

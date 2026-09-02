@@ -76,6 +76,9 @@ data-files:          templates/cfs/Dockerfile
                      templates/fprime/instance-copilot
                      templates/report/Report.md
                      templates/standalone/Copilot.hs
+                     data/formats/default_smv
+                     data/formats/default_literal
+                     data/formats/default_lustre
                      data/formats/fcs_smv
                      data/formats/fcs_lustre
                      data/formats/fdb_smv

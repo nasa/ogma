@@ -114,7 +114,7 @@ parseStandaloneFCS :: FilePath  -- ^ Path to an input file
 parseStandaloneFCS file success = do
     assertExecution "ogma" args success errorMsg
   where
-    args     = ["standalone", "--input-file", file]
+    args     = ["standalone", "--input-file", file, "--input-format", "fcs"]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
 -- | Test standalone backend for FDB format and Lustre.
