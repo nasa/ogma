@@ -39,5 +39,5 @@ toTail _ xs     = xs
 -- | Remove a suffix from a string, if present.
 stripSuffix :: String -> String -> String
 stripSuffix suffix string
-  | isSuffixOf suffix string = take (length string - length suffix) string
-  | otherwise                = string
+  | suffix `isSuffixOf` string = take (length string - length suffix) string
+  | otherwise                  = string
