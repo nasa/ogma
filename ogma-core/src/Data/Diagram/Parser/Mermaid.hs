@@ -129,7 +129,7 @@ pStateTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
 
   _ <- newline
 
-  pure $ (from, exprPairShow ep edge, to)
+  pure (from, exprPairShow ep edge, to)
 
 -- | Parser for Mermaid diagrams of type sequenceDiagram.
 pSequenceDiagram :: ExprPair -> MermaidParser Diagram
