@@ -104,19 +104,19 @@ data FieldSourceInternal
 parseJSONFormat :: JSONFormat -> Either String JSONFormatInternal
 parseJSONFormat jsonFormat = do
   jfi2 <- showErrorsM $
-            fmap (parseJSONPath . pack) $ specInternalVars jsonFormat
+            parseJSONPath . pack <$> specInternalVars jsonFormat
   jfi3 <- showErrors $
             parseJSONPath $ pack $ specInternalVarId jsonFormat
   jfi4 <- showErrors $
             parseJSONPath $ pack $ specInternalVarExpr jsonFormat
   jfi5 <- showErrorsM $
-            fmap (parseJSONPath . pack) $ specInternalVarType jsonFormat
+            parseJSONPath . pack <$> specInternalVarType jsonFormat
   jfi6 <- showErrorsM $
-            fmap (parseJSONPath . pack) $ specExternalVars jsonFormat
+            parseJSONPath . pack <$> specExternalVars jsonFormat
   jfi7 <- showErrors $
             parseJSONPath $ pack $ specExternalVarId jsonFormat
   jfi8 <- showErrorsM $
-            fmap (parseJSONPath . pack) $ specExternalVarType jsonFormat
+            parseJSONPath . pack <$> specExternalVarType jsonFormat
   jfi9 <- showErrors $
             parseJSONPath $ pack $ specRequirements jsonFormat
 
@@ -128,13 +128,13 @@ parseJSONFormat jsonFormat = do
     JSONPath p -> showErrors $ fmap FSIJSONPath $ parseJSONPath $ pack p
 
   jfi11 <- showErrorsM $
-             fmap (parseJSONPath . pack) $ specRequirementDesc jsonFormat
+             parseJSONPath . pack <$> specRequirementDesc jsonFormat
   jfi12 <- showErrors $
              parseJSONPath $ pack $ specRequirementExpr jsonFormat
   jfi13 <- showErrorsM $
-             fmap (parseJSONPath . pack) $ specRequirementResultType jsonFormat
+             parseJSONPath . pack <$> specRequirementResultType jsonFormat
   jfi14 <- showErrorsM $
-             fmap (parseJSONPath . pack) $ specRequirementResultExpr jsonFormat
+             parseJSONPath . pack <$> specRequirementResultExpr jsonFormat
   return $ JSONFormatInternal
              { jfiInternalVars          = jfi2
              , jfiInternalVarId         = jfi3
