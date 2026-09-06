@@ -113,7 +113,7 @@ command' options (ExprPair exprT) = do
 
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec) . readInputExpr')
                cExpr
 
     specF <- if null fpA
