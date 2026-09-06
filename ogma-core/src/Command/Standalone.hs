@@ -106,7 +106,7 @@ command' options (ExprPair exprT) = do
     -- definitions.
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec) . readInputExpr')
                triggerExprM
 
     specF <- if null fpA
