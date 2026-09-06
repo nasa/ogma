@@ -247,7 +247,7 @@ variableMap varDB varName = do
 
       active = inputActive inputDef
 
-  let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
+  let typeVar' = maybe (topicType topicDef) typeToType typeDef
 
   -- Pick name for the function to process a message ID.
   let mn = pascalCase $ stripSuffix "_MID" mid
