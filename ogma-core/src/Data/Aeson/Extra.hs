@@ -28,7 +28,7 @@ import Data.Aeson.KeyMap (union)
 --
 -- Fails if the values are not objects or null.
 mergeObjects :: Value -> Value -> Value
-mergeObjects (Object m1) (Object m2) = Object (union m1 m2)
+mergeObjects (Object m1) (Object m2) = Object (m1 `union` m2)
 mergeObjects obj         Null        = obj
 mergeObjects Null        obj         = obj
 mergeObjects _           _           = error "The values passed are not objects"
