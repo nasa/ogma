@@ -157,7 +157,7 @@ parseRequirementsListFile :: Maybe FilePath
 parseRequirementsListFile Nothing   = return Nothing
 parseRequirementsListFile (Just fp) =
   ExceptT $ makeLeftE (cannotOpenHandlersFile fp) <$>
-    (E.try $ Just . lines <$> readFile fp)
+    E.try (Just . lines <$> readFile fp)
 
 -- | Read a list of variable DBs.
 openVarDBFiles :: VariableDB
