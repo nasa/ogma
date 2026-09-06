@@ -71,7 +71,7 @@ exprPair :: String -> ExprPair
 exprPair "lustre" = ExprPair $
   ExprPairT
     (Lustre.pBoolSpec . Lustre.myLexer)
-    (\_ -> id)
+    (const id)
     Lustre.boolSpec2Copilot
     Lustre.boolSpecNames
     (Lustre.BoolSpecSignal (Lustre.Ident "undefined"))
