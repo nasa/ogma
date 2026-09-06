@@ -88,7 +88,7 @@ parseCSVSpec parseExpr _defA csvFormat value = do
                     specRequirementDesc csvFormat
               , requirementExpr = e
               , requirementResultType =
-                  fmap (bsToString . (rowL !!)) $
+                  bsToString . (rowL !!) <$>
                     specRequirementResultType csvFormat
               , requirementResultExpr = rE
               }
