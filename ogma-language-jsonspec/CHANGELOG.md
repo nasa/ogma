@@ -1,8 +1,9 @@
 # Revision history for ogma-language-jsonspec
 
-## [1.X.Y] - 2026-08-20
+## [1.X.Y] - 2026-09-05
 
 * Bump upper version constraint on `megaparsec` (#545).
+* Use infix variant of `fmap` (#583).
 
 ## [1.15.0] - 2026-07-21
 
