@@ -183,8 +183,7 @@ commandLogic :: VariableDB
              -> [Trigger]
              -> Maybe Command.Standalone.AppData
              -> AppData
-commandLogic varDB varNames handlers copilotM =
-    AppData vars ids infos datas handlers copilotM
+commandLogic varDB varNames = AppData vars ids infos datas
   where
 
     -- This is a Data.List.unzip4
