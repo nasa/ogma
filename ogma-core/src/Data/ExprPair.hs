@@ -78,7 +78,7 @@ exprPair "lustre" = ExprPair $
 exprPair "literal" = ExprPair $
   ExprPairT
     Right
-    (\_ -> id)
+    (const id)
     id
     (const [])
     "undefined"
