@@ -121,7 +121,7 @@ command' options (ExprPair exprT) = do
     let spec = specT <|> specF
 
     case spec of
-      Nothing    -> liftEither $ Left $ commandMissingSpec
+      Nothing    -> liftEither $ Left commandMissingSpec
       Just spec' ->
         commandLogic triggerExprM fpA name typeMaps exprT spec' ComputeState
 
