@@ -70,7 +70,7 @@ parseCSVSpec parseExpr _defA csvFormat value = do
                   rowL !! specRequirementExpr csvFormat
         exprR <- maybe (return $ Right Nothing)
                        (\ix -> fmap Just <$>
-                                 (parseExpr $ bsToString $ rowL !! ix))
+                                 parseExpr (bsToString $ rowL !! ix))
                        (specRequirementResultExpr csvFormat)
         case (expr, exprR) of
           (Left e, _)
