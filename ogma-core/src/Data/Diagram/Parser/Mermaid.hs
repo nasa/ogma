@@ -79,6 +79,7 @@ pGraphDiagram exprP = do
 
   pure $ Diagram transitions
 
+{-# ANN pGraphTransition ("HLint: ignore Redundant bracket" :: String) #-}
 -- | Parser for an edge in a state diagram.
 --
 -- This parser depends on an auxiliary parser for the expressions associated to
