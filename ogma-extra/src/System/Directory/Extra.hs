@@ -45,6 +45,7 @@ import           Text.Parsec.Error         ( Message (..), errorMessages,
                                              errorPos )
 import           Text.Parsec.Pos           ( sourceColumn, sourceLine )
 
+{- HLINT ignore "Redundant <$>" -}
 -- | Copy a template directory into a target location, expanding variables
 -- provided in a map in a JSON value, both in the file contents and in the
 -- filepaths themselves.

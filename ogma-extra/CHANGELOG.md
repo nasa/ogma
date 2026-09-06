@@ -1,10 +1,11 @@
 # Revision history for ogma-extra
 
-## [1.X.Y] - 2026-08-27
+## [1.X.Y] - 2026-09-05
 
 * Remove unnecessary line breaks (#520).
 * Bump upper version constraint on `QuickCheck` (#545).
 * Handle template expansion errors using specialized exception type (#390).
+* Address HLint suggestions (#579).
 
 ## [1.15.0] - 2026-07-21
 
