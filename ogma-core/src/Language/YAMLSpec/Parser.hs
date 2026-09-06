@@ -29,6 +29,7 @@ import           Data.Bifunctor         (first)
 import qualified Data.ByteString        as BS
 import           Data.Char              (isSpace)
 import           Data.List              (intercalate)
+import           Data.Maybe             (maybeToList)
 import           Data.Text              (unpack)
 import qualified Data.Vector            as V
 import qualified Data.Yaml              as Y
@@ -249,7 +250,7 @@ objectFieldValueList _ _ = []
 --
 -- If the values are an array, it returns the values in the array directly.
 objectFieldValues :: String -> Value -> [Value]
-objectFieldValues key (Object o) = maybe [] (:[]) $ M.lookup (fromString key) o
+objectFieldValues key (Object o) = maybeToList $ M.lookup (fromString key) o
 objectFieldValues _   _          = []
 
 -- ** Either-related auxiliary functions
