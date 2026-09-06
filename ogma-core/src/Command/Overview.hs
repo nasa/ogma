@@ -202,7 +202,7 @@ data CommandSummaryDiagram = CommandSummaryDiagram
 instance ToJSON CommandSummaryDiagram
 
 -- | Options used to customize the interpretation of input specifications.
-data CommandOptions = CommandOptions
+newtype CommandOptions = CommandOptions
   { commandInputFiles :: [ OverviewFile ]
   }
 
