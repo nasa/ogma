@@ -235,9 +235,10 @@ variableMap varDB varName = do
                 (inputType inputDef)
                 (Just . typeToType)
                 (findType varDB varName "ros/variable" "C")
-  let typeMsg' = fromMaybe
+  let typeMsg' = maybe
                    (topicType topicDef)
-                   (typeFromType <$> findType varDB varName "ros/message" "C")
+                   typeFromType
+                   (findType varDB varName "ros/message" "C")
 
       fieldMsg = typeFromField =<< findType varDB varName "ros/message" "C"
 
