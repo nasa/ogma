@@ -144,6 +144,7 @@ pSequenceDiagram exprPair = do
 
   pure $ Diagram transitions
 
+{-# ANN pSequenceTransition ("HLint: ignore Redundant bracket" :: String) #-}
 -- | Parser for a connection, message or transition in a sequence diagram.
 --
 -- This parser depends on an auxiliary parser for the expressions associated to
