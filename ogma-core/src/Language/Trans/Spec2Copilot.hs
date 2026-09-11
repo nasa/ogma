@@ -140,30 +140,9 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                 (Just ty, Just ex) -> "[ arg (" ++ showExpr ex ++ " ) ]"
                 _                  -> "[]"
 
-    -- Map from a variable name to its desired identifier in the code
-    -- generated.
-    internalVariableMap =
-      map (\x -> (x, sanitizeLCIdentifier x)) internalVariableNames
-
-    externalVariableMap =
-      map (\x -> (x, sanitizeLCIdentifier x)) externalVariableNames
-
-    requirementNameMap =
-      map (\x -> (x, "prop" ++ sanitizeUCIdentifier x)) requirementNames
-
-    nameSubstitutions = internalVariableMap
-                     ++ externalVariableMap
-                     ++ requirementNameMap
-
-    -- Variable/requirement names used in the input spec.
-    internalVariableNames = map internalVariableName
-                          $ internalVariables spec
-
-    externalVariableNames = map externalVariableName
-                          $ externalVariables spec
-
-    requirementNames = map requirementName
-                     $ requirements spec
+    nameSubstitutions = internalVariableMap spec
+                     ++ externalVariableMap spec
+                     ++ requirementNameMap spec
 
 -- | Check that a specification does not contain any name clashes between
 -- variables and/or requirements.
@@ -195,30 +174,9 @@ specAnalyze spec
                                 `union` externalVariableNames')
 
     -- Names used.
-    internalVariableNames' = map snd internalVariableMap
-    externalVariableNames' = map snd externalVariableMap
-    requirementNames'      = map snd requirementNameMap
-
-    -- Map from a variable name to its desired identifier in the code
-    -- generated.
-    internalVariableMap =
-      map (\x -> (x, sanitizeLCIdentifier x)) internalVariableNames
-
-    externalVariableMap =
-      map (\x -> (x, sanitizeLCIdentifier x)) externalVariableNames
-
-    requirementNameMap =
-      map (\x -> (x, "prop" ++ sanitizeUCIdentifier x)) requirementNames
-
-    -- Variable/requirement names used in the input spec.
-    internalVariableNames = map internalVariableName
-                          $ internalVariables spec
-
-    externalVariableNames = map externalVariableName
-                          $ externalVariables spec
-
-    requirementNames = map requirementName
-                     $ requirements spec
+    internalVariableNames' = map snd (internalVariableMap spec)
+    externalVariableNames' = map snd (externalVariableMap spec)
+    requirementNames'      = map snd (requirementNameMap spec)
 
 -- * Auxiliary
 
@@ -234,3 +192,33 @@ safeMap ls k = fromMaybe k $ lookup k ls
 -- an end of line character at the end of the last string.
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
+
+-- | Map from an internal variable name to its desired identifier in the code
+-- generated.
+internalVariableMap :: Spec a -> [(String, String)]
+internalVariableMap =
+  map (\x -> (x, sanitizeLCIdentifier x)) . internalVariableNames
+
+-- | Map from an external variable name to its desired identifier in the code
+-- generated.
+externalVariableMap :: Spec a -> [(String, String)]
+externalVariableMap =
+  map (\x -> (x, sanitizeLCIdentifier x)) . externalVariableNames
+
+-- | Map from a requirement name to its desired identifier in the code
+-- generated.
+requirementNameMap :: Spec a -> [(String, String)]
+requirementNameMap =
+  map (\x -> (x, "prop" ++ sanitizeUCIdentifier x)) . requirementNames
+
+-- | Names of all internal variables in a 'Spec'.
+internalVariableNames :: Spec a -> [String]
+internalVariableNames = map internalVariableName . internalVariables
+
+-- | Names of all external variables in a 'Spec'.
+externalVariableNames :: Spec a -> [String]
+externalVariableNames = map externalVariableName . externalVariables
+
+-- | Names of all requirements in a 'Spec'.
+requirementNames :: Spec a -> [String]
+requirementNames = map requirementName . requirements
