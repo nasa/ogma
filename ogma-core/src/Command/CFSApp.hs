@@ -131,8 +131,7 @@ command' options (ExprPair exprT) = do
 
     mode <- parseDiagramMode (commandDiagramMode options)
 
-    copilotM <- sequenceA $
-                  (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
+    copilotM <- traverse (\spec' -> processSpec spec' cExpr fpA mode) spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
