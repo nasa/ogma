@@ -127,7 +127,7 @@ command' options (ExprPair exprT) = do
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA) <$> spec
+    copilotM <- traverse (\spec' -> processSpec spec' cExpr fpA) spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
