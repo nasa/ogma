@@ -110,7 +110,8 @@ pStateDiagram exprPair = do
 
   pure $ Diagram transitions
 
-{-# ANN pStateTransition ("HLint: ignore Redundant bracket" :: String) #-}
+{-# ANN pStateTransition ("HLint: ignore Redundant bracket" :: String)  #-}
+{-# ANN pStateTransition ("HLint: ignore Reduce duplication" :: String) #-}
 -- | Parser for transition label in stateDiagram-v2 mermaid diagram.
 pStateTransition :: ExprPair -> MermaidParser (Int, String, Int)
 pStateTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
