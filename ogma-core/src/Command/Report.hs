@@ -160,7 +160,7 @@ command' options (ExprPair exprT) file = do
                            }
 
         pure $ CommandSummary
-                 { commandRequirementsAny = length reqListDetails > 0
+                 { commandRequirementsAny = not (null reqListDetails)
                  , commandRequirementList = [fileReqs]
                  , commandDiagramsAny     = False
                  , commandDiagramsList    = []

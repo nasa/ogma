@@ -79,6 +79,7 @@ pGraphDiagram exprP = do
 
   pure $ Diagram transitions
 
+{-# ANN pGraphTransition ("HLint: ignore Redundant bracket" :: String) #-}
 -- | Parser for an edge in a state diagram.
 --
 -- This parser depends on an auxiliary parser for the expressions associated to
@@ -109,6 +110,8 @@ pStateDiagram exprPair = do
 
   pure $ Diagram transitions
 
+{-# ANN pStateTransition ("HLint: ignore Redundant bracket" :: String)  #-}
+{-# ANN pStateTransition ("HLint: ignore Reduce duplication" :: String) #-}
 -- | Parser for transition label in stateDiagram-v2 mermaid diagram.
 pStateTransition :: ExprPair -> MermaidParser (Int, String, Int)
 pStateTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
@@ -129,7 +132,7 @@ pStateTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
 
   _ <- newline
 
-  pure $ (from, exprPairShow ep edge, to)
+  pure (from, exprPairShow ep edge, to)
 
 -- | Parser for Mermaid diagrams of type sequenceDiagram.
 pSequenceDiagram :: ExprPair -> MermaidParser Diagram
@@ -143,6 +146,7 @@ pSequenceDiagram exprPair = do
 
   pure $ Diagram transitions
 
+{-# ANN pSequenceTransition ("HLint: ignore Redundant bracket" :: String) #-}
 -- | Parser for a connection, message or transition in a sequence diagram.
 --
 -- This parser depends on an auxiliary parser for the expressions associated to

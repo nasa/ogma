@@ -113,7 +113,7 @@ command' options (ExprPair exprT) = do
 
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec) . readInputExpr')
                cExpr
 
     specF <- if null fpA
@@ -131,8 +131,7 @@ command' options (ExprPair exprT) = do
 
     mode <- parseDiagramMode (commandDiagramMode options)
 
-    copilotM <- sequenceA $
-                  (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
+    copilotM <- traverse (\spec' -> processSpec spec' cExpr fpA mode) spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
@@ -159,8 +158,8 @@ command' options (ExprPair exprT) = do
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-    processSpec spec' expr' fp' mode =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec' mode
+    processSpec spec' expr' fp' =
+      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
@@ -183,8 +182,7 @@ commandLogic :: VariableDB
              -> [Trigger]
              -> Maybe Command.Standalone.AppData
              -> AppData
-commandLogic varDB varNames handlers copilotM =
-    AppData vars ids infos datas handlers copilotM
+commandLogic varDB varNames = AppData vars ids infos datas
   where
 
     -- This is a Data.List.unzip4
@@ -248,7 +246,7 @@ variableMap varDB varName = do
 
       active = inputActive inputDef
 
-  let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
+  let typeVar' = maybe (topicType topicDef) typeToType typeDef
 
   -- Pick name for the function to process a message ID.
   let mn = pascalCase $ stripSuffix "_MID" mid

@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2024 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -202,7 +201,7 @@ data CommandSummaryDiagram = CommandSummaryDiagram
 instance ToJSON CommandSummaryDiagram
 
 -- | Options used to customize the interpretation of input specifications.
-data CommandOptions = CommandOptions
+newtype CommandOptions = CommandOptions
   { commandInputFiles :: [ OverviewFile ]
   }
 

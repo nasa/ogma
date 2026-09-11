@@ -157,7 +157,7 @@ parseRequirementsListFile :: Maybe FilePath
 parseRequirementsListFile Nothing   = return Nothing
 parseRequirementsListFile (Just fp) =
   ExceptT $ makeLeftE (cannotOpenHandlersFile fp) <$>
-    (E.try $ Just . lines <$> readFile fp)
+    E.try (Just . lines <$> readFile fp)
 
 -- | Read a list of variable DBs.
 openVarDBFiles :: VariableDB
@@ -226,9 +226,8 @@ checkArguments _       _         _         = Right ()
 -- | Extract the variables from a specification, and sanitize them.
 specExtractExternalVariables :: Maybe (Spec a) -> [String]
 specExtractExternalVariables Nothing   = []
-specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
-                                       $ map externalVariableName
-                                       $ externalVariables cs
+specExtractExternalVariables (Just cs) =
+ map (sanitizeLCIdentifier . externalVariableName) $ externalVariables cs
 
 -- | Extract the requirements from a specification, and sanitize them to match
 -- the names of the handlers used by Copilot.

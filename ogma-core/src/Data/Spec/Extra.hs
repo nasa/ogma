@@ -33,7 +33,7 @@ addMissingIdentifiers :: (a -> [String]) -> Spec a -> Spec a
 addMissingIdentifiers f s = s { externalVariables = vars' }
   where
     vars'   = externalVariables s ++ newVars
-    newVars = map (\n -> ExternalVariableDef n "") newVarNames
+    newVars = map (`ExternalVariableDef` "") newVarNames
 
     -- Names that are not defined anywhere
     newVarNames = identifiers \\ existingNames

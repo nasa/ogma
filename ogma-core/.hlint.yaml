@@ -3,3 +3,5 @@
 
 # Ignore in automatically generated files.
 - ignore: {within: [Paths_ogma_core]}
+
+- ignore: {name: Use tuple-section}

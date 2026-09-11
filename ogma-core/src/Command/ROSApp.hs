@@ -111,7 +111,7 @@ command' options (ExprPair exprT) = do
 
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec) . readInputExpr')
                cExpr
 
     specF <- if null fpA
@@ -127,7 +127,7 @@ command' options (ExprPair exprT) = do
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA) <$> spec
+    copilotM <- traverse (\spec' -> processSpec spec' cExpr fpA) spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
@@ -235,9 +235,10 @@ variableMap varDB varName = do
                 (inputType inputDef)
                 (Just . typeToType)
                 (findType varDB varName "ros/variable" "C")
-  let typeMsg' = fromMaybe
+  let typeMsg' = maybe
                    (topicType topicDef)
-                   (typeFromType <$> findType varDB varName "ros/message" "C")
+                   typeFromType
+                   (findType varDB varName "ros/message" "C")
 
       fieldMsg = typeFromField =<< findType varDB varName "ros/message" "C"
 
