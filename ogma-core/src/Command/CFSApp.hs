@@ -159,8 +159,8 @@ command' options (ExprPair exprT) = do
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-    processSpec spec' expr' fp' mode =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec' mode
+    processSpec spec' expr' fp' =
+      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
