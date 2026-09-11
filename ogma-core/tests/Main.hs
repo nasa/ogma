@@ -1,3 +1,4 @@
+{- HLint ignore "Reduce duplication" -}
 -- | Test ogma-core.
 module Main where
 
