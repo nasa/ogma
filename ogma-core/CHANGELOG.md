@@ -2,6 +2,8 @@
 
 ## [1.X.Y] - 2026-09-10
 
+* Fix `mergeSpecs` dropping first spec's external variables (#551).
+* Fix spelling of "cannot" in `Command.Standalone` (#551).
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
 * Remove unnecessary line breaks (#520).

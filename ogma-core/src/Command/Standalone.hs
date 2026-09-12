@@ -253,7 +253,7 @@ commandIncorrectSpecF e =
     ErrorTriplet ecIncorrectSpec msg LocationNothing
   where
     msg =
-      "The input specification(s) canbot be formalized: " ++ e
+      "The input specification(s) cannot be formalized: " ++ e
 
 -- | Error message associated to not being able to formalize the input spec.
 commandIncorrectSpecE :: String -> String -> ErrorTriplet
