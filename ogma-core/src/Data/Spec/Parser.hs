@@ -29,19 +29,16 @@ import qualified Control.Exception    as E
 import           Control.Monad.Except (ExceptT (..))
 import           Data.Aeson           (eitherDecode)
 import qualified Data.ByteString.Lazy as L
-import           Data.List            (isInfixOf, isPrefixOf, nub, (\\))
+import           Data.List            (isInfixOf, isPrefixOf)
 import           System.Directory     (doesFileExist)
 import           System.FilePath      ((</>))
 import           System.Process       (readProcess)
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B (safeReadFile)
-import Data.String.Extra     (sanitizeLCIdentifier, sanitizeUCIdentifier)
 
 -- External imports: ogma
-import Data.OgmaSpec            (ExternalVariableDef (..),
-                                 InternalVariableDef (..), Requirement (..),
-                                 Spec (..))
+import Data.OgmaSpec            (Requirement (..), Spec (..))
 import Language.CSVSpec.Parser  (parseCSVSpec)
 import Language.JSONSpec.Parser (parseJSONSpec)
 import Language.XLSXSpec.Parser (parseXLSXSpec)
@@ -50,7 +47,6 @@ import Language.YAMLSpec.Parser (parseYAMLSpec)
 
 -- Internal imports: auxiliary
 import Command.Errors    (ErrorTriplet(..), ErrorCode)
-import Data.Diagram      (Diagram)
 import Data.Either.Extra (mapLeft)
 import Data.ExprPair     (ExprPairT(..))
 import Data.Location     (Location (..))
