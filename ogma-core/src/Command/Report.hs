@@ -29,8 +29,7 @@ module Command.Report
 -- External imports
 import qualified Control.Exception      as E
 import           Control.Monad          (foldM)
-import           Control.Monad.Except   (ExceptT (..), liftEither, runExceptT,
-                                         withExceptT)
+import           Control.Monad.Except   (ExceptT (..), liftEither, withExceptT)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (ToJSON (..))
 import           GHC.Generics           (Generic)
