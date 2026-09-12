@@ -61,6 +61,15 @@ tests =
   , testCase "structs-parse-fail-1"
       (testCStructs2Copilot "tests/reduced_geofence_msgs_bad.h" False)
     -- Should fail because a keyword is incorrect
+
+  , testCase "standalone-cmd-merge-specs-two-files"
+      (testStandaloneMergeSpecs
+         "tests/merge-spec-1.json"
+         "tests/merge-spec-2.json"
+         True
+      )
+    -- Should pass: merging two specs with distinct external variables
+    -- must preserve variables from both. Refs #551.
   ]
 
 -- | Test C struct parser and conversion to Copilot structs
@@ -120,10 +129,10 @@ testStandaloneFCS file success = do
     -- detected.
     let testPass = success == isSuccess result
 
-    assertBool errorMsg testPass
+    assertBool errorMsgFCS testPass
   where
-    errorMsg = "The result of the transformation of input file "
-               ++ file ++ " to Copilot was unexpected."
+    errorMsgFCS = "The result of the transformation of input file "
+                  ++ file ++ " to Copilot was unexpected."
 
 -- | Test standalone backend with FDB format.
 --
@@ -158,7 +167,38 @@ testStandaloneFDB file success = do
     -- detected.
     let testPass = success == isSuccess result
 
-    assertBool errorMsg testPass
+    assertBool errorMsgFDB testPass
   where
-    errorMsg = "The result of the transformation of input file "
-               ++ file ++ " to Copilot was unexpected."
+    errorMsgFDB = "The result of the transformation of input file "
+                  ++ file ++ " to Copilot was unexpected."
+
+-- | Test standalone backend with two input files to verify mergeSpecs.
+--
+-- Regression test for issue #551 where a copy-paste bug in mergeSpecs caused
+-- the first spec's external variables to be dropped.
+testStandaloneMergeSpecs :: FilePath
+                         -> FilePath
+                         -> Bool
+                         -> IO ()
+testStandaloneMergeSpecs file1 file2 success = do
+    targetDir <- getTemporaryDirectory
+    let opts = CommandOptions
+                 { commandConditionExpr = Nothing
+                 , commandInputFiles  = [ file1, file2 ]
+                 , commandFormat      = "fcs"
+                 , commandPropFormat  = "smv"
+                 , commandTypeMapping = [("real", "Float")]
+                 , commandFilename    = "monitor"
+                 , commandTargetDir   = targetDir
+                 , commandTemplateDir = Nothing
+                 , commandPropVia     = Nothing
+                 , commandExtraVars   = Nothing
+                 }
+    result <- command opts
+
+    let testPass = success == isSuccess result
+
+    assertBool mergeErrorMsg testPass
+  where
+    mergeErrorMsg = "mergeSpecs: merging " ++ file1 ++ " and " ++ file2
+                    ++ " produced an unexpected result. Refs #551."
