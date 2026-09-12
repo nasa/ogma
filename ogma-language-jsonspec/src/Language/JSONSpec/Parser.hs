@@ -21,19 +21,13 @@ module Language.JSONSpec.Parser where
 
 -- External imports
 import           Control.Monad.Except  (ExceptT (..), runExceptT)
-import           Data.Aeson            (FromJSON (..), Value (..), decode, (.:))
-import           Data.Aeson.Key        (toString)
-import qualified Data.Aeson.KeyMap     as M
-import           Data.Aeson.Types      (prependFailure, typeMismatch)
+import           Data.Aeson            (Value (..))
 import           Data.Bifunctor        (first)
-import           Data.ByteString.Lazy  (fromStrict)
 import           Data.JSONPath.Execute (executeJSONPath)
 import           Data.JSONPath.Parser  (jsonPath)
 import           Data.JSONPath.Types   (JSONPathElement(..))
 import           Data.Text             (pack, unpack)
 import qualified Data.Text             as T
-import qualified Data.Text.Encoding    as T
-import qualified Data.Text.IO          as T
 import           System.FilePath       (takeBaseName, takeFileName)
 import           Text.Megaparsec       (eof, errorBundlePretty, parse)
 
