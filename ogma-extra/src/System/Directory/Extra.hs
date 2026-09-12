@@ -36,7 +36,7 @@ import           Distribution.Simple.Utils ( getDirectoryContentsRecursive )
 import           System.Directory          ( createDirectoryIfMissing,
                                              doesFileExist )
 import           System.FilePath           ( makeRelative, splitFileName,
-                                             takeDirectory, (</>) )
+                                             (</>) )
 import           Text.Microstache          ( MustacheException (..), Template,
                                              compileMustacheFile,
                                              compileMustacheText,
