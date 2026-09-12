@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-09-10
+## [1.X.Y] - 2026-09-12
 
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
@@ -19,6 +19,7 @@
 * Update `Dockerfile` in ROS 2 template for Space ROS `jazzy-2026.07.0` (#569).
 * Introduce default input format configuration files (#575).
 * Address HLint suggestions (#586).
+* Remove unused imports (#590).
 
 ## [1.15.0] - 2026-07-21
 

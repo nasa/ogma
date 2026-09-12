@@ -31,7 +31,7 @@ module Command.FPrimeApp
   where
 
 -- External imports
-import           Control.Applicative    ( liftA2, (<|>) )
+import           Control.Applicative    ( (<|>) )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT(..), liftEither )
 import           Data.Aeson             ( ToJSON, toJSON )
