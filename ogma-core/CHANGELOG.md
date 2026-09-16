@@ -20,6 +20,7 @@
 * Introduce default input format configuration files (#575).
 * Address HLint suggestions (#586).
 * Remove unused imports (#590).
+* Remove unused pragma (#600).
 
 ## [1.15.0] - 2026-07-21
 
