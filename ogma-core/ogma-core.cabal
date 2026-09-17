@@ -33,6 +33,9 @@ extra-source-files:  CHANGELOG.md
                      tests/commands-fcs-error-parsing-failed-3.json
                      tests/fcs_good.json
                      tests/fdb-example1.json
+                     tests/merge-spec-1.json
+                     tests/merge-spec-2.json
+                     tests/merge-spec-3.json
                      tests/reduced_geofence_msgs_bad.h
                      tests/reduced_geofence_msgs.h
 
