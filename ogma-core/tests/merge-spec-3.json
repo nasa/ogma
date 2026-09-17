@@ -1,0 +1,16 @@
+{
+  "Spec3": {
+    "Internal_variables": [],
+    "Other_variables": [
+      {"name":"temperature", "type":"int"}
+    ],
+    "Requirements": [
+      {
+        "name": "propC",
+        "CoCoSpecCode": "true",
+        "ptLTL": "(H (<b><i>temperature</i></b> > <b><i>0</i></b>))",
+        "fretish": "temperature shall always be positive"
+      }
+    ]
+  }
+}
