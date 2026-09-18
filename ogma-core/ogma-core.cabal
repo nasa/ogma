@@ -35,6 +35,8 @@ extra-source-files:  CHANGELOG.md
                      tests/fdb-example1.json
                      tests/reduced_geofence_msgs_bad.h
                      tests/reduced_geofence_msgs.h
+                     tests/merge-spec-1.json
+                     tests/merge-spec-2.json
 
 synopsis:            Ogma: Helper tool to interoperate between Copilot and other languages.
 
