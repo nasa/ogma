@@ -41,6 +41,7 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither,
                                           throwError )
 import           Data.Aeson             ( ToJSON (..), Value )
+import           Data.List              ( nub )
 import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
@@ -182,8 +183,16 @@ commandLogic :: VariableDB
              -> [Trigger]
              -> Maybe Command.Standalone.AppData
              -> AppData
-commandLogic varDB varNames = AppData vars ids infos datas
+commandLogic varDB varNames triggers =
+    AppData vars' ids' infos' datas' triggers'
+
   where
+
+    vars'     = nub vars
+    ids'      = nub ids
+    infos'    = nub infos
+    datas'    = nub datas
+    triggers' = nub triggers
 
     -- This is a Data.List.unzip4
     (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
@@ -273,7 +282,7 @@ data VarDecl = VarDecl
     { varDeclName :: String
     , varDeclType :: String
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON VarDecl
 
@@ -287,7 +296,7 @@ data MsgInfo = MsgInfo
     , msgInfoDesc  :: String
     , msgInfoExtra :: Value
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON MsgInfo
 
@@ -301,7 +310,7 @@ data MsgData = MsgData
     , msgDataVarType   :: String
     , msgDataActive    :: Bool
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON MsgData
 
@@ -311,7 +320,7 @@ data Trigger = Trigger
     , triggerType    :: Maybe String
     , triggerMsgType :: Maybe String
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON Trigger
 
