@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-09-12
+## [1.X.Y] - 2026-09-21
 
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
@@ -22,6 +22,7 @@
 * Remove unused imports (#590).
 * Remove unused pragma (#600).
 * De-duplicate cFS application data (#602).
+* Fix `Command.Common.mergeSpecs` to avoid dropping externs (#551).
 
 ## [1.15.0] - 2026-07-21
 
