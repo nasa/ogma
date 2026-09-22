@@ -152,7 +152,7 @@ library
 
   build-depends:
       base                    >= 4.11.0.0 && < 5
-    , aeson                   >= 2.0.0.0  && < 2.3
+    , aeson                   >= 2.0.0.0  && < 2.4
     , bytestring              >= 0.10.8.2 && < 0.13
     , containers              >= 0.5      && < 0.8
     , copilot-core            >= 4.7.1    && < 4.9
