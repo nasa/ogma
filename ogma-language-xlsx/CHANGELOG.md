@@ -1,7 +1,8 @@
 # Revision history for ogma-language-xlsx
 
-## [1.X.Y] - 2026-09-13
+## [1.16.0] - 2026-09-21
 
+* Version bump (1.16.0) (#606).
 * Bump upper version constraint on `xlsx` (#528).
 * Remove unused imports from `Language.XLSXSpec.Parser` (#596).
 
