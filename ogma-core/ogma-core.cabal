@@ -19,7 +19,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.15.0
+version:             1.16.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             Apache-2.0
@@ -170,16 +170,16 @@ library
     , vector                  >= 0.12.0.1 && < 0.14
     , yaml                    >= 0.11.7.0 && < 0.12
 
-    , ogma-extra              >= 1.15.0 && < 1.16
-    , ogma-language-c         >= 1.15.0 && < 1.16
-    , ogma-language-copilot   >= 1.15.0 && < 1.16
-    , ogma-language-csv       >= 1.15.0 && < 1.16
-    , ogma-language-jsonspec  >= 1.15.0 && < 1.16
-    , ogma-language-lustre    >= 1.15.0 && < 1.16
-    , ogma-language-smv       >= 1.15.0 && < 1.16
-    , ogma-language-xlsx      >= 1.15.0 && < 1.16
-    , ogma-language-xmlspec   >= 1.15.0 && < 1.16
-    , ogma-spec               >= 1.15.0 && < 1.16
+    , ogma-extra              >= 1.16.0 && < 1.17
+    , ogma-language-c         >= 1.16.0 && < 1.17
+    , ogma-language-copilot   >= 1.16.0 && < 1.17
+    , ogma-language-csv       >= 1.16.0 && < 1.17
+    , ogma-language-jsonspec  >= 1.16.0 && < 1.17
+    , ogma-language-lustre    >= 1.16.0 && < 1.17
+    , ogma-language-smv       >= 1.16.0 && < 1.17
+    , ogma-language-xlsx      >= 1.16.0 && < 1.17
+    , ogma-language-xmlspec   >= 1.16.0 && < 1.17
+    , ogma-spec               >= 1.16.0 && < 1.17
 
   hs-source-dirs:
     src
