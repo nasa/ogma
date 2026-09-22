@@ -1,5 +1,24 @@
 # Revision history for ogma-cli
 
+## [1.16.0] - 2026-09-21
+
+* Version bump (1.16.0) (#606).
+* Remove unnecessary line breaks (#520).
+* Update cFS examples to avoid MID collisions (#522).
+* Add missing periods to Haddock comments (#524).
+* Fix spelling of F Prime (#526).
+* Fix target directory name in project file in Turtlesim example (#530).
+* Add CI job to test ROS 2 backend using Turtlesim example (#534).
+* Disable secure mode for package repo in Cabal config in CI jobs (#537).
+* Address HLint suggestions (#540).
+* Attempt to recover from failure during Haskell tool setup in CI jobs (#558).
+* Make file paths in example project files relative to project path (#567).
+* Add missing argument to `docker run` in Turtlesim tutorial (#571).
+* Fix container name in call to `docker exec` in Turtlesim example (#573).
+* Update package index before installing dependencies in CI jobs (#577).
+* Update commands to use new input file format by default (#575).
+* Fix help message associated with `ros` command option (#604).
+
 ## [1.15.0] - 2026-07-21
 
 * Version bump (1.15.0) (#508).

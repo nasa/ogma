@@ -244,7 +244,12 @@ Note that we pass an additional file
 the following:
 
 ```json
-{ "impl_extra_header": "#include \"extra.h\"" }
+{ "impl_extra_header":  "#include \"extra.h\""
+, "CFS_CMD_MID":        "0x1895"
+, "CFS_REEVAL_CMD_MID": "0x1896"
+, "CFS_SEND_HK_MID":    "0x1897"
+, "CFS_HK_TLM_MID":     "0x0897"
+}
 ```
 
 That file indicates that an extra line in the header is needed to compile the
@@ -259,6 +264,11 @@ typedef struct sample_msg {
    int32_t                 payload;
 } sample_msg_t;
 ```
+
+The file `extra-vars.json` above also picks the message IDs (MIDs) used for
+commands and telemetry in the generated application. We customize these MIDs to
+avoid clashing with MIDs used by any applications included in the standard cFS
+bundle.
 
 The call to `ogma` above creates a `demo` directory that contains several files
 and directories, including:

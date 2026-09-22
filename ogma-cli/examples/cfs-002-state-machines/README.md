@@ -352,6 +352,10 @@ the following:
 
 ```json
 { "impl_extra_header": "#include \"extra.h\""
+, "CFS_CMD_MID":        "0x1895"
+, "CFS_REEVAL_CMD_MID": "0x1896"
+, "CFS_SEND_HK_MID":    "0x1897"
+, "CFS_HK_TLM_MID":     "0x0897"
 , "copilot_extra_defs": [ "input :: Stream Int32"
                         , "input = extern \"input\" Nothing"
                         , ""
@@ -380,6 +384,11 @@ typedef struct sample_msg {
    int32_t                 payload;
 } sample_msg_t;
 ```
+
+The file `extra-vars.json` above also picks the message IDs (MIDs) used for
+commands and telemetry in the generated application. We customize these MIDs to
+avoid clashing with MIDs used by any applications included in the standard cFS
+bundle.
 
 The invocation above also passes a file `vars` as argument, which simply lists
 inputs from the database that must be made accessible. This must be stated
@@ -418,13 +427,6 @@ Assuming a clean, new installation:
 $ git clone --recursive -b v7.0.1 git@github.com:nasa/cfs.git
 $ mv demo/copilot cfs/apps/copilot
 $ cp ogma-cli/examples/cfs-001-hello-ogma/extra.h cfs/apps/copilot/fsw/src/
-```
-
-We also modify the default MIDs used by the template, to avoid clashing with
-the `sample_app`:
-
-```sh
-$ sed -i -e 's/0x188/0x189/g' cfs/apps/copilot/fsw/platform_inc/copilot_cfs_msgids.h
 ```
 
 Because of how cFS applications work, we edit the file

@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -41,10 +40,10 @@ import GHC.Generics         (Generic)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
-import Command.Common                 (InputFile (..), cannotCopyTemplate,
+import Command.Common                 (InputFile (..), cannotCopyTemplateF,
                                        combineInputFiles, locateTemplateDir,
-                                       makeLeftE, parseInputFile,
-                                       parseTemplateVarsFile, processResult)
+                                       parseInputFile, parseTemplateVarsFile,
+                                       processResult)
 import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.Result                 (Result (..))
 import Data.Aeson.Extra               (mergeObjects)
@@ -78,7 +77,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where
@@ -106,7 +105,7 @@ command' options (ExprPair exprT) = do
     -- definitions.
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec) . readInputExpr')
                triggerExprM
 
     specF <- if null fpA
@@ -121,7 +120,7 @@ command' options (ExprPair exprT) = do
     let spec = specT <|> specF
 
     case spec of
-      Nothing    -> liftEither $ Left $ commandMissingSpec
+      Nothing    -> liftEither $ Left commandMissingSpec
       Just spec' ->
         commandLogic triggerExprM fpA name typeMaps exprT spec' ComputeState
 

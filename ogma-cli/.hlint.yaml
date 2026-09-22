@@ -1,2 +1,12 @@
 - functions:
   - {name: unsafePerformIO, within: []} # unsafePerformIO cannot appear in any modules
+- ignore:
+    name: Use ++
+    within:
+      - CLI.CommandCFSApp
+      - CLI.CommandFPrimeApp
+      - CLI.CommandOverview
+      - CLI.CommandROSApp
+      - CLI.CommandReport
+      - CLI.CommandSearch
+      - CLI.CommandStandalone

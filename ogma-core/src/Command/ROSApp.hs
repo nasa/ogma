@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -36,7 +35,7 @@ module Command.ROSApp
   where
 
 -- External imports
-import           Control.Applicative  (liftA2, (<|>))
+import           Control.Applicative  ((<|>))
 import qualified Control.Exception    as E
 import           Control.Monad.Except (ExceptT (..), liftEither)
 import           Data.Aeson           (ToJSON (..))
@@ -49,12 +48,13 @@ import System.Directory.Extra (copyTemplate)
 import qualified Command.Standalone
 
 -- Internal imports: auxiliary
-import Command.Result (Result (..))
+import Command.Result    ( Result (..) )
+import Data.Either.Extra ( mapLeft )
 
 -- Internal imports
-import Command.Common                 (InputFile (..), cannotCopyTemplate,
+import Command.Common                 (InputFile (..), cannotCopyTemplateF,
                                        checkArguments, combineInputFiles,
-                                       locateTemplateDir, makeLeftE,
+                                       locateTemplateDir,
                                        openVarDBFilesWithDefault,
                                        parseInputFile,
                                        parseRequirementsListFile,
@@ -87,7 +87,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where
@@ -97,6 +97,8 @@ command options = processResult $ do
     functions     = exprPair (commandPropFormat options)
     templateVarsF = commandExtraVars options
 
+-- | Generate application data describing core elements of a new ROS package
+-- that implements the input requirements or diagrams.
 command' :: CommandOptions
          -> ExprPair
          -> ExceptT ErrorTriplet IO AppData
@@ -108,7 +110,7 @@ command' options (ExprPair exprT) = do
 
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec) . readInputExpr')
                cExpr
 
     specF <- if null fpA
@@ -124,7 +126,7 @@ command' options (ExprPair exprT) = do
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA) <$> spec
+    copilotM <- traverse (\spec' -> processSpec spec' cExpr fpA) spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
@@ -232,9 +234,10 @@ variableMap varDB varName = do
                 (inputType inputDef)
                 (Just . typeToType)
                 (findType varDB varName "ros/variable" "C")
-  let typeMsg' = fromMaybe
+  let typeMsg' = maybe
                    (topicType topicDef)
-                   (typeFromType <$> findType varDB varName "ros/message" "C")
+                   typeFromType
+                   (findType varDB varName "ros/message" "C")
 
       fieldMsg = typeFromField =<< findType varDB varName "ros/message" "C"
 

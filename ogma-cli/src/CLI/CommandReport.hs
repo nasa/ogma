@@ -180,7 +180,7 @@ reportFileOptsParser = ReportFile
         <> metavar "FORMAT_NAME"
         <> help strReportFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"

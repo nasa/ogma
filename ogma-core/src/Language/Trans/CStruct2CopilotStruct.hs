@@ -35,7 +35,7 @@ import Language.Copilot.CStruct ( CField (CArray, CPlain), CStruct(..) )
 -- Internal imports
 import qualified Language.C.AbsC as C
 
--- | Convert a top-level struct declaration into a CStruct
+-- | Convert a top-level struct declaration into a CStruct.
 mkCStruct :: C.ExternalDeclaration -> Either String CStruct
 mkCStruct (C.MkExternalDeclarationFunctionDefinition _) = Left "C files must contain struct definitions only."
 mkCStruct (C.MkExternalDeclarationDeclaration (C.MkDeclaration specifiers initDecl)) =
@@ -48,7 +48,7 @@ mkCStruct (C.MkExternalDeclarationDeclaration (C.MkDeclaration specifiers initDe
       in CStruct <$> name <*> fields
     _ -> Left "C files must contain struct definitions only."
 
--- -- | Convert a declaration within a struct into a field declaration.
+-- | Convert a declaration within a struct into a field declaration.
 buildCField :: C.StructDeclaration -> Either String CField
 buildCField (C.MkStructDeclaration field name)
     | fieldLength > 0 = CArray <$> fieldType <*> fieldName <*> pure fieldLength
@@ -77,7 +77,7 @@ showTypeSpecifier C.MkTypeSpecifierInt32  = "int32_t"
 showTypeSpecifier C.MkTypeSpecifierInt64  = "int64_t"
 showTypeSpecifier C.MkTypeSpecifierInt    = "int"
 
--- -- | Extract the name of a field from a struct declarator.
+-- | Extract the name of a field from a struct declarator.
 extractFieldName :: Read n => C.StructDeclarator -> Either String n
 extractFieldName (C.MkStructDeclaratorDeclarator (C.MkDeclarator C.MkPointerOptNothing (C.MkDirectDeclaratorIdentifier (C.Identifier d)))) = Right $ read $ show d
 extractFieldName (C.MkStructDeclaratorDeclarator
@@ -92,8 +92,8 @@ extractFieldName (C.MkStructDeclaratorDeclarator
 extractFieldName _ = Left $ "only struct declarations that are IDs without a"
                         ++  " pointer, or plain arrays without a pointer, are"
                         ++  " supported."
---
--- -- | Extract the length of an array field from a struct declarator.
+
+-- | Extract the length of an array field from a struct declarator.
 extractFieldLength :: C.StructDeclarator -> Integer
 extractFieldLength (C.MkStructDeclaratorDeclarator
                      (C.MkDeclarator
@@ -139,7 +139,6 @@ extractFieldLength (C.MkStructDeclaratorDeclarator
                    ) = read i
 extractFieldLength _ = 0
 
---
 -- | Convert a 'String' to camel case, also eliminating the @_t@ at the end if
 -- present.
 camelCaseTypeName :: String -> String

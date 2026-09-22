@@ -1,11 +1,11 @@
-# This dockerfile compiles a monitoring application inside FPrime's Reference
+# This dockerfile compiles a monitoring application inside F Prime's Reference
 # Application.
 FROM ubuntu:focal
 
 # Avoid questions during package installation.
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install FPrime dependencies and clone fprime from the repo.
+# Install F Prime dependencies and clone fprime from the repo.
 RUN apt-get update
 RUN apt-get install -y git cmake gcc python3 pip default-jre
 

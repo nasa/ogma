@@ -1,4 +1,4 @@
-name: ros-ghc-8.6-cabal-2.4
+name: ros-ghc-9.10-cabal-3.12-turtlesim
 
 # Trigger the workflow on push or pull request
 on:
@@ -54,9 +54,10 @@ jobs:
 
     - name: Generate ROS app
       run: |
-        ogma ros --target-dir demo --input-file ogma-cli/examples/ros-copilot/document.json --input-format ogma-cli/examples/ros-copilot/json-format.cfg --prop-format literal --variable-db ogma-cli/examples/ros-copilot/vars-db.json
-        cd demo/copilot/src/
+        ogma ros --project ogma-cli/examples/ros2-turtlesim/project.ogma
+        cp ogma-cli/examples/ros2-turtlesim/manual-deps.repos turtlesim-demo/
+        cp ogma-cli/examples/ros2-turtlesim/manually-installed-pkgs.txt turtlesim-demo/
+        cd turtlesim-demo/copilot/src/
         runhaskell Copilot.hs
         cd ../../
-        find .
-        docker build .
+        docker build -t ogma-turtlesim-demo .

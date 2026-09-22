@@ -227,8 +227,7 @@ type XPathExpr = String
 resolveIndirectly :: String
                   -> (String, Maybe (String, String))
                   -> ExceptT String IO XPathExpr
-resolveIndirectly _ (query, Nothing) =
-  liftEither $ checkXPathExpr query
+resolveIndirectly _ (query, Nothing) = liftEither $ checkXPathExpr query
 
 resolveIndirectly xml (query, Just (key, val)) = do
   -- Check that the given query string parses correctly.
@@ -364,7 +363,7 @@ listToEither _   [x] = Right x
 listToEither msg []  = Left $ "Failed to find a value for " ++ msg
 listToEither msg _   = Left $ "Unexpectedly found multiple values for " ++ msg
 
--- | Replace a string by another string
+-- | Replace a string by another string.
 replace :: String -> String -> String -> String
 replace []           _k  _v    = []
 replace string@(h:t) key value

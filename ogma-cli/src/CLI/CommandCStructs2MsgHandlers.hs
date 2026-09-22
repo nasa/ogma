@@ -15,7 +15,7 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | CLI interface to the CStructs2Copilot subcommand
+-- | CLI interface to the CStructs2Copilot subcommand.
 module CLI.CommandCStructs2MsgHandlers
     (
       -- * Direct command access
@@ -67,6 +67,6 @@ commandOptsParser = CommandOpts
         <> help strMsgHandlersInputFileArgDesc
         )
 
--- | Argument C header file to handler generation command
+-- | Argument C header file to handler generation command.
 strMsgHandlersInputFileArgDesc :: String
 strMsgHandlersInputFileArgDesc = "C header file with struct definitions"

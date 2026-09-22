@@ -15,7 +15,7 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | CLI interface to the Standalone subcommand
+-- | CLI interface to the Standalone subcommand.
 module CLI.CommandStandalone
     (
       -- * Direct command access
@@ -149,8 +149,7 @@ typeMapping = map splitTypeMapping
 
 -- | Command description for CLI help.
 commandDesc :: String
-commandDesc =
-  "Generate a standalone Copilot file from an input specification"
+commandDesc = "Generate a standalone Copilot file from an input specification"
 
 -- | Subparser for the @standalone@ command, used to generate a Copilot
 -- specification from an input specification file.
@@ -197,7 +196,7 @@ commandOptsParser = CommandOpts
         <> metavar "FORMAT_NAME"
         <> help strStandaloneFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"
@@ -276,8 +275,7 @@ strStandaloneTargetDesc =
 
 -- | External command to pre-process individual properties.
 strStandalonePropViaDesc :: String
-strStandalonePropViaDesc =
-  "Command to pre-process individual properties"
+strStandalonePropViaDesc = "Command to pre-process individual properties"
 
 -- | Additional template variable file flag description.
 strStandaloneTemplateVarsArgDesc :: String

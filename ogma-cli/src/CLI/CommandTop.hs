@@ -182,7 +182,7 @@ subcommandROSApp =
     (CommandOptsROSApp <$> CLI.CommandROSApp.commandOptsParser)
     CLI.CommandROSApp.commandDesc
 
--- | Modifier for the FPrime app expansion subcommand, linking the subcommand
+-- | Modifier for the F Prime app expansion subcommand, linking the subcommand
 -- options and description to the command @fprime@ at top level.
 subcommandFPrimeApp :: Mod CommandFields CommandOpts
 subcommandFPrimeApp =

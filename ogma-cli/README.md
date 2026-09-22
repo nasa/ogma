@@ -13,7 +13,7 @@ verification framework that generates hard real-time C99 code.
 - Generating [Robot Operating System](https://ros.org) runtime monitoring
   applications.
 
-- Generating [F' (FPrime)](https://github.com/nasa/fprime/) runtime monitoring
+- Generating [F' (F Prime)](https://github.com/nasa/fprime/) runtime monitoring
   components.
 
 - Generating message handlers for NASA Core Flight System applications to make
@@ -567,7 +567,7 @@ or variables file but a matching entry is not found in the variable DB.
 
 ## F' Component Generation
 
-F' (FPrime) is a component-based framework for spaceflight applications.
+F' (F Prime) is a component-based framework for spaceflight applications.
 
 Ogma is able to generate F' monitoring components that subscribe to obtain
 the data needed by the monitors and report any violations. At present, support
@@ -651,7 +651,7 @@ In our example, we only care about the boolean variables; it is sufficient that
 they be listed in the variable DB file.
 
 Finally, the handlers file is a list of monitor handlers that the generated
-FPrime component should restrict to monitoring. They are listed one per line:
+F Prime component should restrict to monitoring. They are listed one per line:
 ```sh
 $ cat handlers
 handlerpropREQ_001

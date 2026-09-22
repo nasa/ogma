@@ -1,1 +1,6 @@
-{ "impl_extra_header": "#include \"extra.h\"" }
+{ "impl_extra_header": "#include \"extra.h\""
+, "CFS_CMD_MID":        "0x1895"
+, "CFS_REEVAL_CMD_MID": "0x1896"
+, "CFS_SEND_HK_MID":    "0x1897"
+, "CFS_HK_TLM_MID":     "0x0897"
+}

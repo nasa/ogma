@@ -2,16 +2,16 @@
   "projectName": "Turtlesim demo",
   "projectInputFiles": [
     [
-      "ogma-cli/examples/ros2-turtlesim/document-turtlesim.json",
-      "ogma-cli/examples/ros2-turtlesim/json-format-turtlesim.cfg",
+      "document-turtlesim.json",
+      "json-format-turtlesim.cfg",
       "literal"
     ]
   ],
-  "projectVariableFiles": "ogma-cli/examples/ros2-turtlesim/variables-turtlesim",
-  "projectVariableDBFile": "ogma-cli/examples/ros2-turtlesim/vars-db-turtlesim.json",
+  "projectVariableFiles": "variables-turtlesim",
+  "projectVariableDBFile": "vars-db-turtlesim.json",
   "projectHandlerFile": null,
   "projectCommandPropVia": null,
   "projectTemplateDir": null,
-  "projectTargetDir": "ros2-turtlesim",
-  "projectExtraJSONFile": "ogma-cli/examples/ros2-turtlesim/extra-vars-turtlesim.json"
+  "projectTargetDir": "cwd:turtlesim-demo",
+  "projectExtraJSONFile": "extra-vars-turtlesim.json"
 }

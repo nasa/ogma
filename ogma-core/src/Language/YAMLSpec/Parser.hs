@@ -20,19 +20,19 @@
 module Language.YAMLSpec.Parser where
 
 -- External imports
-import           Control.Monad.Except   (ExceptT (..), runExceptT)
-import           Control.Monad.IO.Class (liftIO)
-import           Data.Aeson             (Value (..))
-import           Data.Aeson.Key         (fromString)
-import qualified Data.Aeson.KeyMap      as M
-import           Data.Bifunctor         (first)
-import qualified Data.ByteString        as BS
-import           Data.Char              (isSpace)
-import           Data.List              (intercalate)
-import           Data.Text              (unpack)
-import qualified Data.Vector            as V
-import qualified Data.Yaml              as Y
-import           System.FilePath        (takeBaseName, takeFileName)
+import           Control.Monad.Except (ExceptT (..), runExceptT)
+import           Data.Aeson           (Value (..))
+import           Data.Aeson.Key       (fromString)
+import qualified Data.Aeson.KeyMap    as M
+import           Data.Bifunctor       (first)
+import qualified Data.ByteString      as BS
+import           Data.Char            (isSpace)
+import           Data.List            (intercalate)
+import           Data.Maybe           (maybeToList)
+import           Data.Text            (unpack)
+import qualified Data.Vector          as V
+import qualified Data.Yaml            as Y
+import           System.FilePath      (takeBaseName, takeFileName)
 
 -- External imports: ogma-spec
 import Data.Either.Extra (mapLeft)
@@ -249,7 +249,7 @@ objectFieldValueList _ _ = []
 --
 -- If the values are an array, it returns the values in the array directly.
 objectFieldValues :: String -> Value -> [Value]
-objectFieldValues key (Object o) = maybe [] (:[]) $ M.lookup (fromString key) o
+objectFieldValues key (Object o) = maybeToList $ M.lookup (fromString key) o
 objectFieldValues _   _          = []
 
 -- ** Either-related auxiliary functions

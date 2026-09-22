@@ -30,8 +30,7 @@ import qualified Language.SMV.ParSMV as SMV ( myLexer, pBoolSpec )
 
 -- | Run all unit tests for the SMV parser.
 main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+main = defaultMainWithOpts tests mempty
 
 -- | All unit tests for the SMV parser.
 tests :: [Test.Framework.Test]

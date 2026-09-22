@@ -19,24 +19,33 @@
 -- | Auxiliary functions for working with directories.
 module System.Directory.Extra
     ( copyTemplate
+    , CopyTemplateException(..)
     )
   where
 
 -- External imports
+import           Control.Exception         ( Exception, IOException, catch,
+                                             throwIO )
 import           Control.Monad             ( filterM, forM_ )
 import           Data.Aeson                ( Value (..) )
 import qualified Data.ByteString.Lazy      as B
+import           Data.List                 ( isInfixOf )
 import           Data.Text.Lazy            ( pack, unpack )
 import           Data.Text.Lazy.Encoding   ( encodeUtf8 )
 import           Distribution.Simple.Utils ( getDirectoryContentsRecursive )
 import           System.Directory          ( createDirectoryIfMissing,
                                              doesFileExist )
 import           System.FilePath           ( makeRelative, splitFileName,
-                                             takeDirectory, (</>) )
-import           Text.Microstache          ( compileMustacheFile,
+                                             (</>) )
+import           Text.Microstache          ( MustacheException (..), Template,
+                                             compileMustacheFile,
                                              compileMustacheText,
                                              renderMustache )
+import           Text.Parsec.Error         ( Message (..), errorMessages,
+                                             errorPos )
+import           Text.Parsec.Pos           ( sourceColumn, sourceLine )
 
+{- HLINT ignore "Redundant <$>" -}
 -- | Copy a template directory into a target location, expanding variables
 -- provided in a map in a JSON value, both in the file contents and in the
 -- filepaths themselves.
@@ -46,7 +55,8 @@ copyTemplate templateDir subst targetDir = do
   -- Get all files (not directories) in the template dir. To keep a directory,
   -- create an empty file in it (e.g., .keep).
   tmplContents <- map (templateDir </>) . filter (`notElem` ["..", "."])
-                    <$> getDirectoryContentsRecursive templateDir
+                    <$> getDirectoryContentsRecursiveE templateDir
+
   tmplFiles <- filterM doesFileExist tmplContents
 
   -- Copy files to new locations, expanding their name and contents as
@@ -71,11 +81,112 @@ copyTemplate templateDir subst targetDir = do
 
     -- File contents, treated as a mustache template.
     contents <- encodeUtf8 <$> (`renderMustache` subst)
-                           <$> compileMustacheFile fp
+                           <$> compileMustacheFileE fp
 
     -- Create target directory if necessary
     let dirName = fst $ splitFileName fullPath
-    createDirectoryIfMissing True dirName
+    createDirectoryIfMissingE True dirName
 
     -- Write expanded contents to expanded file path
-    B.writeFile fullPath contents
+    -- Capture exceptions here
+    writeFileE fullPath contents
+
+-- | Exception detected during the template expansion process.
+newtype CopyTemplateException = CopyTemplateException String
+
+instance Show CopyTemplateException where
+  show (CopyTemplateException s) = s
+
+instance Exception CopyTemplateException
+
+-- | Wrap 'getDirectoryContentsRecursive' and throw any 'IOException' as a
+-- 'CopyTemplateException'.
+getDirectoryContentsRecursiveE :: FilePath -> IO [FilePath]
+getDirectoryContentsRecursiveE s =
+    catch (getDirectoryContentsRecursive s) handler
+  where
+    handler :: IOException -> IO [FilePath]
+    handler e = throwIO (CopyTemplateException (show e))
+
+-- | Wrap 'createDirectoryIfMissing' and throw any 'IOException' as a
+-- 'CopyTemplateException', possibly making the error message more
+-- user-friendly.
+createDirectoryIfMissingE :: Bool -> FilePath -> IO ()
+createDirectoryIfMissingE parents fp =
+    catch (createDirectoryIfMissing parents fp) handler
+  where
+    handler :: IOException -> IO ()
+    handler e
+      | "createDirectory: permission denied" `isInfixOf` show e
+      = throwIO $ CopyTemplateException $
+          fp ++ ": " ++ "Error creating target directory (permission denied)"
+
+      | otherwise
+      = throwIO $ CopyTemplateException $ fp ++ ": " ++ show e
+
+-- | Wrap 'writeFile' and throw any 'IOException' as a 'CopyTemplateException',
+-- possibly making the error message more user-friendly.
+writeFileE :: FilePath -> B.ByteString -> IO ()
+writeFileE fp contents =
+    catch (B.writeFile fp contents) handler
+  where
+    handler :: IOException -> IO ()
+    handler e
+      | "permission denied" `isInfixOf` show e
+      = throwIO $ CopyTemplateException $
+          fp ++ ": " ++ "Error creating target file (permission denied)"
+
+      | "resource exhausted" `isInfixOf` show e
+      = throwIO $ CopyTemplateException $
+          fp ++ ": " ++ "No space left on device"
+
+      | otherwise
+      = throwIO $ CopyTemplateException $ fp ++ ": " ++ show e
+
+-- | Wrap 'compileMustacheFile' and throw any 'IOException' or
+-- 'MustacheException' as a 'CopyTemplateException', possibly making the error
+-- message more user-friendly.
+compileMustacheFileE :: FilePath -> IO Template
+compileMustacheFileE fp = do
+    catch (catch (compileMustacheFile fp) handler) handlerIO
+  where
+    handler :: MustacheException -> IO Template
+    handler (MustacheParserException p) = do
+      let pos      = errorPos p
+          line     = sourceLine pos
+          column   = sourceColumn pos
+          messages = keepHead $ map showMessage $ errorMessages p
+      throwIO $ CopyTemplateException $
+        fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ messages
+
+    handler e = do
+      throwIO $ CopyTemplateException $ fp ++ ": " ++ show e
+
+    handlerIO :: IOException -> IO Template
+    handlerIO e
+      | "hGetContents: invalid argument" `isInfixOf` show e
+      = throwIO $ CopyTemplateException $
+          fp ++ ": " ++ "Invalid UTF-8 byte sequence"
+
+      | "invalid byte sequence" `isInfixOf` show e
+      = throwIO $ CopyTemplateException $
+          fp ++ ": " ++ "Invalid UTF-8 byte sequence"
+
+      | "openFile: permission denied" `isInfixOf` show e
+      = throwIO $ CopyTemplateException $ fp ++ ": " ++ "Permission denied"
+
+      | otherwise
+      = throwIO $ CopyTemplateException $ fp ++ ": " ++ show e
+
+-- | Show a parse message.
+showMessage :: Message -> String
+showMessage (SysUnExpect s) = "Unexpected " ++ s
+showMessage (UnExpect s)    = "Unexpected " ++ s
+showMessage (Expect s)      = "Expected " ++ s
+showMessage (Message s)     = s
+
+-- | Keep the first element of a list of strings, returning the empty string if
+-- the list is empty.
+keepHead :: [String] -> String
+keepHead (a:_) = a
+keepHead _     = ""

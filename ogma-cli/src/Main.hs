@@ -39,7 +39,7 @@
 -- * Generate Robot Operating System (ROS) applications for runtime monitoring
 -- using Copilot.
 --
--- * Generate F' (FPrime) components for runtime monitoring using Copilot.
+-- * Generate F' (F Prime) components for runtime monitoring using Copilot.
 --
 -- More information can be obtained by calling ogma with the argument @--help@.
 module Main
@@ -66,7 +66,6 @@ fullCLIOpts = info (commandOptsParser <**> helper)
   <> header strProgramSummary
   )
 
--- | Short program description
+-- | Short program description.
 strProgramSummary :: String
-strProgramSummary =
-  "ogma - an anything-to-Copilot application generator"
+strProgramSummary = "ogma - an anything-to-Copilot application generator"

@@ -77,8 +77,8 @@ class CopilotRV : public rclcpp::Node {
 
 {{/monitors}}
     // Needed so we can report messages to the log.
-    static CopilotRV& getInstance() {
-      static CopilotRV instance;
+    static std::shared_ptr<CopilotRV> getInstance() {
+      static std::shared_ptr<CopilotRV> instance = std::shared_ptr<CopilotRV>(new CopilotRV());
       return instance;
     }
 
@@ -115,19 +115,19 @@ class CopilotRV : public rclcpp::Node {
 // communicate with other applications.
 {{#monitorType}}
 void {{monitorName}}({{.}} arg) {
-  CopilotRV::getInstance().{{monitorName}}(arg);
+  CopilotRV::getInstance()->{{monitorName}}(arg);
 }
 {{/monitorType}}
 {{^monitorType}}
 void {{monitorName}}() {
-  CopilotRV::getInstance().{{monitorName}}();
+  CopilotRV::getInstance()->{{monitorName}}();
 }
 {{/monitorType}}
 
 {{/monitors}}
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<CopilotRV>());
+  rclcpp::spin(CopilotRV::getInstance());
   rclcpp::shutdown();
   return 0;
 }

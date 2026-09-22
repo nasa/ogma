@@ -1,5 +1,30 @@
 # Revision history for ogma-core
 
+## [1.16.0] - 2026-09-21
+
+* Version bump (1.16.0) (#606).
+* Replace adhoc function `mergeMaybe` with function from `base` (#516).
+* Fix malformed comments (#518).
+* Remove unnecessary line breaks (#520).
+* Add missing periods to Haddock comments (#524).
+* Fix spelling of F Prime (#526).
+* Replace explicit recursion with calls to `base:Control.Monad.foldM` (#532).
+* Add valid Haddock documentation to all top-level functions (#542).
+* Bump upper version constraints on `QuickCheck`, `megaparsec` (#545).
+* Make `Dockerfile` base image in default ROS 2 template customizable (#548).
+* Allow for inputs to be deeply nested fields in ROS 2 template (#547).
+* Adjust ROS 2 `Dockerfile` to run `rosdep init` only when needed (#561).
+* Fix incorrect creation of two instances of ROS 2 monitoring node (#564).
+* Increase detail in template expansion error messages (#390).
+* Use path prefixes to specify path resolution context in project files (#567).
+* Update `Dockerfile` in ROS 2 template for Space ROS `jazzy-2026.07.0` (#569).
+* Introduce default input format configuration files (#575).
+* Address HLint suggestions (#586).
+* Remove unused imports (#590).
+* Remove unused pragma (#600).
+* De-duplicate cFS application data (#602).
+* Fix `Command.Common.mergeSpecs` to avoid dropping externs (#551).
+
 ## [1.15.0] - 2026-07-21
 
 * Version bump (1.15.0) (#508).

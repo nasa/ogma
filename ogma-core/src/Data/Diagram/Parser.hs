@@ -64,7 +64,7 @@ readDiagram fp format exprP = ExceptT $ do
            (\msg -> ErrorTriplet ecCannotReadDiagram msg (LocationFile fp))
            diagramE
 
---- | Generic function to parse a diagram.
+-- | Generic function to parse a diagram.
 parseDiagram :: DiagramFormat          -- ^ Format of the input file
              -> B.ByteString           -- ^ Contents of the diagram
              -> ExprPair               -- ^ Subparser for conditions or edge

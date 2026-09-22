@@ -28,7 +28,6 @@ module Language.Trans.CStructs2Copilot where
 
 -- External imports
 import Data.Char ( isUpper, toLower )
-import Data.List ( intercalate )
 
 -- External imports: auxiliary
 import Data.List.Extra ( toHead, toTail )

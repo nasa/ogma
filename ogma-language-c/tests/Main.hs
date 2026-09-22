@@ -30,8 +30,7 @@ import qualified Language.C.ParC as C ( myLexer, pTranslationUnit )
 
 -- | Run all unit tests for the C parser.
 main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+main = defaultMainWithOpts tests mempty
 
 -- | All unit tests for the C parser.
 tests :: [Test.Framework.Test]

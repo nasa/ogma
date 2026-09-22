@@ -174,7 +174,7 @@ data RequirementInfo = RequirementInfo
 instance ToJSON RequirementInfo
 
 -- | Information about a diagram that matches the search query.
-data DiagramInfo = DiagramInfo
+newtype DiagramInfo = DiagramInfo
     { diagramInfoLocation :: FilePath
     }
   deriving (Generic, Show)

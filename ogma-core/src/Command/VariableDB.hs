@@ -36,6 +36,8 @@ module Command.VariableDB
   where
 
 -- External imports
+import Control.Applicative  ((<|>))
+import Control.Monad        (foldM)
 import Control.Monad.Except (ExceptT, throwError)
 import Data.Aeson           (FromJSON (..), Value (Object), (.:), withObject)
 import Data.Aeson.KeyMap    (filterWithKey)
@@ -104,8 +106,7 @@ emptyVariableDB = VariableDB [] [] []
 
 -- | Find an input with a given name.
 findInput :: VariableDB -> String -> Maybe InputDef
-findInput varDB name =
-  find (\x -> inputName x == name) (inputs varDB)
+findInput varDB name = find (\x -> inputName x == name) (inputs varDB)
 
 -- | Find a connection a given scope.
 findConnection :: InputDef -> String -> Maybe Connection
@@ -188,10 +189,7 @@ mergeVariableDB varDB1 varDB2 = do
 -- contradictory information.
 mergeInputs :: Monad m
             => [InputDef] -> [InputDef] -> ExceptT ErrorTriplet m [InputDef]
-mergeInputs is1 []     = return is1
-mergeInputs is1 (i2:is2) = do
-  is1' <- mergeInput is1 i2
-  mergeInputs is1' is2
+mergeInputs = foldM mergeInput
 
 -- | Merge an input definition into a list of input definitions, so long as it
 -- does not contain contradictory information.
@@ -205,10 +203,8 @@ mergeInput (i1:is1) i2
        || inputType i1 == inputType i2
        )
   = do cs <- mergeConnections (inputConnections i1) (inputConnections i2)
-       let i1' = i1 { inputType =
-                        mergeMaybe (inputType i1) (inputType i2)
-                    , inputConnections =
-                        cs
+       let i1' = i1 { inputType        = inputType i1 <|> inputType i2
+                    , inputConnections = cs
                     }
        return (i1' : is1)
 
@@ -220,10 +216,7 @@ mergeInput (i1:is1) i2
 -- contradictory information.
 mergeConnections :: Monad m
                  => [Connection] -> [Connection] -> ExceptT ErrorTriplet m [Connection]
-mergeConnections cs1 []       = return cs1
-mergeConnections cs1 (c2:cs2) = do
-  cs1' <- mergeConnection cs1 c2
-  mergeConnections cs1' cs2
+mergeConnections = foldM mergeConnection
 
 -- | Merge a connection into a list of connections, so long as it does not
 -- contain contradictory information.
@@ -246,10 +239,7 @@ mergeConnection (c1:cs1) c2
 -- information.
 mergeTopics :: Monad m
             => [TopicDef] -> [TopicDef] -> ExceptT ErrorTriplet m [TopicDef]
-mergeTopics ts1 [] = return ts1
-mergeTopics ts1 (t2:ts2) = do
-  ts1' <- mergeTopic ts1 t2
-  mergeTopics ts1' ts2
+mergeTopics = foldM mergeTopic
 
 -- | Merge a topic into a list of topics, so long as it does not contain
 -- contradictory information.
@@ -272,10 +262,7 @@ mergeTopic (t1:ts1) t2
 -- contradictory information.
 mergeTypes :: Monad m
            => [TypeDef] -> [TypeDef] -> ExceptT ErrorTriplet m [TypeDef]
-mergeTypes ts1 []       = return ts1
-mergeTypes ts1 (t2:ts2) = do
-  ts1' <- mergeType ts1 t2
-  mergeTypes ts1' ts2
+mergeTypes = foldM mergeType
 
 -- | Merge a type definition into a list of type definitions, so long as it
 -- does not contain contradictory information.
@@ -310,13 +297,6 @@ cannotMergeVariableDBs element =
 -- | Error: one of the variable DBs provided cannot be merged.
 ecCannotMergeVariableDB :: ErrorCode
 ecCannotMergeVariableDB = 1
-
--- | Merge two @Maybe@ values, prefering the left one if two @Just@s are
--- provided.
-mergeMaybe :: Maybe a -> Maybe a -> Maybe a
-mergeMaybe Nothing x       = x
-mergeMaybe x       Nothing = x
-mergeMaybe x       _       = x
 
 -- | Implement instances of parser to read variable DB from JSON, dropping the
 -- prefix in each field name.

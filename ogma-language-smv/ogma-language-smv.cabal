@@ -18,7 +18,7 @@
 cabal-version:       2.0
 build-type:          Custom
 name:                ogma-language-smv
-version:             1.15.0
+version:             1.16.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             Apache-2.0
@@ -99,7 +99,7 @@ test-suite unit-tests
 
   build-depends:
       base                       >= 4.11.0.0 && < 5
-    , QuickCheck                 >= 2.8.2    && < 2.17
+    , QuickCheck                 >= 2.8.2    && < 2.19
     , test-framework             >= 0.8.2    && < 0.9
     , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4
 

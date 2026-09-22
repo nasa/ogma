@@ -2,13 +2,13 @@
   "projectName": "Doorstop demo",
   "projectInputFiles": [
     [
-      "ogma-cli/examples/doorstop/REQ001.yml",
-      "ogma-cli/examples/doorstop/doorstop-with-formula.cfg",
+      "REQ001.yml",
+      "doorstop-with-formula.cfg",
       "literal"
     ]
   , [
-      "ogma-cli/examples/doorstop/REQ002.yml",
-      "ogma-cli/examples/doorstop/doorstop-with-formula.cfg",
+      "REQ002.yml",
+      "doorstop-with-formula.cfg",
       "literal"
     ]
   ],
@@ -17,6 +17,6 @@
   "projectHandlerFile": null,
   "projectCommandPropVia": null,
   "projectTemplateDir": null,
-  "projectTargetDir": "monitor",
-  "projectExtraJSONFile": "ogma-cli/examples/doorstop/extra-vars-yaml.json"
+  "projectTargetDir": "cwd:monitor",
+  "projectExtraJSONFile": "extra-vars-yaml.json"
 }

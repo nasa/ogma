@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -19,7 +18,7 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | Create <https://github.com/nasa/fprime FPrime> components that subscribe
+-- | Create <https://github.com/nasa/fprime F Prime> components that subscribe
 -- to obtain data and call Copilot when new values arrive.
 
 {- HLINT ignore "Functor law" -}
@@ -31,7 +30,7 @@ module Command.FPrimeApp
   where
 
 -- External imports
-import           Control.Applicative    ( liftA2, (<|>) )
+import           Control.Applicative    ( (<|>) )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT(..), liftEither )
 import           Data.Aeson             ( ToJSON, toJSON )
@@ -40,6 +39,7 @@ import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
+import Data.Either.Extra      ( mapLeft )
 import System.Directory.Extra ( copyTemplate )
 
 import qualified Command.Standalone
@@ -48,9 +48,9 @@ import qualified Command.Standalone
 import Command.Result (Result (..))
 
 -- Internal imports
-import Command.Common                 (InputFile (..), cannotCopyTemplate,
+import Command.Common                 (InputFile (..), cannotCopyTemplateF,
                                        checkArguments, combineInputFiles,
-                                       locateTemplateDir, makeLeftE,
+                                       locateTemplateDir,
                                        openVarDBFilesWithDefault,
                                        parseInputFile,
                                        parseRequirementsListFile,
@@ -67,7 +67,7 @@ import Data.Location                  (Location (..))
 import Data.Spec.Parser               (readInputExpr)
 import Language.Trans.Diagram2Copilot (DiagramMode (..))
 
--- | Generate a new FPrime component connected to Copilot.
+-- | Generate a new F Prime component connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
         -> IO (Result ErrorCode)
 command options = processResult $ do
@@ -81,7 +81,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where
@@ -91,6 +91,8 @@ command options = processResult $ do
     functions     = exprPair (commandPropFormat options)
     templateVarsF = commandExtraVars options
 
+-- | Generate application data describing core elements of a new F Prime
+-- component that implements the input requirements or diagrams.
 command' :: CommandOptions
          -> ExprPair
          -> ExceptT ErrorTriplet IO AppData
@@ -102,7 +104,7 @@ command' options (ExprPair exprT) = do
 
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec). readInputExpr')
                cExpr
 
     specF <- if null fpA
@@ -118,7 +120,7 @@ command' options (ExprPair exprT) = do
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA) <$> spec
+    copilotM <- traverse (\spec' -> processSpec spec' cExpr fpA) spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs

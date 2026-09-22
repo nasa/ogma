@@ -30,8 +30,7 @@ import qualified Language.Lustre.ParLustre as Lustre ( myLexer, pBoolSpec )
 
 -- | Run all unit tests for the Lustre parser.
 main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+main = defaultMainWithOpts tests mempty
 
 -- | All unit tests for the Lustre parser.
 tests :: [Test.Framework.Test]

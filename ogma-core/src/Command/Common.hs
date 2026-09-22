@@ -1,5 +1,4 @@
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -32,8 +31,7 @@ module Command.Common
     , specExtractExternalVariables
     , specExtractHandlers
     , processResult
-    , cannotCopyTemplate
-    , makeLeftE
+    , cannotCopyTemplateF
     , locateTemplateDir
     )
   where
@@ -47,8 +45,9 @@ import           Data.Aeson             (Value (Null, Object), eitherDecode,
 import           System.FilePath        ((</>))
 
 -- External imports: auxiliary
-import Data.ByteString.Extra as B (safeReadFile)
-import Data.String.Extra     (sanitizeLCIdentifier, sanitizeUCIdentifier)
+import Data.ByteString.Extra  as B (safeReadFile)
+import Data.String.Extra      (sanitizeLCIdentifier, sanitizeUCIdentifier)
+import System.Directory.Extra (CopyTemplateException(..))
 
 -- External imports: ogma
 import Data.OgmaSpec (Requirement (..), Spec (..), externalVariableName,
@@ -98,7 +97,7 @@ combineInputFiles xs
     mergeSpecs :: Spec a -> Spec a -> Spec a
     mergeSpecs s1 s2 = Spec
       { internalVariables = internalVariables s1 ++ internalVariables s2
-      , externalVariables = externalVariables s2 ++ externalVariables s2
+      , externalVariables = externalVariables s1 ++ externalVariables s2
       , requirements      = requirements s1 ++ requirements s2
       }
 
@@ -157,7 +156,7 @@ parseRequirementsListFile :: Maybe FilePath
 parseRequirementsListFile Nothing   = return Nothing
 parseRequirementsListFile (Just fp) =
   ExceptT $ makeLeftE (cannotOpenHandlersFile fp) <$>
-    (E.try $ Just . lines <$> readFile fp)
+    E.try (Just . lines <$> readFile fp)
 
 -- | Read a list of variable DBs.
 openVarDBFiles :: VariableDB
@@ -226,9 +225,8 @@ checkArguments _       _         _         = Right ()
 -- | Extract the variables from a specification, and sanitize them.
 specExtractExternalVariables :: Maybe (Spec a) -> [String]
 specExtractExternalVariables Nothing   = []
-specExtractExternalVariables (Just cs) = map sanitizeLCIdentifier
-                                       $ map externalVariableName
-                                       $ externalVariables cs
+specExtractExternalVariables (Just cs) =
+ map (sanitizeLCIdentifier . externalVariableName) $ externalVariables cs
 
 -- | Extract the requirements from a specification, and sanitize them to match
 -- the names of the handlers used by Copilot.
@@ -313,14 +311,12 @@ cannotReadObjectTemplateVars file =
 
 -- | Exception handler to deal with the case of files that cannot be
 -- copied/generated due lack of space or permissions or some I/O error.
-cannotCopyTemplate :: ErrorTriplet
-cannotCopyTemplate =
-    ErrorTriplet ecCannotCopyTemplate msg LocationNothing
+cannotCopyTemplateF :: CopyTemplateException -> ErrorTriplet
+cannotCopyTemplateF e =
+    ErrorTriplet ecCannotCopyTemplate (msg ++ show e) LocationNothing
   where
     msg =
-      "Generation failed during copy/write operation. Check that"
-      ++ " there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory."
+      "Generation failed during copy/write operation: "
 
 -- ** Error codes
 

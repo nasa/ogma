@@ -26,7 +26,7 @@ module Command.Result
 -- Internal imports
 import Data.Location ( Location )
 
--- | Result of the global process
+-- | Result of the global process.
 data Result a = Success
               | Error a String Location
 

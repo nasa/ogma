@@ -15,7 +15,7 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | CLI interface to the CStructs2Copilot subcommand
+-- | CLI interface to the CStructs2Copilot subcommand.
 module CLI.CommandCStructs2Copilot
     (
       -- * Direct command access
@@ -68,6 +68,6 @@ commandOptsParser = CommandOpts
         <> help strStructsInputFileArgDesc
         )
 
--- | Argument C header file to struct conversion command
+-- | Argument C header file to struct conversion command.
 strStructsInputFileArgDesc :: String
 strStructsInputFileArgDesc = "C header file with struct definitions"

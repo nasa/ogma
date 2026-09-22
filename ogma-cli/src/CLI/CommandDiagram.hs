@@ -122,8 +122,7 @@ command c
 
 -- | Command description for CLI help.
 commandDesc :: String
-commandDesc =
-  "Generate a monitor from state machine diagram"
+commandDesc = "Generate a monitor from state machine diagram"
 
 -- | Subparser for the @diagram@ command, used to generate a Copilot
 -- specification from an input diagram file.
@@ -216,21 +215,17 @@ strDiagramPropFormatDesc =
 
 -- | Target file name flag description.
 strDiagramTargetDesc :: String
-strDiagramTargetDesc =
-  "Filename prefix for monitoring files in target language"
+strDiagramTargetDesc = "Filename prefix for monitoring files in target language"
 
 -- | Mode name flag description.
 strDiagramModeDesc :: String
-strDiagramModeDesc =
-  "Mode of operation (check, calculate, safeguard)"
+strDiagramModeDesc = "Mode of operation (check, calculate, safeguard)"
 
 strDiagramInputVarDesc :: String
-strDiagramInputVarDesc =
-  "Name of the input variable"
+strDiagramInputVarDesc = "Name of the input variable"
 
 strDiagramStateVarDesc :: String
-strDiagramStateVarDesc =
-  "Name of the state variable"
+strDiagramStateVarDesc = "Name of the state variable"
 
 -- * Error codes
 

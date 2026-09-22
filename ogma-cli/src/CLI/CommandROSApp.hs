@@ -166,7 +166,7 @@ commandProjectOptions projectFile c = do
 
 -- * CLI
 
--- | ROS command description
+-- | ROS command description.
 commandDesc :: String
 commandDesc = "Generate a ROS 2 monitoring package"
 
@@ -236,7 +236,7 @@ commandOptsParser = CommandOpts
         <> metavar "FORMAT_NAME"
         <> help strROSAppFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"
@@ -270,7 +270,7 @@ commandOptsParser = CommandOpts
               (  long "testing-vars"
               <> metavar "variable_name"
               <> showDefault
-              <> help strROSAppHandlerListArgDesc
+              <> help strROSAppVarsTestingListArgDesc
               )
            )
 
@@ -278,11 +278,11 @@ commandOptsParser = CommandOpts
 strROSAppProjectArgDesc :: String
 strROSAppProjectArgDesc = "Project file"
 
--- | Argument target directory to ROS app generation command
+-- | Argument target directory to ROS app generation command.
 strROSAppDirArgDesc :: String
 strROSAppDirArgDesc = "Target directory"
 
--- | Argument template directory to ROS app generation command
+-- | Argument template directory to ROS app generation command.
 strROSAppTemplateDirArgDesc :: String
 strROSAppTemplateDirArgDesc =
   "Directory holding ROS application source template"
@@ -291,22 +291,20 @@ strROSAppTemplateDirArgDesc =
 strROSAppConditionExprArgDesc :: String
 strROSAppConditionExprArgDesc = "Expression used as guard or trigger condition"
 
--- | Argument input file to ROS app generation command
+-- | Argument input file to ROS app generation command.
 strROSAppFileNameArgDesc :: String
-strROSAppFileNameArgDesc =
-  "File containing input specification"
+strROSAppFileNameArgDesc = "File containing input specification"
 
--- | Argument variable list to ROS app generation command
+-- | Argument variable list to ROS app generation command.
 strROSAppVarListArgDesc :: String
 strROSAppVarListArgDesc =
   "File containing list of ROS variables to make accessible"
 
--- | Argument variable database to ROS app generation command
+-- | Argument variable database to ROS app generation command.
 strROSAppVarDBArgDesc :: String
-strROSAppVarDBArgDesc =
-  "File containing a DB of known ROS variables"
+strROSAppVarDBArgDesc = "File containing a DB of known ROS variables"
 
--- | Argument handler list to ROS app generation command
+-- | Argument handler list to ROS app generation command.
 strROSAppHandlerListArgDesc :: String
 strROSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
@@ -321,20 +319,19 @@ strROSAppPropFormatDesc = "Format of temporal or boolean properties"
 
 -- | External command to pre-process individual properties.
 strROSAppPropViaDesc :: String
-strROSAppPropViaDesc =
-  "Command to pre-process individual properties"
+strROSAppPropViaDesc = "Command to pre-process individual properties"
 
 -- | Additional template variable file flag description.
 strROSAppTemplateVarsArgDesc :: String
 strROSAppTemplateVarsArgDesc =
   "JSON file containing additional variables to expand in template"
 
--- | Argument packages to tested list to ROS app generation command
+-- | Argument packages to tested list to ROS app generation command.
 strROSAppROSNodesTestingListArgDesc :: String
 strROSAppROSNodesTestingListArgDesc =
   "Turn on ROS 2 package node during testing"
 
--- | Argument variables to be tested list to ROS app generation command
+-- | Argument variables to be tested list to ROS app generation command.
 strROSAppVarsTestingListArgDesc :: String
 strROSAppVarsTestingListArgDesc =
   "Limit random input generation to these variables"

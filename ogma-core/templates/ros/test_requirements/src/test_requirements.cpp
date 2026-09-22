@@ -113,10 +113,10 @@ class RequirementsTest : public rclcpp::Node {
 
 {{#testingVariables}}
        {{#varDeclMsgField}}
-       {{varDeclType}} {{varDeclName}}_{{.}} = {{varDeclRandom}}();
-       auto {{varDeclName}}_{{.}}_msg = {{varDeclMsgType}}();
-       {{varDeclName}}_{{.}}_msg.{{.}} = {{varDeclName}}_{{.}};
-       {{varDeclName}}_publisher_->publish({{varDeclName}}_{{.}}_msg);
+       {{varDeclType}} {{varDeclName}}_data = {{varDeclRandom}}();
+       auto {{varDeclName}}_data_msg = {{varDeclMsgType}}();
+       {{varDeclName}}_data_msg.{{.}} = {{varDeclName}}_data;
+       {{varDeclName}}_publisher_->publish({{varDeclName}}_data_msg);
        {{/varDeclMsgField}}
        {{^varDeclMsgField}}
        {{varDeclType}} {{varDeclName}}_data = {{varDeclRandom}}();

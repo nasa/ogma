@@ -17,15 +17,22 @@
 -- under the License.
 --
 -- | Ogma projects.
-module Data.Project where
+module Data.Project
+    ( Project(..)
+    , readProject
+    )
+  where
 
 -- External imports
 import           Control.Exception (IOException, try)
 import           Data.Aeson        (FromJSON, ToJSON, eitherDecodeStrict')
 import qualified Data.ByteString   as BS
+import           Data.List         (stripPrefix)
 import           GHC.Generics      (Generic)
+import           System.Directory  (makeAbsolute)
+import           System.FilePath   (isAbsolute, takeDirectory, (</>))
 
--- -- Internal imports
+-- Internal imports
 import Data.Either.Extra (mapLeft)
 
 data Project = Project
@@ -49,7 +56,49 @@ instance ToJSON Project
 readProject :: FilePath -> IO (Either String Project)
 readProject path = do
   bytesResult <- try (BS.readFile path)
-  pure $ case bytesResult of
-           Left e      -> Left (show (e :: IOException))
-           Right bytes -> mapLeft ("Failed to read project: " ++)
-                        $ eitherDecodeStrict' bytes
+  let project = case bytesResult of
+                  Left e      -> Left (show (e :: IOException))
+                  Right bytes -> mapLeft ("Failed to read project: " ++)
+                               $ eitherDecodeStrict' bytes
+
+  projectDir <- takeDirectory <$> makeAbsolute path
+
+  pure $ resolveProjectPaths projectDir <$> project
+
+-- | Resolve paths inside a project.
+resolveProjectPaths :: FilePath -> Project -> Project
+resolveProjectPaths projectDir p = p
+  { projectInputFiles     = resolveInputFile projectDir <$> projectInputFiles p
+  , projectVariableFiles  = resolvePath projectDir <$> projectVariableFiles p
+  , projectVariableDBFile = resolvePath projectDir <$> projectVariableDBFile p
+  , projectHandlerFile    = resolvePath projectDir <$> projectHandlerFile p
+  , projectCommandPropVia = resolvePath projectDir <$> projectCommandPropVia p
+  , projectTemplateDir    = resolvePath projectDir <$> projectTemplateDir p
+  , projectTargetDir      = resolvePath projectDir <$> projectTargetDir p
+  , projectExtraJSONFile  = resolvePath projectDir <$> projectExtraJSONFile p
+  }
+
+-- | Resolve the locations of input file pairs, possibly in relation to the
+-- project path.
+resolveInputFile :: FilePath
+                 -> (FilePath, String, String)
+                 -> (FilePath, String, String)
+resolveInputFile projectDir (filePath, fileFormat, propName) =
+    (filePath', fileFormat', propName)
+  where
+    filePath'   = resolvePath projectDir filePath
+    fileFormat' = resolvePath projectDir fileFormat
+
+-- | Resolve the path to a file, possibly in relation to the project path.
+resolvePath :: FilePath -> FilePath -> FilePath
+resolvePath projectDir path
+  | isAbsolute path
+  = path
+  | Just path' <- stripPrefix "cwd:" path
+  = path'
+  | Just path' <- stripPrefix "cmd:" path
+  = path'
+  | Just path' <- stripPrefix "project:" path
+  = projectDir </> path'
+  | otherwise
+  = projectDir </> path

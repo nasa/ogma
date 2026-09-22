@@ -29,21 +29,21 @@ module Command.Report
 -- External imports
 import qualified Control.Exception      as E
 import           Control.Monad          (foldM)
-import           Control.Monad.Except   (ExceptT (..), liftEither, runExceptT,
-                                         withExceptT)
+import           Control.Monad.Except   (ExceptT (..), liftEither, withExceptT)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (ToJSON (..))
 import           GHC.Generics           (Generic)
 
 -- External imports: Ogma
+import Data.Either.Extra      (mapLeft)
 import Data.OgmaSpec          (Requirement (..), Spec (..))
 import Data.String.Extra      (sanitizeUCIdentifier)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
 import           Command.Common              (InputFile (..),
-                                              cannotCopyTemplate,
-                                              locateTemplateDir, makeLeftE,
+                                              cannotCopyTemplateF,
+                                              locateTemplateDir,
                                               parseInputFile, processResult)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
@@ -76,7 +76,7 @@ command options = processResult $ do
                     (commandInputFiles options)
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir (toJSON reportData) targetDir
 
   where
@@ -159,7 +159,7 @@ command' options (ExprPair exprT) file = do
                            }
 
         pure $ CommandSummary
-                 { commandRequirementsAny = length reqListDetails > 0
+                 { commandRequirementsAny = not (null reqListDetails)
                  , commandRequirementList = [fileReqs]
                  , commandDiagramsAny     = False
                  , commandDiagramsList    = []

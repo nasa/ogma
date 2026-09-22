@@ -47,7 +47,7 @@ import qualified Command.FPrimeApp
 
 -- * Command
 
--- | Options needed to generate the FPrime component.
+-- | Options needed to generate the F Prime component.
 data CommandOpts = CommandOpts
   { fprimeAppProject       :: Maybe String
   , fprimeAppConditionExpr :: Maybe String
@@ -63,7 +63,7 @@ data CommandOpts = CommandOpts
   , fprimeAppTemplateVars  :: Maybe String
   }
 
--- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
+-- | Create <https://github.com/nasa/fprime F Prime> component that subscribe
 -- to obtain necessary data from the bus and call Copilot when new data
 -- arrives.
 --
@@ -113,7 +113,7 @@ commandProjectOptions projectFile c = do
           fromMaybe (fprimeAppTarget c) (projectTargetDir project)
 
       , Command.FPrimeApp.commandTemplateDir =
-          maybe (fprimeAppTemplateDir c) Just (projectTemplateDir project)
+          projectTemplateDir project <|> fprimeAppTemplateDir c
 
       , Command.FPrimeApp.commandVariables =
           projectVariableFiles project <|> fprimeAppVariables c
@@ -142,11 +142,11 @@ commandProjectOptions projectFile c = do
 
 -- * CLI
 
--- | FPrime command description
+-- | F Prime command description.
 commandDesc :: String
 commandDesc = "Generate a complete F' monitoring component"
 
--- | Subparser for the @fprime@ command, used to generate an FPrime component
+-- | Subparser for the @fprime@ command, used to generate an F Prime component
 -- connected to Copilot monitors.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
@@ -212,7 +212,7 @@ commandOptsParser = CommandOpts
         <> metavar "FORMAT_NAME"
         <> help strFPrimeAppFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"
@@ -237,40 +237,38 @@ commandOptsParser = CommandOpts
             )
         )
 
--- | Argument project to FPrime app generation command.
+-- | Argument project to F Prime app generation command.
 strFPrimeAppProjectArgDesc :: String
 strFPrimeAppProjectArgDesc = "Project file"
 
--- | Argument target directory to FPrime component generation command
+-- | Argument target directory to F Prime component generation command.
 strFPrimeAppDirArgDesc :: String
 strFPrimeAppDirArgDesc = "Target directory"
 
--- | Argument template directory to FPrime component generation command
+-- | Argument template directory to F Prime component generation command.
 strFPrimeAppTemplateDirArgDesc :: String
 strFPrimeAppTemplateDirArgDesc =
   "Directory holding F' component source template"
 
--- | Argument expression to FPrime app generation command.
+-- | Argument expression to F Prime app generation command.
 strFPrimeAppConditionExprArgDesc :: String
 strFPrimeAppConditionExprArgDesc =
   "Expression used as guard or trigger condition"
 
--- | Argument input file to FPrime component generation command
+-- | Argument input file to F Prime component generation command.
 strFPrimeAppFileNameArgDesc :: String
-strFPrimeAppFileNameArgDesc =
-  "File containing input specification"
+strFPrimeAppFileNameArgDesc = "File containing input specification"
 
--- | Argument variable list to FPrime component generation command
+-- | Argument variable list to F Prime component generation command.
 strFPrimeAppVarListArgDesc :: String
 strFPrimeAppVarListArgDesc =
   "File containing list of F' variables to make accessible"
 
--- | Argument variable database to FPrime component generation command
+-- | Argument variable database to F Prime component generation command.
 strFPrimeAppVarDBArgDesc :: String
-strFPrimeAppVarDBArgDesc =
-  "File containing a DB of known F' variables"
+strFPrimeAppVarDBArgDesc = "File containing a DB of known F' variables"
 
--- | Argument handler list to FPrime component generation command
+-- | Argument handler list to F Prime component generation command.
 strFPrimeAppHandlerListArgDesc :: String
 strFPrimeAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
@@ -285,8 +283,7 @@ strFPrimeAppPropFormatDesc = "Format of temporal or boolean properties"
 
 -- | External command to pre-process individual properties.
 strFPrimeAppPropViaDesc :: String
-strFPrimeAppPropViaDesc =
-  "Command to pre-process individual properties"
+strFPrimeAppPropViaDesc = "Command to pre-process individual properties"
 
 -- | Additional template variable file flag description.
 strFPrimeAppTemplateVarsArgDesc :: String

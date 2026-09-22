@@ -243,7 +243,7 @@ showSpec spec = template ++ "\n" ++ extra ++ "\n" ++ triggers
       map ("       " ++) [ n ++ " :: " ++ t, n ++ " = " ++ i ]
 
     formatTrigger (_, _, h, g, a) =
-      map ("   " ++) [ "trigger " ++ show h ++ " (" ++ g ++ ") " ++ a ]
+      [ "   trigger " ++ show h ++ " (" ++ g ++ ") " ++ a ]
 
 -- | Default imports for a 'Spec' that was converted into a 'Copilot.Spec'.
 defaultSpecImports :: [(String, Maybe String)]

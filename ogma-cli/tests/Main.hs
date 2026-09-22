@@ -1,4 +1,4 @@
--- | Test Ogma
+-- | Test Ogma.
 module Main where
 
 import Data.List                      ( intercalate )
@@ -11,10 +11,9 @@ import Test.HUnit                     ( assertBool )
 
 -- | Run all unit tests on Ogma.
 main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+main = defaultMainWithOpts tests mempty
 
--- | All unit tests for Ogma
+-- | All unit tests for Ogma.
 tests :: [Test.Framework.Test]
 tests =
   [
@@ -91,13 +90,7 @@ testCStructs2Copilot :: FilePath  -- ^ Path to a C header file with structs
                      -> Bool
                      -> IO ()
 testCStructs2Copilot file success = do
-    (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
-
-    -- True if success is expected and detected, or niether expected nor
-    -- detected.
-    let testPass = success == (ec == ExitSuccess)
-
-    assertBool errorMsg testPass
+    assertExecution "ogma" args success errorMsg
   where
     args     = ["structs", "--input-file", file]
     errorMsg = "Result of processing file " ++ file ++ " failed"
@@ -119,15 +112,9 @@ parseStandaloneFCS :: FilePath  -- ^ Path to an input file
                    -> Bool
                    -> IO ()
 parseStandaloneFCS file success = do
-    (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
-
-    -- True if success is expected and detected, or niether expected nor
-    -- detected.
-    let testPass = success == (ec == ExitSuccess)
-
-    assertBool errorMsg testPass
+    assertExecution "ogma" args success errorMsg
   where
-    args     = ["standalone", "--input-file", file]
+    args     = ["standalone", "--input-file", file, "--input-format", "fcs"]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
 -- | Test standalone backend for FDB format and Lustre.
@@ -146,8 +133,7 @@ parseStandaloneFCS file success = do
 parseStandaloneFDB :: FilePath  -- ^ Path to an input file
                    -> IO ()
 parseStandaloneFDB file = do
-    (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
-    assertBool errorMsg (ec == ExitSuccess)
+    assertExecution "ogma" args True errorMsg
   where
     args     = [ "standalone", "--input-file", file, "--input-format", "fdb"
                , "--prop-format", "lustre"]
@@ -170,14 +156,23 @@ runErrorCode :: [String] -- ^ Arguments to pass to ogma
              -> Bool
              -> IO ()
 runErrorCode args success = do
-    (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
-
-    -- True if success is expected and detected, or niether expected nor
-    -- detected.
-    let testPass = success == (ec == ExitSuccess)
-
-    assertBool errorMsg testPass
+    assertExecution "ogma" args success errorMsg
   where
     errorMsg = "Testing ogma's CLI parser with arguments "
              ++ intercalate "," args
              ++ " failed"
+
+-- | Run program and check result of execution against expectation.
+assertExecution :: String   -- ^ Program to run.
+                -> [String] -- ^ Arguments.
+                -> Bool     -- ^ Expectation (sucess).
+                -> String   -- ^ Message if expectation is not met.
+                -> IO ()
+assertExecution program args success errorMsg = do
+  (ec, _out, _err) <- readProcessWithExitCode program args ""
+
+  -- True if success is expected and detected, or neither expected nor
+  -- detected.
+  let testPass = success == (ec == ExitSuccess)
+
+  assertBool errorMsg testPass

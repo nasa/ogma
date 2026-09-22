@@ -20,12 +20,10 @@ module Language.XLSXSpec.Parser (XLSXFormat(..), parseXLSXSpec) where
 import           Codec.Xlsx           (Cell, CellValue (..), ColumnIndex (..),
                                        ParseError (..), _cellValue, _wsCells,
                                        _xlSheets, toRows, toXlsxEither)
-import           Control.Monad        (forM, sequence)
+import           Control.Monad        (forM)
 import qualified Data.ByteString.Lazy as L
-import           Data.List            (lookup)
 import           Data.Maybe           (catMaybes, fromJust, isNothing)
 import qualified Data.Text            as T
-import qualified Data.Text.Encoding   as T
 
 -- External imports: ogma-spec
 import Data.OgmaSpec (Requirement (..), Spec (Spec))

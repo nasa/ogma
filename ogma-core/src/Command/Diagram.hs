@@ -187,7 +187,7 @@ exprPair :: DiagramPropFormat -> ExprPair
 exprPair Inputs = ExprPair $
   ExprPairT
     ((Right . read) :: String -> Either String Int)
-    (\_ -> id)
+    (const id)
     (\x -> "input == " ++ show x)
     (const [])
     (-1)

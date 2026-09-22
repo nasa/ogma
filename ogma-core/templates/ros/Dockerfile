@@ -1,4 +1,9 @@
-FROM osrf/space-ros:jazzy-2026.04.0
+{{#BASE_DOCKER_IMAGE}}
+FROM {{.}}
+{{/BASE_DOCKER_IMAGE}}
+{{^BASE_DOCKER_IMAGE}}
+FROM osrf/space-ros:jazzy-2026.07.0
+{{/BASE_DOCKER_IMAGE}}
 
 ARG USER=spaceros-user
 ARG PACKAGE_PATH=/home/${USER}/monitors
@@ -26,7 +31,7 @@ RUN if [ -f "/tmp/manual-deps.repos" ]; then \
     fi
 
 ADD excluded-pkgs*.txt /tmp/
-RUN sudo rosdep init
+RUN if [ ! -f "/etc/ros/rosdep/sources.list.d/20-default.list" ]; then sudo rosdep init; fi
 RUN rosdep update
 RUN source /opt/ros/spaceros/setup.bash && \
     if [ -f "/tmp/excluded-pkgs.txt" ]; then \

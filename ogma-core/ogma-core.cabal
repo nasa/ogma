@@ -19,7 +19,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.15.0
+version:             1.16.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             Apache-2.0
@@ -76,6 +76,9 @@ data-files:          templates/cfs/Dockerfile
                      templates/fprime/instance-copilot
                      templates/report/Report.md
                      templates/standalone/Copilot.hs
+                     data/formats/default_smv
+                     data/formats/default_literal
+                     data/formats/default_lustre
                      data/formats/fcs_smv
                      data/formats/fcs_lustre
                      data/formats/fdb_smv
@@ -160,23 +163,23 @@ library
     , filepath                >= 1.4.2    && < 1.6
     , graphviz                >= 2999.20  && < 2999.21
     , hint                    >= 0.9.0    && < 1.10
-    , megaparsec              >= 8.0.0    && < 9.8
+    , megaparsec              >= 8.0.0    && < 9.9
     , mtl                     >= 2.2.2    && < 2.4
     , process                 >= 1.6      && < 1.7
     , text                    >= 1.2.3.1  && < 2.2
     , vector                  >= 0.12.0.1 && < 0.14
     , yaml                    >= 0.11.7.0 && < 0.12
 
-    , ogma-extra              >= 1.15.0 && < 1.16
-    , ogma-language-c         >= 1.15.0 && < 1.16
-    , ogma-language-copilot   >= 1.15.0 && < 1.16
-    , ogma-language-csv       >= 1.15.0 && < 1.16
-    , ogma-language-jsonspec  >= 1.15.0 && < 1.16
-    , ogma-language-lustre    >= 1.15.0 && < 1.16
-    , ogma-language-smv       >= 1.15.0 && < 1.16
-    , ogma-language-xlsx      >= 1.15.0 && < 1.16
-    , ogma-language-xmlspec   >= 1.15.0 && < 1.16
-    , ogma-spec               >= 1.15.0 && < 1.16
+    , ogma-extra              >= 1.16.0 && < 1.17
+    , ogma-language-c         >= 1.16.0 && < 1.17
+    , ogma-language-copilot   >= 1.16.0 && < 1.17
+    , ogma-language-csv       >= 1.16.0 && < 1.17
+    , ogma-language-jsonspec  >= 1.16.0 && < 1.17
+    , ogma-language-lustre    >= 1.16.0 && < 1.17
+    , ogma-language-smv       >= 1.16.0 && < 1.17
+    , ogma-language-xlsx      >= 1.16.0 && < 1.17
+    , ogma-language-xmlspec   >= 1.16.0 && < 1.17
+    , ogma-spec               >= 1.16.0 && < 1.17
 
   hs-source-dirs:
     src
@@ -198,7 +201,7 @@ test-suite unit-tests
       base                       >= 4.11.0.0 && < 5
     , directory                  >= 1.3.1.5  && < 1.4
     , HUnit                      >= 1.2.0.0  && < 1.7
-    , QuickCheck                 >= 2.8.2    && < 2.17
+    , QuickCheck                 >= 2.8.2    && < 2.19
     , test-framework             >= 0.8.2    && < 0.9
     , test-framework-hunit       >= 0.2.0    && < 0.4
     , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4

@@ -1,5 +1,12 @@
 # Revision history for ogma-language-jsonspec
 
+## [1.16.0] - 2026-09-21
+
+* Version bump (1.16.0) (#606).
+* Bump upper version constraint on `megaparsec` (#545).
+* Use infix variant of `fmap` (#583).
+* Remove unused imports from `Language.JSONSpec.Parser` (#598).
+
 ## [1.15.0] - 2026-07-21
 
 * Version bump (1.15.0) (#508).

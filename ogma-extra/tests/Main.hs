@@ -29,8 +29,7 @@ import Data.List.Extra ( headEither, toHead, toTail )
 
 -- | Run all unit tests on Ogma's core.
 main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+main = defaultMainWithOpts tests mempty
 
 -- | All unit tests for Ogma's core.
 tests :: [Test.Framework.Test]

@@ -211,7 +211,7 @@ overviewFileOptsParser = OverviewFile
         <> metavar "FORMAT_NAME"
         <> help strOverviewFormatDesc
         <> showDefault
-        <> value "fcs"
+        <> value "default"
         )
   <*> strOption
         (  long "prop-format"
@@ -247,8 +247,7 @@ strOverviewPropFormatDesc = "Format of temporal or boolean properties"
 
 -- | External command to pre-process individual properties.
 strOverviewPropViaDesc :: String
-strOverviewPropViaDesc =
-  "Command to pre-process individual properties"
+strOverviewPropViaDesc = "Command to pre-process individual properties"
 
 -- | Error code for when a project cannot be read.
 cannotReadProject :: ErrorCode

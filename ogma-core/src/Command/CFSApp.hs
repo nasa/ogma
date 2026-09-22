@@ -36,11 +36,12 @@ module Command.CFSApp
   where
 
 -- External imports
-import           Control.Applicative    ( liftA2, (<|>) )
+import           Control.Applicative    ( (<|>) )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither,
                                           throwError )
 import           Data.Aeson             ( ToJSON (..), Value )
+import           Data.List              ( nub )
 import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
@@ -49,14 +50,15 @@ import qualified Command.Standalone
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
+import Data.Either.Extra      ( mapLeft )
 import Data.List.Extra        ( stripSuffix )
 import Data.String.Extra      ( pascalCase )
 import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
-import Command.Common                 (InputFile (..), cannotCopyTemplate,
+import Command.Common                 (InputFile (..), cannotCopyTemplateF,
                                        checkArguments, combineInputFiles,
-                                       locateTemplateDir, makeLeftE,
+                                       locateTemplateDir,
                                        openVarDBFilesWithDefault,
                                        parseInputFile,
                                        parseRequirementsListFile,
@@ -89,7 +91,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where
@@ -99,6 +101,8 @@ command options = processResult $ do
     functions     = exprPair (commandPropFormat options)
     templateVarsF = commandExtraVars options
 
+-- | Generate application data describing core elements of a new cFS
+-- application that implements the input requirements or diagrams.
 command' :: CommandOptions
          -> ExprPair
          -> ExceptT ErrorTriplet IO AppData
@@ -110,7 +114,7 @@ command' options (ExprPair exprT) = do
 
     specT <- maybe
                (return Nothing)
-               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               (fmap (Just . InputFileSpec) . readInputExpr')
                cExpr
 
     specF <- if null fpA
@@ -128,8 +132,7 @@ command' options (ExprPair exprT) = do
 
     mode <- parseDiagramMode (commandDiagramMode options)
 
-    copilotM <- sequenceA $
-                  (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
+    copilotM <- traverse (\spec' -> processSpec spec' cExpr fpA mode) spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
@@ -156,8 +159,8 @@ command' options (ExprPair exprT) = do
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-    processSpec spec' expr' fp' mode =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec' mode
+    processSpec spec' expr' fp' =
+      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
@@ -180,9 +183,16 @@ commandLogic :: VariableDB
              -> [Trigger]
              -> Maybe Command.Standalone.AppData
              -> AppData
-commandLogic varDB varNames handlers copilotM =
-    AppData vars ids infos datas handlers copilotM
+commandLogic varDB varNames triggers =
+    AppData vars' ids' infos' datas' triggers'
+
   where
+
+    vars'     = nub vars
+    ids'      = nub ids
+    infos'    = nub infos
+    datas'    = nub datas
+    triggers' = nub triggers
 
     -- This is a Data.List.unzip4
     (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
@@ -245,7 +255,7 @@ variableMap varDB varName = do
 
       active = inputActive inputDef
 
-  let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
+  let typeVar' = maybe (topicType topicDef) typeToType typeDef
 
   -- Pick name for the function to process a message ID.
   let mn = pascalCase $ stripSuffix "_MID" mid
@@ -272,7 +282,7 @@ data VarDecl = VarDecl
     { varDeclName :: String
     , varDeclType :: String
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON VarDecl
 
@@ -286,7 +296,7 @@ data MsgInfo = MsgInfo
     , msgInfoDesc  :: String
     , msgInfoExtra :: Value
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON MsgInfo
 
@@ -300,7 +310,7 @@ data MsgData = MsgData
     , msgDataVarType   :: String
     , msgDataActive    :: Bool
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON MsgData
 
@@ -310,7 +320,7 @@ data Trigger = Trigger
     , triggerType    :: Maybe String
     , triggerMsgType :: Maybe String
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON Trigger
 

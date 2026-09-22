@@ -118,7 +118,8 @@ $ docker run --rm -it \
    -e TERM \
    -e QT_X11_NO_MITSHM=1 \
    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-   ogma-turtlesim-demo
+   ogma-turtlesim-demo \
+   /bin/bash
 ```
 
 Once container boots, we start the simulation itself, which brings up ta GUI
@@ -136,7 +137,7 @@ That should bring up a GUI with a turtle in the middle.
 In the second terminal we execute:
 
 ```
-$ docker exec -it ogma-turtlesim-container /bin/bash
+$ docker exec -it ogma-turtlesim-demo-container /bin/bash
 ```
 
 Once the container boots, we run a ROS 2 that allows us to control the turtle
@@ -152,7 +153,7 @@ $ ros2 run turtlesim turtle_teleop_key
 In the third terminal we execute:
 
 ```
-$ docker exec -it ogma-turtlesim-container /bin/bash
+$ docker exec -it ogma-turtlesim-demo-container /bin/bash
 ```
 
 Once the container boots, we start the monitoring node, which awaits for
@@ -166,7 +167,7 @@ $ ros2 run copilot copilot
 ## Terminal 4
 
 ```
-$ docker exec -it ogma-turtlesim-container /bin/bash
+$ docker exec -it ogma-turtlesim-demo-container /bin/bash
 ```
 
 Once the container boots, we listen for message violations reported by the
