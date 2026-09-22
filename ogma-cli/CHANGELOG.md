@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-09-02
+## [1.X.Y] - 2026-09-21
 
 * Remove unnecessary line breaks (#520).
 * Update cFS examples to avoid MID collisions (#522).
@@ -16,6 +16,7 @@
 * Fix container name in call to `docker exec` in Turtlesim example (#573).
 * Update package index before installing dependencies in CI jobs (#577).
 * Update commands to use new input file format by default (#575).
+* Fix help message associated with `ros` command option (#604).
 
 ## [1.15.0] - 2026-07-21
 

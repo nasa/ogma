@@ -270,7 +270,7 @@ commandOptsParser = CommandOpts
               (  long "testing-vars"
               <> metavar "variable_name"
               <> showDefault
-              <> help strROSAppHandlerListArgDesc
+              <> help strROSAppVarsTestingListArgDesc
               )
            )
 
