@@ -1,7 +1,8 @@
 # Revision history for ogma-language-csv
 
-## [1.X.Y] - 2026-09-05
+## [1.16.0] - 2026-09-21
 
+* Version bump (1.16.0) (#606).
 * Address HLint suggestions (#581).
 
 ## [1.15.0] - 2026-07-21
