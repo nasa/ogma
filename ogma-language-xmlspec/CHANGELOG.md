@@ -1,7 +1,8 @@
 # Revision history for ogma-language-xmlspec
 
-## [1.X.Y] - 2026-07-23
+## [1.16.0] - 2026-09-21
 
+* Version bump (1.16.0) (#606).
 * Remove unnecessary line breaks (#520).
 * Add missing periods to Haddock comments (#524).
 
