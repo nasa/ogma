@@ -4,6 +4,7 @@
 
 * Bump upper version constraint on `aeson`, `QuickCheck` (#609).
 * Remove duplicate line from copyright header (#611).
+* Add regression test for `mergeSpecs` with multiple input files (#555).
 
 ## [1.16.0] - 2026-09-21
 
