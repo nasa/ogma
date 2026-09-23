@@ -1,5 +1,9 @@
 # Revision history for ogma-extra
 
+## [1.X.Y] - 2026-09-23
+
+* Bump upper version constraint on `aeson`, `QuickCheck` (#609).
+
 ## [1.16.0] - 2026-09-21
 
 * Version bump (1.16.0) (#606).
