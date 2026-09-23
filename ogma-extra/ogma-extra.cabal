@@ -89,7 +89,7 @@ test-suite unit-tests
 
   build-depends:
       base                       >= 4.11.0.0 && < 5
-    , QuickCheck                 >= 2.8.2    && < 2.19
+    , QuickCheck                 >= 2.8.2    && < 2.20
     , test-framework             >= 0.8.2    && < 0.9
     , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4
 
