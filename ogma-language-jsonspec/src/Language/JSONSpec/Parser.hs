@@ -291,7 +291,7 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
   return $ Spec internalVariableDefs externalVariableDefs requirements
 
 valueToString :: String -> Value -> Either String String
-valueToString msg (String x) = Right $ unpack x
+valueToString _   (String x) = Right $ unpack x
 valueToString msg _          = Left $
   "The JSON value provided for " ++ msg ++ " does not contain a string"
 
