@@ -150,36 +150,36 @@ parseJSONSpec :: (String -> IO (Either String a))
               -> FilePath
               -> Value
               -> IO (Either String (Spec a))
-parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
+parseJSONSpec parseExpr jsonFormat filepath specValue = runExceptT $ do
   jsonFormatInternal <- except $ parseJSONFormat jsonFormat
 
-  let values :: [Value]
-      values =
-        maybe [] (`executeJSONPath` value) (jfiInternalVars jsonFormatInternal)
+  let internalValues :: [Value]
+      internalValues =
+        maybe [] (`executeJSONPath` specValue) (jfiInternalVars jsonFormatInternal)
 
       internalVarDef :: Value -> Either String InternalVariableDef
       internalVarDef value = do
-        let msg = "internal variable name"
-        varId <- valueToString msg =<<
+        let varNameMsg = "internal variable name"
+        varId <- valueToString varNameMsg =<<
                    listToEither
-                     msg
+                     varNameMsg
                      ( executeJSONPath
                          (jfiInternalVarId jsonFormatInternal)
                          value
                      )
 
-        let msg = "internal variable type"
+        let varTypeMsg = "internal variable type"
         varType <- maybe
                      (Right "")
-                     (\e -> valueToString msg =<<
-                              listToEither msg (executeJSONPath e value)
+                     (\e -> valueToString varTypeMsg =<<
+                              listToEither varTypeMsg (executeJSONPath e value)
                      )
                      (jfiInternalVarType jsonFormatInternal)
 
-        let msg = "internal variable expr"
-        varExpr <- valueToString msg =<<
+        let varExprMsg = "internal variable expr"
+        varExpr <- valueToString varExprMsg =<<
                      listToEither
-                       msg
+                       varExprMsg
                        ( executeJSONPath
                            (jfiInternalVarExpr jsonFormatInternal)
                            value
@@ -191,30 +191,30 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
                    , internalVariableExpr = varExpr
                    }
 
-  internalVariableDefs <- except $ mapM internalVarDef values
+  internalVariableDefs <- except $ mapM internalVarDef internalValues
 
-  let values :: [Value]
-      values =
-        maybe [] (`executeJSONPath` value) (jfiExternalVars jsonFormatInternal)
+  let externalValues :: [Value]
+      externalValues =
+        maybe [] (`executeJSONPath` specValue) (jfiExternalVars jsonFormatInternal)
 
       externalVarDef :: Value -> Either String ExternalVariableDef
       externalVarDef value = do
 
-        let msg = "external variable name"
-        varId <- valueToString msg =<<
+        let varNameMsg = "external variable name"
+        varId <- valueToString varNameMsg =<<
                    listToEither
-                     msg
+                     varNameMsg
                      ( executeJSONPath
                          (jfiExternalVarId jsonFormatInternal)
                          value
                      )
 
-        let msg = "external variable type"
+        let varTypeMsg = "external variable type"
         varType <-
           maybe
             (Right "")
-            (\e -> valueToString msg =<<
-                     listToEither msg (executeJSONPath e value)
+            (\e -> valueToString varTypeMsg =<<
+                     listToEither varTypeMsg (executeJSONPath e value)
             )
             (jfiExternalVarType jsonFormatInternal)
 
@@ -223,14 +223,14 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
                    , externalVariableType = varType
                    }
 
-  externalVariableDefs <- except $ mapM externalVarDef values
+  externalVariableDefs <- except $ mapM externalVarDef externalValues
 
-  let values :: [Value]
-      values = executeJSONPath (jfiRequirements jsonFormatInternal) value
+  let requirementValues :: [Value]
+      requirementValues = executeJSONPath (jfiRequirements jsonFormatInternal) specValue
 
       -- requirementDef :: Value -> Either String (Requirement a)
       requirementDef value = do
-        let msg = "Requirement name"
+        let reqNameMsg = "Requirement name"
 
         -- Handle the case where the requirement ID is the file name, with or
         -- without extension.
@@ -238,38 +238,38 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
           FSIFileName   -> return $ takeFileName filepath
           FSIBaseName   -> return $ takeBaseName filepath
           FSIJSONPath p -> except $
-            valueToString msg =<< listToEither msg (executeJSONPath p value)
+            valueToString reqNameMsg =<< listToEither reqNameMsg (executeJSONPath p value)
 
-        let msg = "Requirement expression"
-        reqExpr <- except $ valueToString msg =<<
+        let reqExprMsg = "Requirement expression"
+        reqExpr <- except $ valueToString reqExprMsg =<<
                               listToEither
-                                msg
+                                reqExprMsg
                                 ( executeJSONPath
                                     (jfiRequirementExpr jsonFormatInternal)
                                     value
                                 )
         reqExpr' <- ExceptT $ parseExpr reqExpr
 
-        let msg = "Requirement description"
+        let reqDescMsg = "Requirement description"
         reqDesc <- except $ maybe
                      (Right "")
-                     (\e -> valueToString msg =<<
-                              listToEither msg (executeJSONPath e value)
+                     (\e -> valueToString reqDescMsg =<<
+                              listToEither reqDescMsg (executeJSONPath e value)
                      )
                      (jfiRequirementDesc jsonFormatInternal)
 
-        let msg = "Requirement result type"
+        let reqResTypeMsg = "Requirement result type"
             ty :: Maybe (Either String String)
-            ty = (\e -> valueToString msg =<<
-                          listToEither msg (executeJSONPath e value)
+            ty = (\e -> valueToString reqResTypeMsg =<<
+                          listToEither reqResTypeMsg (executeJSONPath e value)
                  )
              <$> jfiRequirementResultType jsonFormatInternal
         reqResType <- except $ maybeEither ty
 
-        let msg = "Requirement result expression"
+        let reqResExprMsg = "Requirement result expression"
             resultExpr :: Maybe (Either String String)
-            resultExpr = (\e -> valueToString msg =<<
-                                  listToEither msg (executeJSONPath e value)
+            resultExpr = (\e -> valueToString reqResExprMsg =<<
+                                  listToEither reqResExprMsg (executeJSONPath e value)
                          )
                      <$> jfiRequirementResultExpr jsonFormatInternal
 
@@ -286,9 +286,9 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
                    , requirementResultExpr  = reqResExpr'
                    }
 
-  requirements <- mapM requirementDef values
+  requirementDefs <- mapM requirementDef requirementValues
 
-  return $ Spec internalVariableDefs externalVariableDefs requirements
+  return $ Spec internalVariableDefs externalVariableDefs requirementDefs
 
 valueToString :: String -> Value -> Either String String
 valueToString _   (String x) = Right $ unpack x
