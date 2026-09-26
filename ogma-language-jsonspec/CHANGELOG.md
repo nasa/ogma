@@ -4,6 +4,7 @@
 
 * Bump upper version constraint on `aeson` (#609).
 * Replace unused variables with wildcards (#615).
+* Rename variables to avoid name shadowing (#617).
 
 ## [1.16.0] - 2026-09-21
 
