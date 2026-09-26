@@ -152,6 +152,6 @@ cellValueToString (CellError _)  = "(error)"
 showParseError :: ParseError -> String
 showParseError (InvalidZipArchive string) = "Invalid zip archive: " ++ string
 showParseError (MissingFile fp)           = "Missing file: " ++ fp
-showParseError (InvalidFile fp txt)       = "Invalid file: " ++ fp
-showParseError (InvalidRef fp refId)      = "Invalid reference in file: " ++ fp
-showParseError (InconsistentXlsx txt)     = "Inconsistent XLSX file"
+showParseError (InvalidFile fp _)         = "Invalid file: " ++ fp
+showParseError (InvalidRef fp _)          = "Invalid reference in file: " ++ fp
+showParseError (InconsistentXlsx _)       = "Inconsistent XLSX file"
