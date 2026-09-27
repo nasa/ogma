@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2026-09-23
 
 * Bump upper version constraint on `aeson` (#609).
+* Use `--handlers-file` in ROS 2 and F Prime documentation (#594).
 
 ## [1.16.0] - 2026-09-21
 
