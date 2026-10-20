@@ -237,9 +237,15 @@ testStandaloneMerge files externs = do
 
     -- Number of times each external variable is declared, with its type, as
     -- an extern stream in the generated monitor. Each must be exactly one.
-    let declaration (v, t) = v ++ " :: Stream (" ++ t ++ ")\n"
-                             ++ v ++ " = extern " ++ show v ++ " Nothing\n"
-        occurrences s      = length $ filter (s `isPrefixOf`) $ tails monitor
+    --
+    -- The generated file has MIXED line endings: the template's static header
+    -- uses CRLF while the per-variable blocks use LF. So the line ending is
+    -- not part of what is being asserted here -- the declaration and its type
+    -- are compared on their own, one line at a time.
+    let lines'          = map stripCR (lines monitor)
+        declaration (v, t) = [ v ++ " :: Stream (" ++ t ++ ")"
+                             , v ++ " = extern " ++ show v ++ " Nothing" ]
+        occurrences s      = length $ filter (s `isPrefixOf`) $ tails lines'
         wrong              = [ v | e@(v, _) <- externs
                                  , occurrences (declaration e) /= 1 ]
 
@@ -251,3 +257,9 @@ testStandaloneMerge files externs = do
     wrongMsg vs = "The monitor generated from input files " ++ show files
                   ++ " does not declare the external variables " ++ show vs
                   ++ " exactly once with their types."
+
+-- | Drop a trailing carriage return, so that CRLF and LF files compare equal.
+stripCR :: String -> String
+stripCR ('\r':cs) = stripCR cs
+stripCR (c:cs)   = c : stripCR cs
+stripCR []       = []
