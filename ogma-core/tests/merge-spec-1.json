@@ -1,0 +1,16 @@
+{
+  "Spec1": {
+    "Internal_variables": [],
+    "Other_variables": [
+      {"name":"sensor_a", "type":"bool"}
+    ],
+    "Requirements": [
+      {
+        "name": "propA",
+        "CoCoSpecCode": "true",
+        "ptLTL": "(H (<b><i>sensor_a</i></b>))",
+        "fretish": "sensor_a shall always hold"
+      }
+    ]
+  }
+}
