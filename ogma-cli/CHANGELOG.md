@@ -2,6 +2,8 @@
 
 ## [1.X.Y] - 2026-09-23
 
+* Add `standalone --require-types` to reject unresolved external types, including project-based invocations, while preserving default generation with warnings.
+* Add CLI smoke checks for untyped warnings, strict rejection, and mapped controls.
 * Bump upper version constraint on `aeson` (#609).
 
 ## [1.16.0] - 2026-09-21

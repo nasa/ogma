@@ -2,6 +2,8 @@
 
 ## [1.X.Y] - 2026-09-26
 
+* Warn when standalone external types are unresolved, and allow strict rejection before generating monitor files.
+* Add standalone external-type regression tests for implicit, blank, and correctly declared signal types.
 * Bump upper version constraint on `aeson`, `QuickCheck` (#609).
 * Remove duplicate line from copyright header (#611).
 * Remove extraneous horizontal space from imports (#620).
