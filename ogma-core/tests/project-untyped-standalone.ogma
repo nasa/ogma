@@ -1,0 +1,11 @@
+{
+  "projectName": "Standalone missing external type regression",
+  "projectInputFiles": [["project:fcs-untyped-sensor.json", "cmd:fcs", "smv"]],
+  "projectVariableFiles": null,
+  "projectVariableDBFile": null,
+  "projectHandlerFile": null,
+  "projectCommandPropVia": null,
+  "projectTemplateDir": null,
+  "projectTargetDir": null,
+  "projectExtraJSONFile": null
+}

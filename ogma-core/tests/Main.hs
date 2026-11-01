@@ -3,6 +3,7 @@
 module Main where
 
 import Data.Monoid                    ( mempty )
+import Data.List                      ( isInfixOf )
 import Test.Framework                 ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.HUnit ( testCase )
 import Test.HUnit                     ( assertBool )
@@ -10,7 +11,7 @@ import System.Directory               ( getTemporaryDirectory )
 
 -- Internal imports
 import Command.CStructs2Copilot (cstructs2Copilot)
-import Command.Result           (isSuccess)
+import Command.Result           (Result (..), isSuccess)
 import Command.Standalone       (CommandOptions (..), command)
 
 -- | Run all unit tests on ogma-core.
@@ -24,6 +25,24 @@ tests =
     testCase "standalone-cmd-fcs-ok"
       (testStandaloneFCS "tests/fcs_good.json" True)
     -- Should pass
+
+  , testCase "standalone-unmapped-default-remains-permissive"
+      (testStandaloneTypes "tests/fcs-untyped-sensor.json" False True [])
+
+  , testCase "standalone-unmapped-strict-rejects-sensor"
+      (testStandaloneTypes "tests/fcs-untyped-sensor.json" True False
+        ["sensor_ok"])
+
+  , testCase "standalone-mapped-strict-accepts-sensor"
+      (testStandaloneTypes "tests/fcs-typed-sensor.json" True True [])
+
+  , testCase "standalone-explicit-blank-type-strict-rejects"
+      (testStandaloneTypes "tests/fcs-empty-type-sensor.json" True False
+        ["sensor_ok"])
+
+  , testCase "standalone-two-undeclared-signals-strict-rejects-both"
+      (testStandaloneTypes "tests/fcs-two-untyped-sensors.json" True False
+        ["sensor_ok", "link_ok"])
 
   , testCase "standalone-cmd-fsc-file-not-found"
       (testStandaloneFCS "tests/file-invalid.json" False)
@@ -108,6 +127,7 @@ testStandaloneFCS file success = do
                  , commandFormat      = "fcs"
                  , commandPropFormat  = "smv"
                  , commandTypeMapping = [("int", "Int64"), ("real", "Float")]
+                 , commandRequireTypes = False
                  , commandFilename    = "monitor"
                  , commandTargetDir   = targetDir
                  , commandTemplateDir = Nothing
@@ -124,6 +144,34 @@ testStandaloneFCS file success = do
   where
     errorMsg = "The result of the transformation of input file "
                ++ file ++ " to Copilot was unexpected."
+
+-- | Boundary regression for the standalone strict-type option. The
+-- fixture-derived expected names are literal, rather than computed by the
+-- implementation that decides whether an input has unresolved types.
+testStandaloneTypes :: FilePath -> Bool -> Bool -> [String] -> IO ()
+testStandaloneTypes file requireTypes expectSuccess expectedNames = do
+    targetDir <- getTemporaryDirectory
+    let opts = CommandOptions
+                 { commandConditionExpr = Nothing
+                 , commandInputFiles  = [ file ]
+                 , commandFormat      = "fcs"
+                 , commandPropFormat  = "smv"
+                 , commandTypeMapping = []
+                 , commandRequireTypes = requireTypes
+                 , commandFilename    = "monitor"
+                 , commandTargetDir   = targetDir
+                 , commandTemplateDir = Nothing
+                 , commandPropVia     = Nothing
+                 , commandExtraVars   = Nothing
+                 }
+    result <- command opts
+    assertBool ("unexpected standalone result for " ++ file)
+      (expectSuccess == isSuccess result)
+    case result of
+      Error _ msg _ -> mapM_ (\name -> assertBool
+                              ("missing identifier " ++ name ++ " in error")
+                              (name `isInfixOf` msg)) expectedNames
+      Success       -> return ()
 
 -- | Test standalone backend with FDB format.
 --
@@ -146,6 +194,7 @@ testStandaloneFDB file success = do
                  , commandFormat      = "fdb"
                  , commandPropFormat  = "lustre"
                  , commandTypeMapping = []
+                 , commandRequireTypes = False
                  , commandFilename    = "monitor"
                  , commandTargetDir   = targetDir
                  , commandTemplateDir = Nothing

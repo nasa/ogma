@@ -1,0 +1,9 @@
+{
+  "RTSASpec": {
+    "Internal_variables": [],
+    "Other_variables": [{"name":"sensor_ok", "type":"bool"}],
+    "Requirements": [
+      {"name":"R_sensor", "CoCoSpecCode":"H(sensor_ok)", "ptLTL":"(H sensor_ok)", "fretish":"The controller shall maintain sensor_ok"}
+    ]
+  }
+}

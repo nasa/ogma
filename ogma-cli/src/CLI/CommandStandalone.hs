@@ -34,7 +34,7 @@ import Control.Applicative ((<|>))
 import Data.Functor        ((<&>))
 import Data.Maybe          (fromMaybe)
 import Options.Applicative (Parser, help, long, many, metavar, optional, short,
-                            showDefault, strOption, value)
+                            showDefault, strOption, switch, value)
 
 -- External imports: handling of input projects and command results
 import Command.Result ( Result(..) )
@@ -60,6 +60,7 @@ data CommandOpts = CommandOpts
   , standaloneTarget        :: String
   , standalonePropVia       :: Maybe String
   , standaloneTemplateVars  :: Maybe String
+  , standaloneRequireTypes  :: Bool
   }
 
 -- | Transform an input specification into a Copilot specification.
@@ -86,6 +87,7 @@ command c
       , Command.Standalone.commandFilename      = standaloneTarget c
       , Command.Standalone.commandPropVia       = standalonePropVia c
       , Command.Standalone.commandExtraVars     = standaloneTemplateVars c
+      , Command.Standalone.commandRequireTypes  = standaloneRequireTypes c
       }
 
     types :: [(String, String)]
@@ -132,6 +134,8 @@ commandProjectOptions projectFile c = do
       , Command.Standalone.commandFilename = standaloneTarget c
 
       , Command.Standalone.commandTypeMapping = typeMapping (standaloneTypes c)
+
+      , Command.Standalone.commandRequireTypes = standaloneRequireTypes c
 
       }
 
@@ -234,6 +238,10 @@ commandOptsParser = CommandOpts
             <> help strStandaloneTemplateVarsArgDesc
             )
         )
+  <*> switch
+        (  long "require-types"
+        <> help strStandaloneRequireTypesDesc
+        )
 
 -- | Project flag description.
 strStandaloneProjectArgDesc :: String
@@ -281,6 +289,11 @@ strStandalonePropViaDesc = "Command to pre-process individual properties"
 strStandaloneTemplateVarsArgDesc :: String
 strStandaloneTemplateVarsArgDesc =
   "JSON file containing additional variables to expand in template"
+
+-- | Opt-in rejection of missing external stream types.
+strStandaloneRequireTypesDesc :: String
+strStandaloneRequireTypesDesc =
+  "Reject standalone specifications with untyped external signals"
 
 -- | Error code for when a project cannot be read.
 cannotReadProject :: ErrorCode

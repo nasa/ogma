@@ -191,6 +191,42 @@ with Dockerfiles listing the steps necessary to install Ogma from scratch.
 The main invocation of `ogma` with `--help` lists sub-commands available. More
 details are provided in the following sections.
 
+## Standalone Copilot and external signal types
+
+The `standalone` command produces a Copilot specification from requirements.
+It accepts `--input-file`, `--input-format`, `--prop-format`, and the usual
+output customization flags. For example:
+
+```sh
+ogma standalone --input-file requirements.json --input-format fcs \
+  --prop-format smv --target-dir monitor
+```
+
+When a property mentions a signal without an external type declaration, Ogma
+adds it as an implicit external variable. For compatibility, `standalone`
+still generates output by default and now warns on stderr with the missing
+signal names. The generated `Copilot.hs` may contain `Stream (_)` for such
+signals; GHC cannot compile a wildcard in this declaration signature.
+
+Use `--require-types` to reject these specifications *before* writing the
+generated monitor files:
+
+```sh
+ogma standalone --input-file requirements.json --input-format fcs \
+  --prop-format smv --target-dir monitor --require-types
+```
+
+For FRET/FCS JSON input, declare the missing names in the `Other_variables`
+array under `RTSASpec`. Each entry needs a nonempty `type` such as `bool`:
+
+```json
+{ "name": "sensor_ok", "type": "bool" }
+```
+
+This preflight concerns **external type declarations** in the `standalone`
+backend. It does not prove the correctness or compilation of a generated
+monitor, and it does not alter the ROS, cFS, or F´ backends.
+
 ## cFS Application Generation
 
 [NASA Core Flight System](https://cfs.gsfc.nasa.gov/) (cFS) is a flight

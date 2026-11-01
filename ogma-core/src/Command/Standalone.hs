@@ -31,10 +31,13 @@ module Command.Standalone
 -- External imports
 import Control.Applicative  ((<|>))
 import Control.Exception    as E
-import Control.Monad.Except (ExceptT (..), liftEither)
+import Control.Monad.Except (ExceptT (..), liftEither, throwError)
+import Control.Monad.IO.Class (liftIO)
 import Data.Aeson           (ToJSON (..))
+import Data.List            (intercalate, nub)
 import Data.Maybe           (fromMaybe)
 import GHC.Generics         (Generic)
+import System.IO            (hPutStrLn, stderr)
 
 -- External imports: Ogma
 import System.Directory.Extra (copyTemplate)
@@ -50,6 +53,7 @@ import Data.Aeson.Extra               (mergeObjects)
 import Data.Either.Extra              (mapLeft)
 import Data.ExprPair                  (ExprPair (..), ExprPairT (..), exprPair)
 import Data.Location                  (Location (..))
+import Data.OgmaSpec                  (ExternalVariableDef (..), Spec (..))
 import Data.Spec.Extra                (addMissingIdentifiers)
 import Data.Spec.Parser               (readInputExpr)
 import Language.Trans.Diagram2Copilot (DiagramMode (..), diagram2CopilotSpec)
@@ -121,7 +125,22 @@ command' options (ExprPair exprT) = do
 
     case spec of
       Nothing    -> liftEither $ Left commandMissingSpec
-      Just spec' ->
+      Just spec' -> do
+        -- Keep the historical permissive output by default. A missing type
+        -- would otherwise appear in Copilot.hs as a Stream (_) wildcard,
+        -- which cannot be compiled in a declaration signature.
+        case unresolvedExternalTypes exprT spec' of
+          [] -> pure ()
+          names
+            | commandRequireTypes options ->
+                throwError $ commandUnresolvedTypes names
+            | otherwise ->
+                liftIO $ hPutStrLn stderr $
+                  "warning: unresolved external type(s): "
+                  ++ intercalate ", " names
+                  ++ "; generated Copilot.hs may contain Stream (_) "
+                  ++ "wildcards. Add the types to Other_variables."
+
         commandLogic triggerExprM fpA name typeMaps exprT spec' ComputeState
 
   where
@@ -138,6 +157,18 @@ command' options (ExprPair exprT) = do
 
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
+
+-- | Names of external signals without a declared type. Use exactly the same
+-- completion function as 'commandLogic' so implicitly referenced signals and
+-- explicit blank declarations receive the same diagnosis. Diagrams have no
+-- input-spec external-variable table and are intentionally unaffected.
+unresolvedExternalTypes :: ExprPairT a -> InputFile a -> [String]
+unresolvedExternalTypes (ExprPairT _ _ _ ids _) (InputFileSpec input) =
+    nub [ externalVariableName v
+        | v <- externalVariables (addMissingIdentifiers ids input)
+        , null (externalVariableType v)
+        ]
+unresolvedExternalTypes _ (InputFileDiagram _) = []
 
 -- | Generate the data of a new standalone Copilot monitor that implements the
 -- spec, using a subexpression handler.
@@ -195,6 +226,8 @@ data CommandOptions = CommandOptions
   , commandPropFormat    :: String             -- ^ Format used for input
                                                -- properties.
   , commandTypeMapping   :: [(String, String)]
+  , commandRequireTypes  :: Bool               -- ^ Reject untyped external
+                                               -- signals instead of warning.
   , commandFilename      :: String
   , commandPropVia       :: Maybe String       -- ^ Use external command to
                                                -- pre-process system properties.
@@ -262,6 +295,15 @@ commandIncorrectSpecE expr e =
     msg =
       "The input specification " ++ show expr ++ " cannot be formalized: " ++ e
 
+-- | Error: standalone external inputs have not all been given a type.
+commandUnresolvedTypes :: [String] -> ErrorTriplet
+commandUnresolvedTypes names =
+    ErrorTriplet ecUnresolvedTypes msg LocationNothing
+  where
+    msg = "Unresolved external type(s): " ++ intercalate ", " names
+       ++ ". Define types in Other_variables before generating "
+       ++ "a standalone Copilot monitor."
+
 -- ** Error codes
 
 -- | Error: there is no input argument.
@@ -275,3 +317,7 @@ ecMultipleInputTypes = 1
 -- | Error: the input specification cannot be formalized.
 ecIncorrectSpec :: ErrorCode
 ecIncorrectSpec = 1
+
+-- | Error: a strict standalone command contains untyped external signals.
+ecUnresolvedTypes :: ErrorCode
+ecUnresolvedTypes = 1
