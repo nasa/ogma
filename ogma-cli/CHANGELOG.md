@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-09-23
+## [1.X.Y] - 2026-11-06
 
 * Bump upper version constraint on `aeson` (#609).
+* Fix compilation errors in cFS CI job (#627).
 
 ## [1.16.0] - 2026-09-21
 
