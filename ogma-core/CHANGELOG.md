@@ -5,6 +5,7 @@
 * Bump upper version constraint on `aeson`, `QuickCheck` (#609).
 * Remove duplicate line from copyright header (#611).
 * Remove extraneous horizontal space from imports (#620).
+* Adapt cFS backend, template to support messages with multiple fields (#625).
 
 ## [1.16.0] - 2026-09-21
 
