@@ -19,7 +19,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.16.0
+version:             1.17.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             Apache-2.0
@@ -152,7 +152,7 @@ library
 
   build-depends:
       base                    >= 4.11.0.0 && < 5
-    , aeson                   >= 2.0.0.0  && < 2.3
+    , aeson                   >= 2.0.0.0  && < 2.4
     , bytestring              >= 0.10.8.2 && < 0.13
     , containers              >= 0.5      && < 0.8
     , copilot-core            >= 4.7.1    && < 4.9
@@ -170,16 +170,16 @@ library
     , vector                  >= 0.12.0.1 && < 0.14
     , yaml                    >= 0.11.7.0 && < 0.12
 
-    , ogma-extra              >= 1.16.0 && < 1.17
-    , ogma-language-c         >= 1.16.0 && < 1.17
-    , ogma-language-copilot   >= 1.16.0 && < 1.17
-    , ogma-language-csv       >= 1.16.0 && < 1.17
-    , ogma-language-jsonspec  >= 1.16.0 && < 1.17
-    , ogma-language-lustre    >= 1.16.0 && < 1.17
-    , ogma-language-smv       >= 1.16.0 && < 1.17
-    , ogma-language-xlsx      >= 1.16.0 && < 1.17
-    , ogma-language-xmlspec   >= 1.16.0 && < 1.17
-    , ogma-spec               >= 1.16.0 && < 1.17
+    , ogma-extra              >= 1.17.0 && < 1.18
+    , ogma-language-c         >= 1.17.0 && < 1.18
+    , ogma-language-copilot   >= 1.17.0 && < 1.18
+    , ogma-language-csv       >= 1.17.0 && < 1.18
+    , ogma-language-jsonspec  >= 1.17.0 && < 1.18
+    , ogma-language-lustre    >= 1.17.0 && < 1.18
+    , ogma-language-smv       >= 1.17.0 && < 1.18
+    , ogma-language-xlsx      >= 1.17.0 && < 1.18
+    , ogma-language-xmlspec   >= 1.17.0 && < 1.18
+    , ogma-spec               >= 1.17.0 && < 1.18
 
   hs-source-dirs:
     src
@@ -201,7 +201,7 @@ test-suite unit-tests
       base                       >= 4.11.0.0 && < 5
     , directory                  >= 1.3.1.5  && < 1.4
     , HUnit                      >= 1.2.0.0  && < 1.7
-    , QuickCheck                 >= 2.8.2    && < 2.19
+    , QuickCheck                 >= 2.8.2    && < 2.20
     , test-framework             >= 0.8.2    && < 0.9
     , test-framework-hunit       >= 0.2.0    && < 0.4
     , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4

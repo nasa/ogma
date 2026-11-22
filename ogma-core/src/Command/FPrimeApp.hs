@@ -30,13 +30,13 @@ module Command.FPrimeApp
   where
 
 -- External imports
-import           Control.Applicative    ( (<|>) )
-import qualified Control.Exception      as E
-import           Control.Monad.Except   ( ExceptT(..), liftEither )
-import           Data.Aeson             ( ToJSON, toJSON )
-import           Data.Char              ( toUpper )
-import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
-import           GHC.Generics           ( Generic )
+import           Control.Applicative  ( (<|>) )
+import qualified Control.Exception    as E
+import           Control.Monad.Except ( ExceptT(..), liftEither )
+import           Data.Aeson           ( ToJSON, toJSON )
+import           Data.Char            ( toUpper )
+import           Data.Maybe           ( fromMaybe, mapMaybe, maybeToList )
+import           GHC.Generics         ( Generic )
 
 -- External imports: auxiliary
 import Data.Either.Extra      ( mapLeft )

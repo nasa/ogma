@@ -1,5 +1,10 @@
 # Revision history for ogma-language-smv
 
+## [1.17.0] - 2026-11-21
+
+* Version bump (1.17.0) (#632).
+* Bump upper version constraint on `QuickCheck` (#609).
+
 ## [1.16.0] - 2026-09-21
 
 * Version bump (1.16.0) (#606).

@@ -1,5 +1,12 @@
 # Revision history for ogma-language-jsonspec
 
+## [1.17.0] - 2026-11-21
+
+* Version bump (1.17.0) (#632).
+* Bump upper version constraint on `aeson` (#609).
+* Replace unused variables with wildcards (#615).
+* Rename variables to avoid name shadowing (#617).
+
 ## [1.16.0] - 2026-09-21
 
 * Version bump (1.16.0) (#606).

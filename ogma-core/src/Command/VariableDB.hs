@@ -275,6 +275,7 @@ mergeType (t1:ts1) t2
 
   |    typeFromScope t1 == typeFromScope t2
     && typeFromType t1  == typeFromType t2
+    && typeFromField t1 == typeFromField t2
     && typeToScope t1   == typeToScope t2
   = throwError $
       cannotMergeVariableDBs

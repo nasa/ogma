@@ -61,6 +61,14 @@ jobs:
         # Clone standard cFS
         git clone --recursive -b v7.0.1 https://github.com/nasa/cfs.git
 
+        # Temporary workaround to fix compilation error in cFS 7.0.1
+        pushd cfs/psp
+        wget https://patch-diff.githubusercontent.com/raw/nasa/PSP/pull/495.patch -O - | git apply
+        popd
+
+        # Avoid errors with new versions of CMake
+        echo "CMAKE_POLICY_VERSION_MINIMUM=3.5" >> $GITHUB_ENV
+
         # Generate cFS app with Ogma
         ogma cfs --target-dir cfs/apps/ \
                  --input-file ogma-cli/examples/cfs-001-hello-ogma/expressions.json \
