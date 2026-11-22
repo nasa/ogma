@@ -103,8 +103,8 @@ opTwoNum2Copilot BoolNumOp2Eq = "=="
 opTwoNum2Copilot BoolNumOp2Ne = "/="
 opTwoNum2Copilot BoolNumOp2Le = "<="
 opTwoNum2Copilot BoolNumOp2Lt = "<"
-opTwoNum2Copilot BoolNumOp2Gt = ">="
-opTwoNum2Copilot BoolNumOp2Ge = ">"
+opTwoNum2Copilot BoolNumOp2Gt = ">"
+opTwoNum2Copilot BoolNumOp2Ge = ">="
 
 -- | Return the Copilot representation of a Lustre boolean
 -- constant.

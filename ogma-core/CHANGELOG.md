@@ -1,11 +1,12 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-09-26
+## [1.X.Y] - 2026-11-21
 
 * Bump upper version constraint on `aeson`, `QuickCheck` (#609).
 * Remove duplicate line from copyright header (#611).
 * Remove extraneous horizontal space from imports (#620).
 * Adapt cFS backend, template to support messages with multiple fields (#625).
+* Fix translation of Lustre comparison operators (#634).
 
 ## [1.16.0] - 2026-09-21
 
