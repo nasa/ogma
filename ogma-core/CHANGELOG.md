@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-11-21
+## [1.17.0] - 2026-11-21
 
+* Version bump (1.17.0) (#632).
 * Bump upper version constraint on `aeson`, `QuickCheck` (#609).
 * Remove duplicate line from copyright header (#611).
 * Remove extraneous horizontal space from imports (#620).
