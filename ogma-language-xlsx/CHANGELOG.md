@@ -1,7 +1,8 @@
 # Revision history for ogma-language-xlsx
 
-## [1.X.Y] - 2026-09-23
+## [1.17.0] - 2026-11-21
 
+* Version bump (1.17.0) (#632).
 * Replace unused variables with wildcards (#613).
 
 ## [1.16.0] - 2026-09-21
